@@ -1039,7 +1039,7 @@ u8 win32_process_memory(process_memory_info *out)
 
 #define KEYS_COUNT 256
 
-typedef struct win32_shade_it_state
+typedef struct win32_fathom_state
 {
 
   u32 window_width;
@@ -1110,11 +1110,11 @@ typedef struct win32_shade_it_state
   s8 *gl_renderer;
   s8 *gl_vendor;
 
-} win32_shade_it_state;
+} win32_fathom_state;
 
 FATHOM_API FATHOM_INLINE i64 win32_window_callback(void *window, u32 message, u64 wParam, i64 lParam)
 {
-  win32_shade_it_state *state = (win32_shade_it_state *)GetWindowLongPtrA(window, GWLP_USERDATA);
+  win32_fathom_state *state = (win32_fathom_state *)GetWindowLongPtrA(window, GWLP_USERDATA);
 
   i64 result = 0;
 
@@ -1125,7 +1125,7 @@ FATHOM_API FATHOM_INLINE i64 win32_window_callback(void *window, u32 message, u6
   case WM_CREATE:
   {
     CREATESTRUCTA *cs = (CREATESTRUCTA *)lParam;
-    state = (win32_shade_it_state *)cs->lpCreateParams;
+    state = (win32_fathom_state *)cs->lpCreateParams;
     SetWindowLongPtrA(window, GWLP_USERDATA, (i64)state);
 
     /* Setup raw input for mouse and keyboard */
@@ -1267,7 +1267,7 @@ FATHOM_API FATHOM_INLINE i64 win32_window_callback(void *window, u32 message, u6
 
 static WINDOWPLACEMENT g_wpPrev = {0};
 
-FATHOM_API void win32_window_enter_fullscreen(win32_shade_it_state *state)
+FATHOM_API void win32_window_enter_fullscreen(win32_fathom_state *state)
 {
   i32 dwStyle = GetWindowLongA(state->window_handle, GWL_STYLE);
 
@@ -1295,7 +1295,7 @@ FATHOM_API void win32_window_enter_fullscreen(win32_shade_it_state *state)
   }
 }
 
-FATHOM_API void win32_window_enter_borderless(win32_shade_it_state *state)
+FATHOM_API void win32_window_enter_borderless(win32_fathom_state *state)
 {
   if (GetWindowPlacement(state->window_handle, &g_wpPrev))
   {
@@ -1320,7 +1320,7 @@ FATHOM_API void win32_window_enter_borderless(win32_shade_it_state *state)
   }
 }
 
-FATHOM_API void win32_window_enter_windowed(win32_shade_it_state *state)
+FATHOM_API void win32_window_enter_windowed(win32_fathom_state *state)
 {
   i32 dwStyle = GetWindowLongA(state->window_handle, GWL_STYLE);
 
@@ -1361,7 +1361,7 @@ FATHOM_API void win32_window_enter_windowed(win32_shade_it_state *state)
 #define FATHOM_FONT_GLYPH_WIDTH 5
 #define FATHOM_FONT_GLYPH_HEIGHT 7
 
-static u8 shade_it_font[] = {
+static u8 fathom_font[] = {
     0x77, 0x9D, 0xCF, 0xFD, 0xD1, 0x73, 0xE3, 0x08, 0xE5, 0xDE, 0x77, 0x9D,
     0xF8, 0xC6, 0x31, 0x8F, 0xDC, 0x47, 0x7A, 0x5F, 0x77, 0xDC, 0xE0, 0x64,
     0x00, 0x00, 0x05, 0x18, 0xC6, 0x50, 0x84, 0x62, 0x41, 0x4A, 0x1B, 0xCC,
@@ -1704,7 +1704,7 @@ FATHOM_API PROC opengl_load_function(s8 *name)
   return gl_function;
 }
 
-FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_shade_it_state *state)
+FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_fathom_state *state)
 {
   void *window_instance = GetModuleHandleA(0);
   WNDCLASSA window_class = {0};
@@ -2104,7 +2104,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
   /* Default fragment shader file name to load if no file is passed as an argument in cli */
   s8 *fragment_shader_file_name = (argv && argc > 1) ? (s8 *)argv[1] : "fathom.fs";
 
-  win32_shade_it_state state = {0};
+  win32_fathom_state state = {0};
   shader_main main_shader = {0};
   shader_font font_shader = {0};
 
@@ -2207,16 +2207,16 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
   /******************************/
   {
     /* Generate font texture */
-    u8 shade_it_font_pixels[FATHOM_FONT_WIDTH * FATHOM_FONT_HEIGHT];
+    u8 fathom_font_pixels[FATHOM_FONT_WIDTH * FATHOM_FONT_HEIGHT];
     u32 tex;
 
     /* OpenGL does not allow 1bit packed texture data so we convert each bit to 1 byte */
-    unpack_1bit_to_8bit(shade_it_font_pixels, shade_it_font, FATHOM_FONT_WIDTH, FATHOM_FONT_HEIGHT);
+    unpack_1bit_to_8bit(fathom_font_pixels, fathom_font, FATHOM_FONT_WIDTH, FATHOM_FONT_HEIGHT);
 
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, FATHOM_FONT_WIDTH, FATHOM_FONT_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, shade_it_font_pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, FATHOM_FONT_WIDTH, FATHOM_FONT_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, fathom_font_pixels);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
