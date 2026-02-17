@@ -1,7 +1,6 @@
 #ifndef FATHOM_MATH_LINEAR_ALGEBRA_H
 #define FATHOM_MATH_LINEAR_ALGEBRA_H
 
-#include "fathom_types.h"
 #include "fathom_math_basic.h"
 
 /* #############################################################################
@@ -38,6 +37,17 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_sub(fathom_vec3 a, fathom_vec3 
     return result;
 }
 
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_addf(fathom_vec3 a, f32 value)
+{
+    fathom_vec3 result = a;
+
+    result.x += value;
+    result.y += value;
+    result.z += value;
+
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_divf(fathom_vec3 a, f32 value)
 {
     fathom_vec3 result = a;
@@ -45,6 +55,28 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_divf(fathom_vec3 a, f32 value)
     result.x /= value;
     result.y /= value;
     result.z /= value;
+
+    return result;
+}
+
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_abs(fathom_vec3 a)
+{
+    fathom_vec3 result = {0};
+
+    result.x = fathom_absf(a.x);
+    result.y = fathom_absf(a.y);
+    result.z = fathom_absf(a.z);
+
+    return result;
+}
+
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_maxf(fathom_vec3 a, f32 value)
+{
+    fathom_vec3 result = {0};
+
+    result.x = fathom_maxf(a.x, value);
+    result.y = fathom_maxf(a.y, value);
+    result.z = fathom_maxf(a.z, value);
 
     return result;
 }
