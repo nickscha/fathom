@@ -5,8 +5,10 @@ set PLATFORM_NAME=win32_fathom
 set ICON_DATA=win32_fathom.res
 
 set DEF_COMPILER_FLAGS=-mwindows -march=native -mtune=native ^
--std=c89 -pedantic -nodefaultlibs -nostdlib -mno-stack-arg-probe -Xlinker /STACK:0x400000,0x400000 ^
--fno-builtin -ffreestanding -fno-asynchronous-unwind-tables -fuse-ld=lld -fno-math-errno -fno-trapping-math
+-std=c89 -pedantic -nodefaultlibs -nostdlib -mno-stack-arg-probe -Xlinker /STACK:0x100000,0x100000 ^
+-fno-builtin -ffreestanding -fno-asynchronous-unwind-tables -fuse-ld=lld -fno-math-errno -fno-trapping-math ^
+-Wall -Wextra -Werror -Wvla -Wconversion -Wdouble-promotion -Wsign-conversion ^
+-Wmissing-field-initializers -Wuninitialized -Winit-self -Wunused -Wunused-macros -Wunused-local-typedefs
 
 set DEF_FLAGS_LINKER=-lkernel32 -luser32 -lgdi32 -lopengl32
 
