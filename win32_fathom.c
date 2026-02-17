@@ -1667,6 +1667,15 @@ typedef struct shader_font
 
 } shader_font;
 
+typedef struct shader_recording
+{
+  shader_header header;
+
+  i32 loc_iResolution;
+  i32 loc_iTime;
+
+} shader_recording;
+
 static s8 shader_info_log[1024];
 
 static u32 opengl_failed_function_load_count = 0;
@@ -2095,6 +2104,35 @@ FATHOM_API void opengl_shader_load_shader_font(shader_font *shader)
   }
 }
 
+FATHOM_API void opengl_shader_load_shader_recording(shader_recording *shader)
+{
+  static s8 *shader_code_fragment =
+      "#version 330 core\n"
+      "out vec4 FragColor;"
+      "uniform float iTime;"
+      "uniform vec3 iRes;"
+      "void main()"
+      "{"
+      "float r=10.0;"
+      "float m=10.0;"
+      "vec2 p=gl_FragCoord.xy;"
+      "vec2 c=vec2(iRes.x-r-m, r+m);"
+      "float d=length(p-c);"
+      "float blink=0.5+0.5*sin(iTime*12.0);"
+      "float b=4.0;"
+      "if ((d<=r&&blink>0.5)||(p.x<b||p.y<b||p.x>=iRes.x-b||p.y>=iRes.y-b))"
+      " FragColor=vec4(1.0,0.0,0.0,blink);"
+      "else"
+      " discard;"
+      "}";
+
+  if (opengl_shader_load(&shader->header, shader_code_vertex, shader_code_fragment))
+  {
+    shader->loc_iResolution = glGetUniformLocation(shader->header.program, "iRes");
+    shader->loc_iTime = glGetUniformLocation(shader->header.program, "iTime");
+  }
+}
+
 /* #############################################################################
  * # [SECTION] Main Entry Point
  * #############################################################################
@@ -2107,6 +2145,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
   win32_fathom_state state = {0};
   shader_main main_shader = {0};
   shader_font font_shader = {0};
+  shader_recording recording_shader = {0};
 
   u32 main_vao;
   u32 font_vao;
@@ -2200,6 +2239,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
 
     opengl_shader_load_shader_main(&main_shader, fragment_shader_file_name);
     opengl_shader_load_shader_font(&font_shader);
+    opengl_shader_load_shader_recording(&recording_shader);
   }
 
   /******************************/
@@ -2783,6 +2823,69 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
         glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, glyph_buffer_count);
 
         glDisable(GL_BLEND);
+      }
+
+      /******************************/
+      /* Screen Recording (F2)      */
+      /******************************/
+      {
+        static u8 *framebuffer;
+        static void *video_file_handle;
+
+        if (state.keys_is_down[0x71] && !state.keys_was_down[0x71]) /* F2 */
+        {
+          state.screen_recording_enabled = !state.screen_recording_enabled;
+        }
+
+        if (state.screen_recording_enabled)
+        {
+
+          u32 written = 0;
+
+          if (!state.screen_recording_initialized)
+          {
+            s8 buffer[128];
+            text t = {0};
+
+            t.size = sizeof(buffer);
+            t.buffer = buffer;
+
+            /* Create recording output file name.
+             * Format:  fathom_capture_<window_width>x<window_height>_<target_frames_per_second>.raw
+             * Example: fathom_capture_800x600_60.raw
+             */
+            text_append_str(&t, "fathom_capture_");
+            text_append_i32(&t, (i32)(state.window_width));
+            text_append_str(&t, "x");
+            text_append_i32(&t, (i32)(state.window_height));
+            text_append_str(&t, "_");
+            text_append_i32(&t, (i32)(state.target_frames_per_second));
+            text_append_str(&t, ".raw");
+
+            framebuffer = VirtualAlloc(0, state.window_width * state.window_height * 3, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+            video_file_handle = CreateFileA(t.buffer, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+
+            glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+            state.screen_recording_initialized = 1;
+          }
+          glReadPixels(0, 0, (i32)state.window_width, (i32)state.window_height, GL_RGB, GL_UNSIGNED_BYTE, framebuffer);
+
+          WriteFile(video_file_handle, framebuffer, state.window_width * state.window_height * 3, &written, 0);
+
+          /* Render recording indicator */
+          glUseProgram(recording_shader.header.program);
+          glUniform3f(recording_shader.loc_iResolution, (f32)state.window_width, (f32)state.window_height, 1.0f);
+          glUniform1f(recording_shader.loc_iTime, (f32)state.iTime);
+          glBindVertexArray(main_vao);
+          glDrawArrays(GL_TRIANGLES, 0, 3);
+        }
+        else if (state.screen_recording_initialized)
+        {
+          VirtualFree(framebuffer, 0, MEM_RELEASE);
+          CloseHandle(video_file_handle);
+          state.screen_recording_initialized = 0;
+        }
       }
 
       SwapBuffers(state.device_context);
