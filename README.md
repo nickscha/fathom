@@ -2,7 +2,7 @@
 A C89 standard compliant, nostdlib (no C Standard Library) Fathom Engine.
 
 <p align="center">
-<a href="https://github.com/nickscha/fathom"><img src="assets/fathom.png"></a>
+<a href="https://github.com/nickscha/fathom"><img src="assets/fathom.png" width="300"></a>
 </p>
 
 > [!WARNING]
