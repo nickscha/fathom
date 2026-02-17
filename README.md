@@ -1,6 +1,10 @@
 # fathom
 A C89 standard compliant, nostdlib (no C Standard Library) Fathom Engine.
 
+<p align="center">
+<a href="https://github.com/nickscha/fathom"><img src="assets/fathom.png"></a>
+</p>
+
 > [!WARNING]
 > THIS PROJECT IS A WORK IN PROGRESS! ANYTHING CAN CHANGE AT ANY MOMENT WITHOUT ANY NOTICE! USE THIS PROJECT AT YOUR OWN RISK!
 
