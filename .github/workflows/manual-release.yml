@@ -1,0 +1,146 @@
+name: Manual Release of win32_fathom.c with Changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version number for the new release (e.g., v0.1)'
+        required: true
+        type: string
+
+jobs:
+  build_x64:
+    name: Build x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile win32_fathom
+        shell: bash
+        run: |
+          gcc -s -O2 -mwindows \
+            -std=c89 -pedantic -nodefaultlibs -nostdlib \
+            -mno-stack-arg-probe \
+            -Xlinker /STACK:0x100000,0x100000 \
+            -fno-builtin -ffreestanding \
+            -fno-asynchronous-unwind-tables \
+            -fuse-ld=lld \
+            -Wall -Wextra -Werror -Wvla -Wconversion \
+            -Wdouble-promotion -Wmissing-field-initializers \
+            -Wuninitialized -Winit-self -Wunused \
+            -Wunused-macros -Wunused-local-typedefs \
+            win32_fathom.c win32_fathom.res -o win32_fathom_x64.exe \
+            -lkernel32 -luser32 -lgdi32 -lopengl32
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-x64
+          path: win32_fathom_x64.exe
+
+  build_arm:
+    name: Build ARM
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile win32_fathom
+        shell: bash
+        run: |
+          gcc -s -O2 -mwindows \
+            -std=c89 -pedantic -nodefaultlibs -nostdlib \
+            -mno-stack-arg-probe \
+            -Xlinker /STACK:0x100000,0x100000 \
+            -fno-builtin -ffreestanding \
+            -fno-asynchronous-unwind-tables \
+            -fuse-ld=lld \
+            -Wall -Wextra -Werror -Wvla -Wconversion \
+            -Wdouble-promotion -Wmissing-field-initializers \
+            -Wuninitialized -Winit-self -Wunused \
+            -Wunused-macros -Wunused-local-typedefs \
+            win32_fathom.c win32_fathom.res -o win32_fathom_arm.exe \
+            -lkernel32 -luser32 -lgdi32 -lopengl32
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-arm
+          path: win32_fathom_arm.exe
+
+  release:
+    name: Create GitHub Release
+    needs: [build_x64, build_arm]
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./dist
+          merge-multiple: true
+
+      - name: Get latest release tag
+        id: get_tag
+        shell: bash
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Get commit logs
+        id: get_commits
+        shell: bash
+        run: |
+          if [ -z "${{ steps.get_tag.outputs.latest_tag }}" ]; then
+            log_range="HEAD"
+            echo "No previous tag found. All commits will be listed."
+          else
+            log_range="${{ steps.get_tag.outputs.latest_tag }}..HEAD"
+            echo "Listing commits since tag ${{ steps.get_tag.outputs.latest_tag }}"
+          fi
+
+          commit_log=$(git log --pretty=format:'* %s (%h)' $log_range)
+
+          echo "commits_body<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$commit_log" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: "${{ github.event.inputs.version }}: win32_fathom.c release"
+          body: |
+            # ${{ github.event.inputs.version }}: shade_it - OpenGL Shader Playground Release.
+
+            A C89 standard compliant, nostdlib (no C Standard Library) Fathom Engine (FATHOM).
+
+            ---
+
+            ### **Changes**
+            
+            ${{ steps.get_commits.outputs.commits_body }}
+
+            ---
+
+
+            ## Downloads
+            - **win32_fathom_x64.exe** (Windows x64, OpenGL 3.3)
+            - **win32_fathom_arm.exe** (Windows ARM, OpenGL 3.3)
+            ---
+
+            ### What's Included
+
+            This release includes the `win32_fathom.c` source file as well as testing and example codes ready to be used.
+
+            **Get started by downloading the source code today!**
+
+          files: ./dist/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
