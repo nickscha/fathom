@@ -7,56 +7,27 @@ LICENSE
 
 */
 
-/* #############################################################################
- * # [SECTION] TYPES & COMPILER SETTINGS
- * #############################################################################
- */
+#include "fathom_types.h"
+
 #if __STDC_VERSION__ >= 199901L
-#define SHADE_IT_INLINE inline
 typedef long long i64;
 typedef unsigned long long u64;
 #elif defined(__GNUC__) || defined(__clang__)
-#define SHADE_IT_INLINE __inline__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wlong-long"
 typedef long long i64;
 typedef unsigned long long u64;
 #pragma GCC diagnostic pop
 #elif defined(_MSC_VER)
-#define SHADE_IT_INLINE __inline
 typedef __int64 i64;
 typedef unsigned __int64 u64;
 #else
-#define SHADE_IT_INLINE
 typedef long i64;
 typedef unsigned long u64;
 #endif
 
-#define SHADE_IT_API static
-
-/******************************/
-/* Standard Types             */
-/******************************/
-typedef char s8;
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned int u32;
-typedef short i16;
-typedef int i32;
-typedef float f32;
-typedef double f64;
-
-#define TYPES_STATIC_ASSERT(c, m) typedef char types_assert_##m[(c) ? 1 : -1]
-TYPES_STATIC_ASSERT(sizeof(s8) == 1, s8_size_must_be_1);
-TYPES_STATIC_ASSERT(sizeof(u8) == 1, u8_size_must_be_1);
-TYPES_STATIC_ASSERT(sizeof(u16) == 2, u16_size_must_be_2);
-TYPES_STATIC_ASSERT(sizeof(i16) == 2, i16_size_must_be_2);
-TYPES_STATIC_ASSERT(sizeof(u32) == 4, u32_size_must_be_4);
-TYPES_STATIC_ASSERT(sizeof(i32) == 4, i32_size_must_be_4);
-TYPES_STATIC_ASSERT(sizeof(f32) == 4, f32_size_must_be_4);
-TYPES_STATIC_ASSERT(sizeof(f64) == 8, f64_size_must_be_8);
-TYPES_STATIC_ASSERT(sizeof(u64) == 8, u64_size_must_be_8);
-TYPES_STATIC_ASSERT(sizeof(i64) == 8, i64_size_must_be_8);
+FATHOM_TYPES_STATIC_ASSERT(sizeof(u64) == 8, u64_size_must_be_8);
+FATHOM_TYPES_STATIC_ASSERT(sizeof(i64) == 8, i64_size_must_be_8);
 
 /* Unfortunaly "modern" compilers sometimes inject memset intrinsics in the generated code
  * even if the application does not call memset and even with -fno-builtin, ... set.
@@ -694,7 +665,7 @@ static XInputGetStateFunc XInputGetState = 0;
  * # [SECTION] XInput Loader
  * #############################################################################
  */
-SHADE_IT_API u8 xinput_load(void)
+FATHOM_API u8 xinput_load(void)
 {
   void *xinput_lib = LoadLibraryA("xinput1_4.dll");
 
@@ -718,7 +689,7 @@ SHADE_IT_API u8 xinput_load(void)
   return 1;
 }
 
-SHADE_IT_API f32 xinput_process_thumbstick(i16 value, i16 deadzone)
+FATHOM_API f32 xinput_process_thumbstick(i16 value, i16 deadzone)
 {
   f32 result = 0.0f;
 
@@ -734,7 +705,7 @@ SHADE_IT_API f32 xinput_process_thumbstick(i16 value, i16 deadzone)
   return result;
 }
 
-SHADE_IT_API SHADE_IT_INLINE f32 xinput_process_trigger(u8 value)
+FATHOM_API FATHOM_INLINE f32 xinput_process_trigger(u8 value)
 {
   return value > XINPUT_GAMEPAD_TRIGGER_THRESHOLD ? (f32)value / 255.0f : 0.0f;
 }
@@ -743,7 +714,7 @@ SHADE_IT_API SHADE_IT_INLINE f32 xinput_process_trigger(u8 value)
  * # [SECTION] WIN32 specifiy functions
  * #############################################################################
  */
-SHADE_IT_API void win32_print(s8 *str)
+FATHOM_API void win32_print(s8 *str)
 {
   static u32 written;
   static void *log_file;
@@ -766,7 +737,7 @@ SHADE_IT_API void win32_print(s8 *str)
   }
 }
 
-SHADE_IT_API u8 *win32_file_read(s8 *filename, u32 *file_size_out)
+FATHOM_API u8 *win32_file_read(s8 *filename, u32 *file_size_out)
 {
   void *hFile = INVALID_HANDLE;
   u32 fileSize = 0;
@@ -823,14 +794,14 @@ SHADE_IT_API u8 *win32_file_read(s8 *filename, u32 *file_size_out)
   return buffer;
 }
 
-SHADE_IT_API SHADE_IT_INLINE FILETIME win32_file_mod_time(s8 *file)
+FATHOM_API FATHOM_INLINE FILETIME win32_file_mod_time(s8 *file)
 {
   static FILETIME empty = {0, 0};
   WIN32_FILE_ATTRIBUTE_DATA fad;
   return GetFileAttributesExA(file, 0, &fad) ? fad.ftLastWriteTime : empty;
 }
 
-SHADE_IT_API SHADE_IT_INLINE u8 win32_enable_high_priority(void)
+FATHOM_API FATHOM_INLINE u8 win32_enable_high_priority(void)
 {
   /* TODO(nickscha): Check integrated plus discrete GPU
    *
@@ -863,7 +834,7 @@ SHADE_IT_API SHADE_IT_INLINE u8 win32_enable_high_priority(void)
   return 1;
 }
 
-SHADE_IT_API SHADE_IT_INLINE u8 win32_enable_dpi_awareness(void)
+FATHOM_API FATHOM_INLINE u8 win32_enable_dpi_awareness(void)
 {
   /* Try Windows 10 / 11 (Per-Monitor V2) */
   void *user32 = GetModuleHandleA("user32.dll");
@@ -907,7 +878,7 @@ SHADE_IT_API SHADE_IT_INLINE u8 win32_enable_dpi_awareness(void)
   return 1;
 }
 
-SHADE_IT_API SHADE_IT_INLINE u8 win32_enable_high_resolution_timer(void)
+FATHOM_API FATHOM_INLINE u8 win32_enable_high_resolution_timer(void)
 {
   void *winmm = LoadLibraryA("Winmm.dll");
 
@@ -939,7 +910,7 @@ SHADE_IT_API SHADE_IT_INLINE u8 win32_enable_high_resolution_timer(void)
   return 1;
 }
 
-SHADE_IT_API i32 win32_process_thread_count(void)
+FATHOM_API i32 win32_process_thread_count(void)
 {
   u32 pid = GetCurrentProcessId();
   void *snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -1141,7 +1112,7 @@ typedef struct win32_shade_it_state
 
 } win32_shade_it_state;
 
-SHADE_IT_API SHADE_IT_INLINE i64 win32_window_callback(void *window, u32 message, u64 wParam, i64 lParam)
+FATHOM_API FATHOM_INLINE i64 win32_window_callback(void *window, u32 message, u64 wParam, i64 lParam)
 {
   win32_shade_it_state *state = (win32_shade_it_state *)GetWindowLongPtrA(window, GWLP_USERDATA);
 
@@ -1296,7 +1267,7 @@ SHADE_IT_API SHADE_IT_INLINE i64 win32_window_callback(void *window, u32 message
 
 static WINDOWPLACEMENT g_wpPrev = {0};
 
-SHADE_IT_API void win32_window_enter_fullscreen(win32_shade_it_state *state)
+FATHOM_API void win32_window_enter_fullscreen(win32_shade_it_state *state)
 {
   i32 dwStyle = GetWindowLongA(state->window_handle, GWL_STYLE);
 
@@ -1324,7 +1295,7 @@ SHADE_IT_API void win32_window_enter_fullscreen(win32_shade_it_state *state)
   }
 }
 
-SHADE_IT_API void win32_window_enter_borderless(win32_shade_it_state *state)
+FATHOM_API void win32_window_enter_borderless(win32_shade_it_state *state)
 {
   if (GetWindowPlacement(state->window_handle, &g_wpPrev))
   {
@@ -1349,7 +1320,7 @@ SHADE_IT_API void win32_window_enter_borderless(win32_shade_it_state *state)
   }
 }
 
-SHADE_IT_API void win32_window_enter_windowed(win32_shade_it_state *state)
+FATHOM_API void win32_window_enter_windowed(win32_shade_it_state *state)
 {
   i32 dwStyle = GetWindowLongA(state->window_handle, GWL_STYLE);
 
@@ -1385,10 +1356,10 @@ SHADE_IT_API void win32_window_enter_windowed(win32_shade_it_state *state)
 /* 1-bit bitmap, packed, row-major */
 /* width=210, height=7 */
 /* Charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:%+-.<" */
-#define SHADE_IT_FONT_WIDTH 215
-#define SHADE_IT_FONT_HEIGHT 7
-#define SHADE_IT_FONT_GLYPH_WIDTH 5
-#define SHADE_IT_FONT_GLYPH_HEIGHT 7
+#define FATHOM_FONT_WIDTH 215
+#define FATHOM_FONT_HEIGHT 7
+#define FATHOM_FONT_GLYPH_WIDTH 5
+#define FATHOM_FONT_GLYPH_HEIGHT 7
 
 static u8 shade_it_font[] = {
     0x77, 0x9D, 0xCF, 0xFD, 0xD1, 0x73, 0xE3, 0x08, 0xE5, 0xDE, 0x77, 0x9D,
@@ -1410,7 +1381,7 @@ static u8 shade_it_font[] = {
 
 /* clang-format off */
 /* Charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:%+-.<" */
-SHADE_IT_API i32 font_char_to_glyph_index(s8 c)
+FATHOM_API i32 font_char_to_glyph_index(s8 c)
 {
   /* Convert to uppercase */
   if (c >= 'a' && c <= 'z')
@@ -1433,7 +1404,7 @@ SHADE_IT_API i32 font_char_to_glyph_index(s8 c)
 }
 /* clang-format on */
 
-SHADE_IT_API void unpack_1bit_to_8bit(
+FATHOM_API void unpack_1bit_to_8bit(
     u8 *dst, /* width * height bytes */
     u8 *src, /* packed bits */
     u32 width,
@@ -1464,7 +1435,7 @@ typedef struct text
   s8 *buffer;
 } text;
 
-SHADE_IT_API void text_append_str(text *src, s8 *s)
+FATHOM_API void text_append_str(text *src, s8 *s)
 {
   u32 len = src->length;
   u32 cap = src->size;
@@ -1483,7 +1454,7 @@ SHADE_IT_API void text_append_str(text *src, s8 *s)
   src->length = len;
 }
 
-SHADE_IT_API void text_append_i32(text *src, i32 v)
+FATHOM_API void text_append_i32(text *src, i32 v)
 {
   s8 tmp[12];
   i32 i = 0;
@@ -1529,7 +1500,7 @@ SHADE_IT_API void text_append_i32(text *src, i32 v)
   src->length = len;
 }
 
-SHADE_IT_API void text_append_f64(text *src, f64 v, i32 decimals)
+FATHOM_API void text_append_f64(text *src, f64 v, i32 decimals)
 {
   i32 i;
   f64 frac;
@@ -1588,24 +1559,24 @@ typedef struct glyph
   u16 packed_color;       /* rgb565_color */
 } glyph;
 
-SHADE_IT_API u16 pack_rgb565(u8 r, u8 g, u8 b)
+FATHOM_API u16 pack_rgb565(u8 r, u8 g, u8 b)
 {
   return (u16)(((r >> 3) << 11) |
                ((g >> 2) << 5) |
                ((b >> 3) << 0));
 }
 
-SHADE_IT_API SHADE_IT_INLINE u16 glyph_advance_x(f32 font_scale)
+FATHOM_API FATHOM_INLINE u16 glyph_advance_x(f32 font_scale)
 {
-  return (u16)((f32)(SHADE_IT_FONT_GLYPH_WIDTH + 1) * font_scale);
+  return (u16)((f32)(FATHOM_FONT_GLYPH_WIDTH + 1) * font_scale);
 }
 
-SHADE_IT_API SHADE_IT_INLINE u16 glyph_advance_y(f32 font_scale)
+FATHOM_API FATHOM_INLINE u16 glyph_advance_y(f32 font_scale)
 {
-  return (u16)(((f32)SHADE_IT_FONT_GLYPH_HEIGHT * font_scale) + (f32)SHADE_IT_FONT_GLYPH_HEIGHT);
+  return (u16)(((f32)FATHOM_FONT_GLYPH_HEIGHT * font_scale) + (f32)FATHOM_FONT_GLYPH_HEIGHT);
 }
 
-SHADE_IT_API void glyph_add(
+FATHOM_API void glyph_add(
     glyph *glyph_buffer,     /* pre allocated glyph array */
     u32 glyph_buffer_size,   /* maximum size */
     u32 *glyph_buffer_count, /* current size */
@@ -1700,7 +1671,7 @@ static s8 shader_info_log[1024];
 
 static u32 opengl_failed_function_load_count = 0;
 
-SHADE_IT_API PROC opengl_load_function(s8 *name)
+FATHOM_API PROC opengl_load_function(s8 *name)
 {
   PROC gl_function = wglGetProcAddress(name);
 
@@ -1733,7 +1704,7 @@ SHADE_IT_API PROC opengl_load_function(s8 *name)
   return gl_function;
 }
 
-SHADE_IT_API SHADE_IT_INLINE i32 opengl_create_context(win32_shade_it_state *state)
+FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_shade_it_state *state)
 {
   void *window_instance = GetModuleHandleA(0);
   WNDCLASSA window_class = {0};
@@ -1946,7 +1917,7 @@ SHADE_IT_API SHADE_IT_INLINE i32 opengl_create_context(win32_shade_it_state *sta
   return 1;
 }
 
-SHADE_IT_API i32 opengl_shader_compile(s8 *shaderCode, u32 shaderType)
+FATHOM_API i32 opengl_shader_compile(s8 *shaderCode, u32 shaderType)
 {
   u32 shaderId = glCreateShader(shaderType);
   i32 success;
@@ -1969,7 +1940,7 @@ SHADE_IT_API i32 opengl_shader_compile(s8 *shaderCode, u32 shaderType)
   return (i32)shaderId;
 }
 
-SHADE_IT_API i32 opengl_shader_create(u32 *shader_program, s8 *shader_vertex_code, s8 *shader_fragment_code)
+FATHOM_API i32 opengl_shader_create(u32 *shader_program, s8 *shader_vertex_code, s8 *shader_fragment_code)
 {
   i32 vertex_shader_id;
   i32 fragment_shader_id;
@@ -2011,7 +1982,7 @@ SHADE_IT_API i32 opengl_shader_create(u32 *shader_program, s8 *shader_vertex_cod
   return 1;
 }
 
-SHADE_IT_API u32 opengl_shader_load(shader_header *shader, s8 *shader_code_vertex, s8 *shader_code_fragment)
+FATHOM_API u32 opengl_shader_load(shader_header *shader, s8 *shader_code_vertex, s8 *shader_code_fragment)
 {
   u32 new_program;
 
@@ -2048,7 +2019,7 @@ static s8 *shader_code_vertex =
     ");"
     "void main(){gl_Position=vec4(quad[gl_VertexID],0.0,1.0);}";
 
-SHADE_IT_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_file_name)
+FATHOM_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_file_name)
 {
 
   u32 size = 0;
@@ -2075,7 +2046,7 @@ SHADE_IT_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader
   VirtualFree(shader_code_fragment, 0, MEM_RELEASE);
 }
 
-SHADE_IT_API void opengl_shader_load_shader_font(shader_font *shader)
+FATHOM_API void opengl_shader_load_shader_font(shader_font *shader)
 {
   static s8 *shader_font_code_vertex =
       "#version 330 core\n"
@@ -2128,7 +2099,7 @@ SHADE_IT_API void opengl_shader_load_shader_font(shader_font *shader)
  * # [SECTION] Main Entry Point
  * #############################################################################
  */
-SHADE_IT_API i32 start(i32 argc, u8 **argv)
+FATHOM_API i32 start(i32 argc, u8 **argv)
 {
   /* Default fragment shader file name to load if no file is passed as an argument in cli */
   s8 *fragment_shader_file_name = (argv && argc > 1) ? (s8 *)argv[1] : "fathom.fs";
@@ -2236,16 +2207,16 @@ SHADE_IT_API i32 start(i32 argc, u8 **argv)
   /******************************/
   {
     /* Generate font texture */
-    u8 shade_it_font_pixels[SHADE_IT_FONT_WIDTH * SHADE_IT_FONT_HEIGHT];
+    u8 shade_it_font_pixels[FATHOM_FONT_WIDTH * FATHOM_FONT_HEIGHT];
     u32 tex;
 
     /* OpenGL does not allow 1bit packed texture data so we convert each bit to 1 byte */
-    unpack_1bit_to_8bit(shade_it_font_pixels, shade_it_font, SHADE_IT_FONT_WIDTH, SHADE_IT_FONT_HEIGHT);
+    unpack_1bit_to_8bit(shade_it_font_pixels, shade_it_font, FATHOM_FONT_WIDTH, FATHOM_FONT_HEIGHT);
 
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, SHADE_IT_FONT_WIDTH, SHADE_IT_FONT_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, shade_it_font_pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, FATHOM_FONT_WIDTH, FATHOM_FONT_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, shade_it_font_pixels);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2802,7 +2773,7 @@ SHADE_IT_API i32 start(i32 argc, u8 **argv)
         glUseProgram(font_shader.header.program);
         glUniform3f(font_shader.loc_iResolution, (f32)state.window_width, (f32)state.window_height, 1.0f);
         glUniform1f(font_shader.loc_iTime, (f32)state.iTime);
-        glUniform4f(font_shader.loc_iTextureInfo, SHADE_IT_FONT_WIDTH, SHADE_IT_FONT_HEIGHT, SHADE_IT_FONT_GLYPH_WIDTH, SHADE_IT_FONT_GLYPH_HEIGHT);
+        glUniform4f(font_shader.loc_iTextureInfo, FATHOM_FONT_WIDTH, FATHOM_FONT_HEIGHT, FATHOM_FONT_GLYPH_WIDTH, FATHOM_FONT_GLYPH_HEIGHT);
         glUniform1i(font_shader.loc_iTexture, 0);
         glUniform1f(font_shader.loc_iFontScale, font_scale);
         glBindVertexArray(font_vao);
