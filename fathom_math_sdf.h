@@ -3,6 +3,10 @@
 
 #include "fathom_math_linear_algebra.h"
 
+/* #############################################################################
+ * # [SECTION] Signed Distance Functions
+ * #############################################################################
+ */
 FATHOM_API f32 fathom_sdf_sphere(fathom_vec3 pos, f32 radius)
 {
     return fathom_vec3_length(pos) - radius;
