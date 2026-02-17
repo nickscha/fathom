@@ -750,7 +750,7 @@ SHADE_IT_API void win32_print(s8 *str)
 
   if (!log_file)
   {
-    log_file = CreateFileA("sdf.log", GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+    log_file = CreateFileA("fathom.log", GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
   }
 
   {
@@ -1682,15 +1682,6 @@ typedef struct shader_main
   i32 loc_iTexture;
   i32 loc_iController;
 
-  i32 loc_grid_min;  /* world-space origin of SDF grid */
-  i32 loc_cell_size; /* size of one voxel */
-  i32 loc_brick_size;
-  i32 loc_band;                /* narrow-band distance */
-  i32 loc_index_res;           /* number of bricks along one axis (e.g. 8) */
-  i32 loc_atlas_dim;           /* bricks per axis in atlas (e.g. 8) */
-  i32 loc_atlas_texture;       /* R8 brick atlas */
-  i32 loc_brick_index_texture; /* R16UI brick index */
-
 } shader_main;
 
 typedef struct shader_font
@@ -2079,15 +2070,6 @@ SHADE_IT_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader
     shader->loc_iTextureInfo = glGetUniformLocation(shader->header.program, "iTextureInfo");
     shader->loc_iTexture = glGetUniformLocation(shader->header.program, "iTexture");
     shader->loc_iController = glGetUniformLocation(shader->header.program, "iController");
-
-    shader->loc_grid_min = glGetUniformLocation(shader->header.program, "gridMin");
-    shader->loc_cell_size = glGetUniformLocation(shader->header.program, "cellSize");
-    shader->loc_brick_size = glGetUniformLocation(shader->header.program, "BRICK_SIZE");
-    shader->loc_band = glGetUniformLocation(shader->header.program, "band");
-    shader->loc_index_res = glGetUniformLocation(shader->header.program, "INDEX_RES");
-    shader->loc_atlas_dim = glGetUniformLocation(shader->header.program, "ATLAS_DIM");
-    shader->loc_atlas_texture = glGetUniformLocation(shader->header.program, "atlasTex");
-    shader->loc_brick_index_texture = glGetUniformLocation(shader->header.program, "brickIndexTex");
   }
 
   VirtualFree(shader_code_fragment, 0, MEM_RELEASE);
@@ -2149,7 +2131,7 @@ SHADE_IT_API void opengl_shader_load_shader_font(shader_font *shader)
 SHADE_IT_API i32 start(i32 argc, u8 **argv)
 {
   /* Default fragment shader file name to load if no file is passed as an argument in cli */
-  s8 *fragment_shader_file_name = (argv && argc > 1) ? (s8 *)argv[1] : "sdf.fs";
+  s8 *fragment_shader_file_name = (argv && argc > 1) ? (s8 *)argv[1] : "fathom.fs";
 
   win32_shade_it_state state = {0};
   shader_main main_shader = {0};
@@ -2169,15 +2151,15 @@ SHADE_IT_API i32 start(i32 argc, u8 **argv)
   state.target_frames_per_second = 30; /* 60 FPS, 0 = unlimited */
   state.controller.check_needed = 1;   /* By default we have to query first XInput state */
 
-  (void) GL_TEXTURE1;
-  (void) GL_RED_INTEGER;
-  (void) GL_LINEAR;
-  (void) GL_TRIANGLES;
-  (void) GL_PACK_ALIGNMENT;
-  (void) GL_RGB;
-  (void) GL_TEXTURE_3D;
-  (void) GL_TEXTURE_WRAP_R;
-  (void) GL_R16UI;
+  (void)GL_TEXTURE1;
+  (void)GL_RED_INTEGER;
+  (void)GL_LINEAR;
+  (void)GL_TRIANGLES;
+  (void)GL_PACK_ALIGNMENT;
+  (void)GL_RGB;
+  (void)GL_TEXTURE_3D;
+  (void)GL_TEXTURE_WRAP_R;
+  (void)GL_R16UI;
 
   /******************************/
   /* Set Process Priorities     */
