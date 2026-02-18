@@ -162,4 +162,17 @@ FATHOM_API FATHOM_INLINE f32 fathom_clampf(f32 x, f32 a, f32 b)
     return (x1 > b) ? b : x1;
 }
 
+FATHOM_API FATHOM_INLINE u8 fathom_quantizef(f32 value, f32 value_max)
+{
+    if (value <= 0.0f)
+    {
+        return 0;
+    }
+    if (value >= value_max)
+    {
+        return 255;
+    }
+    return (u8)((value / value_max) * 255.0f + 0.5f);
+}
+
 #endif /* FATHOM_MATH_BASIC_H */

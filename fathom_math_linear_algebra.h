@@ -37,6 +37,17 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_sub(fathom_vec3 a, fathom_vec3 
     return result;
 }
 
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_subf(fathom_vec3 a, f32 value)
+{
+    fathom_vec3 result = a;
+
+    result.x -= value;
+    result.y -= value;
+    result.z -= value;
+
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_addf(fathom_vec3 a, f32 value)
 {
     fathom_vec3 result = a;
