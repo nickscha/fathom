@@ -1,6 +1,7 @@
 # Prerequisites
 *.d
 *.log
+*.mp4
 
 # Object files
 *.o
