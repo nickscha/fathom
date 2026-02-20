@@ -162,4 +162,10 @@ FATHOM_API FATHOM_INLINE f32 fathom_clampf(f32 x, f32 a, f32 b)
     return (x1 > b) ? b : x1;
 }
 
+FATHOM_API FATHOM_INLINE f32 fathom_sminf(f32 a, f32 b, f32 k)
+{
+    f32 h = fathom_maxf(k - fathom_absf(a - b), 0.0f) / k;
+    return fathom_minf(a, b) - h * h * h * k * (1.0f / 6.0f);
+}
+
 #endif /* FATHOM_MATH_BASIC_H */
