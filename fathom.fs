@@ -93,35 +93,30 @@ float raymarch(vec3 ro, vec3 rd)
     vec3 invRd = 1.0 / rd;
 
     // Fast Brick Skip
-    for(int i = 0; i < 80; i++)
-    {
+    for(int i = 0; i < 80; i++) {
         vec3 p = ro + rd * t;
         vec3 gridPos = (p - uGridStart) / uCellSize;
         ivec3 brickCoord = ivec3(floor(gridPos / float(BRICK_SIZE)));
 
-        // Bounds check
-        if(any(lessThan(brickCoord, ivec3(0))) || any(greaterThanEqual(brickCoord, uBrickGridDim))) {
-            t += uCellSize * 2.0; // Larger nudge
-            if(t > exitT) break;
-            continue;
-        }
-
+        // texelFetch returns 0u if it hits the border, which triggers the skip
         uint stored = texelFetch(uBrickMap, brickCoord, 0).r;
 
         if(stored == 0u) {
-            // EMPTY BRICK SKIP
+            // EMPTY BRICK: Skip
             vec3 brickMin = vec3(brickCoord * BRICK_SIZE);
             vec3 brickMax = brickMin + vec3(BRICK_SIZE);
             vec3 tMax = max((brickMin - gridPos) * invRd, (brickMax - gridPos) * invRd);
             float skipDist = min(tMax.x, min(tMax.y, tMax.z));
             t += (skipDist + 0.01) * uCellSize;
-        }
-        else {
-            // REUSE 'stored' and 'brickCoord' to avoid redundant lookups
+        } else {
+            // OCCUPIED
             float d = sampleAtlasOnly(gridPos, stored, brickCoord);
-            if(d < uCellSize * 0.1) return t;
+            if (d < uCellSize * 0.1) {
+               return t;
+            }
             t += d;
         }
+
         if(t > exitT) break;
     }
     return -1.0;
