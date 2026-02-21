@@ -75,7 +75,7 @@ float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     return (d * 2.0 - 1.0) * uTruncation;
 }
 
-float raymarch(vec3 ro, vec3 rd)
+float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick)
 {
     vec3 gridMin = uGridStart;
     vec3 gridMax = uGridStart + vec3(uBrickGridDim * BRICK_SIZE) * uCellSize;
@@ -97,8 +97,6 @@ float raymarch(vec3 ro, vec3 rd)
         vec3 p = ro + rd * t;
         vec3 gridPos = (p - uGridStart) / uCellSize;
         ivec3 brickCoord = ivec3(floor(gridPos / float(BRICK_SIZE)));
-
-        // texelFetch returns 0u if it hits the border, which triggers the skip
         uint stored = texelFetch(uBrickMap, brickCoord, 0).r;
 
         if(stored == 0u) {
@@ -112,6 +110,8 @@ float raymarch(vec3 ro, vec3 rd)
             // OCCUPIED
             float d = sampleAtlasOnly(gridPos, stored, brickCoord);
             if (d < uCellSize * 0.1) {
+               outStored = stored;
+               outBrick = brickCoord;
                return t;
             }
             t += d;
@@ -133,6 +133,24 @@ vec3 calc_normal(vec3 p)
         k.yxy * sampleSparseSDF(p + k.yxy * e) +
         k.xxx * sampleSparseSDF(p + k.xxx * e)
     );
+}
+
+vec3 calc_normal_fast(vec3 pos, uint stored, ivec3 brickCoord)
+{
+    float e = uCellSize * 0.5; 
+    
+    vec3 gridPos = (pos - uGridStart) / uCellSize;
+
+    float g = e / uCellSize;
+    
+    float dx = sampleAtlasOnly(gridPos + vec3(g, 0, 0), stored, brickCoord) - 
+               sampleAtlasOnly(gridPos - vec3(g, 0, 0), stored, brickCoord);
+    float dy = sampleAtlasOnly(gridPos + vec3(0, g, 0), stored, brickCoord) - 
+               sampleAtlasOnly(gridPos - vec3(0, g, 0), stored, brickCoord);
+    float dz = sampleAtlasOnly(gridPos + vec3(0, 0, g), stored, brickCoord) - 
+               sampleAtlasOnly(gridPos - vec3(0, 0, g), stored, brickCoord);
+
+    return normalize(vec3(dx, dy, dz));
 }
 
 float ambientOcclusion(vec3 pos, vec3 nor)
@@ -168,12 +186,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
   vec3 col = vec3(0.4, 0.75, 1.0) - 0.7 * rd.y; // sky, darker the higher
 
-  float t = raymarch(ro, rd);
+  uint hitStored;
+  ivec3 hitBrick;
+  float t = raymarch(ro, rd, hitStored, hitBrick);
 
   if (t > 0.0) 
   {
     vec3 pos = ro + t * rd;
-    vec3 nor = calc_normal(pos);
+    vec3 nor = calc_normal_fast(pos, hitStored, hitBrick);
 
     //float ao = ambientOcclusion(pos, nor);
 
