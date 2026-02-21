@@ -582,6 +582,9 @@ static PFNGLUNIFORM1IPROC glUniform1i;
 typedef void (*PFNGLUNIFORM3FPROC)(i32 location, f32 v0, f32 v1, f32 v2);
 static PFNGLUNIFORM3FPROC glUniform3f;
 
+typedef void (*PFNGLUNIFORM3IPROC)(i32 location, i32 v0, i32 v1, i32 v2);
+static PFNGLUNIFORM3IPROC glUniform3i;
+
 typedef void (*PFNGLUNIFORM4FPROC)(i32 location, f32 v0, f32 v1, f32 v2, f32 v3);
 static PFNGLUNIFORM4FPROC glUniform4f;
 
@@ -1653,6 +1656,16 @@ typedef struct shader_main
   i32 loc_iTexture;
   i32 loc_iController;
 
+  i32 loc_brick_map_texture;
+  i32 loc_atlas_texture;
+
+  i32 loc_brick_grid_dim;
+  i32 loc_atlas_brick_dim;
+
+  i32 loc_grid_start;
+  i32 loc_cell_size;
+  i32 loc_cell_diagonal;
+
 } shader_main;
 
 typedef struct shader_font
@@ -1831,6 +1844,7 @@ FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_fathom_state *state)
   glUniform1f = (PFNGLUNIFORM1FPROC)opengl_load_function("glUniform1f");
   glUniform1i = (PFNGLUNIFORM1IPROC)opengl_load_function("glUniform1i");
   glUniform3f = (PFNGLUNIFORM3FPROC)opengl_load_function("glUniform3f");
+  glUniform3i = (PFNGLUNIFORM3IPROC)opengl_load_function("glUniform3i");
   glUniform4f = (PFNGLUNIFORM4FPROC)opengl_load_function("glUniform4f");
   glUniform4fv = (PFNGLUNIFORM4FVPROC)opengl_load_function("glUniform4fv");
   glActiveTexture = (PFNGLACTIVETEXTUREPROC)opengl_load_function("glActiveTexture");
@@ -2050,6 +2064,15 @@ FATHOM_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_f
     shader->loc_iTextureInfo = glGetUniformLocation(shader->header.program, "iTextureInfo");
     shader->loc_iTexture = glGetUniformLocation(shader->header.program, "iTexture");
     shader->loc_iController = glGetUniformLocation(shader->header.program, "iController");
+
+    shader->loc_brick_map_texture = glGetUniformLocation(shader->header.program, "uBrickMap");
+    shader->loc_atlas_texture = glGetUniformLocation(shader->header.program, "uAtlas");
+
+    shader->loc_brick_grid_dim = glGetUniformLocation(shader->header.program, "uBrickGridDim");
+    shader->loc_atlas_brick_dim = glGetUniformLocation(shader->header.program, "uAtlasBrickDim");
+    shader->loc_grid_start = glGetUniformLocation(shader->header.program, "uGridStart");
+    shader->loc_cell_size = glGetUniformLocation(shader->header.program, "uCellSize");
+    shader->loc_cell_diagonal = glGetUniformLocation(shader->header.program, "uCellDiagonal");
   }
 
   VirtualFree(shader_code_fragment, 0, MEM_RELEASE);
@@ -2131,6 +2154,130 @@ FATHOM_API void opengl_shader_load_shader_recording(shader_recording *shader)
     shader->loc_iResolution = glGetUniformLocation(shader->header.program, "iRes");
     shader->loc_iTime = glGetUniformLocation(shader->header.program, "iTime");
   }
+}
+
+#include "fathom_math_sdf.h"
+#include "fathom_sparse_distance_grid.h"
+
+/* Simple Sphere SDF */
+FATHOM_API f32 sdf_function(fathom_vec3 position)
+{
+  f32 sphere_radius = 0.5f;
+  f32 sphere = fathom_sdf_sphere(position, sphere_radius);
+  f32 ground = position.y - (-0.25f);
+
+  return fathom_sminf(ground, sphere, 0.6f);
+}
+
+FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, shader_main *main_shader, u32 main_vao)
+{
+  static u8 grid_initialized = 0;
+  static fathom_sparse_distance_grid grid = {0};
+  static void *memory;
+  static u32 brickMapTex;
+  static u32 atlasTex;
+
+  if (!grid_initialized)
+  {
+    fathom_vec3 grid_center = fathom_vec3_init(0.0f, 0.0f, 0.0f);
+    u32 grid_cell_count = 64;
+    f32 grid_cell_size = 0.0625f;
+
+    s8 buffer[128];
+    text t = {0};
+    t.buffer = buffer;
+    t.size = 128;
+
+    /* Use a grid size divisible by 8 */
+    if (!fathom_sparse_distance_grid_initialize(&grid, grid_center, grid_cell_count, grid_cell_size))
+    {
+      win32_print("Could not initialize grid!\n");
+    }
+
+    memory = VirtualAlloc(0, grid.brick_map_bytes + grid.atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+    text_append_str(&t, "[grid] mem: ");
+    text_append_f64(&t, (f64)(grid.brick_map_bytes + grid.atlas_bytes) / 1024.0 / 1024.0, 6);
+    text_append_str(&t, "\n");
+    win32_print(buffer);
+
+    if (!memory || !fathom_sparse_distance_grid_assign_memory(&grid, memory))
+    {
+      win32_print("Could not assign memory!\n");
+    }
+
+    if (!fathom_sparse_distance_grid_calculate(&grid, sdf_function))
+    {
+      win32_print("Could not calculate sparse grid!\n");
+    }
+
+    /* Brick Map */
+    glGenTextures(1, &brickMapTex);
+    glBindTexture(GL_TEXTURE_3D, brickMapTex);
+
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R16UI,
+                 (i32)grid.grid_dim_bricks_x,
+                 (i32)grid.grid_dim_bricks_y,
+                 (i32)grid.grid_dim_bricks_z,
+                 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, grid.brick_map);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    /* Atlas Texture */
+    glGenTextures(1, &atlasTex);
+    glBindTexture(GL_TEXTURE_3D, atlasTex);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R8,
+                 FATHOM_ATLAS_WIDTH_IN_BRICKS * FATHOM_BRICK_SIZE,
+                 FATHOM_ATLAS_HEIGHT_IN_BRICKS * FATHOM_BRICK_SIZE,
+                 FATHOM_ATLAS_DEPTH_IN_BRICKS * FATHOM_BRICK_SIZE,
+                 0, GL_RED, GL_UNSIGNED_BYTE, grid.atlas_data);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); /* GL_LINEAR */
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); /* GL_LINEAR */
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    grid_initialized = 1;
+  }
+
+  /******************************/
+  /* Draw                       */
+  /******************************/
+  glUseProgram(main_shader->header.program);
+
+  /* General uniforms */
+  glUniform3f(main_shader->loc_iResolution, (f32)state->window_width, (f32)state->window_height, 1.0f);
+  glUniform1f(main_shader->loc_iTime, (f32)state->iTime);
+  glUniform1f(main_shader->loc_iTimeDelta, (f32)state->iTimeDelta);
+  glUniform1i(main_shader->loc_iFrame, state->iFrame);
+  glUniform1f(main_shader->loc_iFrameRate, (f32)state->iFrameRate);
+  glUniform4f(main_shader->loc_iMouse, (f32)state->mouse_x, (f32)state->mouse_y, (f32)state->mouse_dx, (f32)state->mouse_dy);
+
+  /* Grid uniforms */
+  glUniform3i(main_shader->loc_brick_grid_dim, (i32)grid.grid_dim_bricks_x, (i32)grid.grid_dim_bricks_y, (i32)grid.grid_dim_bricks_z);
+  glUniform3i(main_shader->loc_atlas_brick_dim, FATHOM_ATLAS_WIDTH_IN_BRICKS, FATHOM_ATLAS_HEIGHT_IN_BRICKS, FATHOM_ATLAS_DEPTH_IN_BRICKS);
+  glUniform3f(main_shader->loc_grid_start, grid.start.x, grid.start.y, grid.start.z);
+  glUniform1f(main_shader->loc_cell_size, grid.cell_size);
+  glUniform1f(main_shader->loc_cell_diagonal, grid.cell_space_diagonal);
+
+  /* Bind textures to texture units */
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_3D, brickMapTex);
+  glUniform1i(main_shader->loc_brick_map_texture, 0);
+
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_3D, atlasTex);
+  glUniform1i(main_shader->loc_atlas_texture, 1);
+
+  glBindVertexArray(main_vao);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 /* #############################################################################
@@ -2546,6 +2693,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
       /******************************/
       /* Main Application Logic     */
       /******************************/
+      fathom_render_sparse_distance_grid(&state, &main_shader, main_vao);
 
       /******************************/
       /* UI Rendering (F1 pressed)  */

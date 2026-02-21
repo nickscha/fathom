@@ -78,6 +78,8 @@ typedef struct fathom_sparse_grid
 typedef f32 (*fathom_distance_function)(fathom_vec3 position);
 
 /*
+later upload opengl textures : 
+
 glTexImage3D(GL_TEXTURE_3D, 0, GL_R16UI,
              grid->brick_resolution,
              grid->brick_resolution,
@@ -124,10 +126,7 @@ FATHOM_API u8 fathom_sparse_grid_build(fathom_sparse_grid *grid, fathom_sparse_g
 
     /* Process Bricks */
     {
-        u32 brick_x;
-        u32 brick_y;
-        u32 brick_z;
-
+        u32 brick_x, brick_y, brick_z;
         u32 brick_resolution = grid_layout->brick_resolution;
         u32 grid_dimension = grid_layout->grid_dimension;
         f32 half_extent = ((f32)grid_dimension * grid_cell_size) * 0.5f;
@@ -136,8 +135,6 @@ FATHOM_API u8 fathom_sparse_grid_build(fathom_sparse_grid *grid, fathom_sparse_g
         u32 brick_index_linear = 0;
 
         f32 brick_world_size = FATHOM_BRICK_SIZE * grid_cell_size;
-
-        /* maximum useful distance inside a brick */
         f32 brick_diag = brick_world_size * 1.7320508f; /* sqrt(3) */
 
         f32 world_origin_x = grid_center.x - half_extent + 0.5f * grid_cell_size;
@@ -146,20 +143,15 @@ FATHOM_API u8 fathom_sparse_grid_build(fathom_sparse_grid *grid, fathom_sparse_g
 
         u8 brick_voxels[FATHOM_BRICK_SIZE * FATHOM_BRICK_SIZE * FATHOM_BRICK_SIZE];
 
-        u32 atlas_bricks_per_axis = grid_layout->atlas_resolution_worst_case / FATHOM_BRICK_SIZE;
-        u32 atlas_resolution_worst_case = grid_layout->atlas_resolution_worst_case;
-
         for (brick_z = 0; brick_z < brick_resolution; ++brick_z)
         {
-
             for (brick_y = 0; brick_y < brick_resolution; ++brick_y)
             {
-
                 for (brick_x = 0; brick_x < brick_resolution; ++brick_x)
                 {
-                    u32 base_voxel_z = brick_z * FATHOM_BRICK_SIZE;
-                    u32 base_voxel_y = brick_y * FATHOM_BRICK_SIZE;
                     u32 base_voxel_x = brick_x * FATHOM_BRICK_SIZE;
+                    u32 base_voxel_y = brick_y * FATHOM_BRICK_SIZE;
+                    u32 base_voxel_z = brick_z * FATHOM_BRICK_SIZE;
 
                     f32 brick_base_x = world_origin_x + (f32)base_voxel_x * grid_cell_size;
                     f32 brick_base_y = world_origin_y + (f32)base_voxel_y * grid_cell_size;
@@ -169,129 +161,93 @@ FATHOM_API u8 fathom_sparse_grid_build(fathom_sparse_grid *grid, fathom_sparse_g
                     u8 has_positive = 0;
                     u8 has_negative = 0;
 
-                    u32 voxel_x;
-                    u32 voxel_y;
-                    u32 voxel_z;
-
-                    f32 z_pos = brick_base_z;
-
+                    /* check brick center */
                     f32 brick_center_x = brick_base_x + 0.5f * brick_world_size;
                     f32 brick_center_y = brick_base_y + 0.5f * brick_world_size;
                     f32 brick_center_z = brick_base_z + 0.5f * brick_world_size;
                     f32 brick_center_distance = distance_function(fathom_vec3_init(brick_center_x, brick_center_y, brick_center_z));
 
+                    u32 voxel_z;
+                    u32 voxel_y;
+                    u32 voxel_x;
+
+                    /* skip fully outside */
                     if (brick_center_distance >= brick_diag * 0.5f)
                     {
-                        /* Brick fully outside surface, skip it */
                         grid->brick_map[brick_index_linear++] = 0;
                         continue;
                     }
 
-                    /* skip fully inside bricks */
+                    /* skip fully inside */
                     if (brick_center_distance <= -brick_diag * 0.5f)
                     {
                         grid->brick_map[brick_index_linear++] = 0;
                         continue;
                     }
 
+                    /* fill voxel data */
                     for (voxel_z = 0; voxel_z < FATHOM_BRICK_SIZE; ++voxel_z)
                     {
-                        f32 y_pos = brick_base_y;
-
+                        f32 z_pos = brick_base_z + voxel_z * grid_cell_size;
                         for (voxel_y = 0; voxel_y < FATHOM_BRICK_SIZE; ++voxel_y)
                         {
-                            f32 x_pos = brick_base_x;
-
+                            f32 y_pos = brick_base_y + voxel_y * grid_cell_size;
                             for (voxel_x = 0; voxel_x < FATHOM_BRICK_SIZE; ++voxel_x)
                             {
+                                f32 x_pos = brick_base_x + voxel_x * grid_cell_size;
                                 fathom_vec3 world_pos = fathom_vec3_init(x_pos, y_pos, z_pos);
+                                f32 dist = distance_function(world_pos);
 
-                                f32 d = distance_function(world_pos);
-                                f32 normalized;
-
-                                if (d >= 0.0f)
-                                {
+                                if (dist >= 0.0f)
                                     has_positive = 1;
-                                }
                                 else
-                                {
                                     has_negative = 1;
-                                }
 
-                                /* normalize to [0,255] */
-                                normalized = d / brick_diag;
-
-                                if (normalized < -1.0f)
-                                {
-                                    normalized = -1.0f;
-                                }
-                                if (normalized > 1.0f)
-                                {
-                                    normalized = 1.0f;
-                                }
-
-                                /* map -1..1 → 0..255 */
-                                normalized = (normalized * 0.5f + 0.5f) * 255.0f;
-
-                                brick_voxels[local_index++] = (u8)normalized;
-
-                                x_pos += grid_cell_size;
+                                /* normalize -1..1 → 0..255 */
+                                f32 clamped = fathom_clampf(dist / brick_diag, -1.0f, 1.0f);
+                                brick_voxels[local_index++] = (u8)((clamped * 0.5f + 0.5f) * 255.0f);
                             }
-                            y_pos += grid_cell_size;
                         }
-
-                        z_pos += grid_cell_size;
                     }
 
+                    /* skip empty or full bricks */
                     if (!(has_positive && has_negative))
                     {
                         grid->brick_map[brick_index_linear++] = 0;
+                        continue;
                     }
-                    else
+
+                    /* assign atlas index */
+                    u32 atlas_index = atlas_brick_counter++;
+                    grid->brick_map[brick_index_linear++] = (u16)atlas_index;
+
+                    /* compute atlas bricks per axis using allocated bricks so far */
+                    u32 atlas_bricks_per_axis_actual = fathom_cuberoot_ceil_u32(atlas_brick_counter - 1);
+                    grid->atlas_resolution = atlas_bricks_per_axis_actual * FATHOM_BRICK_SIZE;
+
+                    /* compute 3D atlas coordinates */
+                    u32 abx = atlas_index % atlas_bricks_per_axis_actual;
+                    u32 aby = (atlas_index / atlas_bricks_per_axis_actual) % atlas_bricks_per_axis_actual;
+                    u32 abz = atlas_index / (atlas_bricks_per_axis_actual * atlas_bricks_per_axis_actual);
+
+                    u32 atlas_base_x = abx * FATHOM_BRICK_SIZE;
+                    u32 atlas_base_y = aby * FATHOM_BRICK_SIZE;
+                    u32 atlas_base_z = abz * FATHOM_BRICK_SIZE;
+
+                    /* write brick into atlas */
+                    u32 i = 0;
+
+                    for (voxel_z = 0; voxel_z < FATHOM_BRICK_SIZE; ++voxel_z)
                     {
-                        u32 atlas_index;
-
-                        if (atlas_brick_counter >
-                            (atlas_resolution_worst_case / FATHOM_BRICK_SIZE) *
-                                (atlas_resolution_worst_case / FATHOM_BRICK_SIZE) *
-                                (atlas_resolution_worst_case / FATHOM_BRICK_SIZE))
+                        for (voxel_y = 0; voxel_y < FATHOM_BRICK_SIZE; ++voxel_y)
                         {
-                            /* atlas overflow (should never happen in worst-case allocation) */
-                            return 0;
-                        }
-
-                        atlas_index = atlas_brick_counter++;
-
-                        grid->brick_map[brick_index_linear++] = (u16)atlas_index;
-
-                        /* compute atlas brick position */
-                        {
-                            u32 abx = atlas_index % atlas_bricks_per_axis;
-                            u32 aby = (atlas_index / atlas_bricks_per_axis) % atlas_bricks_per_axis;
-                            u32 abz = atlas_index / (atlas_bricks_per_axis * atlas_bricks_per_axis);
-
-                            u32 atlas_base_x = abx * FATHOM_BRICK_SIZE;
-                            u32 atlas_base_y = aby * FATHOM_BRICK_SIZE;
-                            u32 atlas_base_z = abz * FATHOM_BRICK_SIZE;
-
-                            /* write brick into atlas */
+                            for (voxel_x = 0; voxel_x < FATHOM_BRICK_SIZE; ++voxel_x)
                             {
-                                u32 i = 0;
-                                for (voxel_z = 0; voxel_z < FATHOM_BRICK_SIZE; ++voxel_z)
-                                {
-                                    for (voxel_y = 0; voxel_y < FATHOM_BRICK_SIZE; ++voxel_y)
-                                    {
-                                        for (voxel_x = 0; voxel_x < FATHOM_BRICK_SIZE; ++voxel_x)
-                                        {
-                                            u32 ax = atlas_base_x + voxel_x;
-                                            u32 ay = atlas_base_y + voxel_y;
-                                            u32 az = atlas_base_z + voxel_z;
-                                            u32 atlas_linear = ax + ay * atlas_resolution_worst_case + az * atlas_resolution_worst_case * atlas_resolution_worst_case;
-
-                                            grid->atlas_data[atlas_linear] = brick_voxels[i++];
-                                        }
-                                    }
-                                }
+                                u32 ax = atlas_base_x + voxel_x;
+                                u32 ay = atlas_base_y + voxel_y;
+                                u32 az = atlas_base_z + voxel_z;
+                                u32 atlas_linear = ax + ay * grid->atlas_resolution + az * grid->atlas_resolution * grid->atlas_resolution;
+                                grid->atlas_data[atlas_linear] = brick_voxels[i++];
                             }
                         }
                     }
@@ -300,17 +256,7 @@ FATHOM_API u8 fathom_sparse_grid_build(fathom_sparse_grid *grid, fathom_sparse_g
         }
 
         grid->allocated_brick_count = atlas_brick_counter - 1;
-
-        if (grid->allocated_brick_count == 0)
-        {
-            grid->atlas_resolution = 0;
-        }
-        else
-        {
-            u32 atlas_bricks_per_axis = fathom_cuberoot_ceil_u32(grid->allocated_brick_count);
-            grid->atlas_resolution = atlas_bricks_per_axis * FATHOM_BRICK_SIZE;
-            grid->atlas_bytes_used = grid->atlas_resolution * grid->atlas_resolution * grid->atlas_resolution;
-        }
+        grid->atlas_bytes_used = grid->atlas_resolution * grid->atlas_resolution * grid->atlas_resolution * FATHOM_ATLAS_BYTES;
     }
 
     return 1;

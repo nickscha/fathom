@@ -110,26 +110,6 @@ FATHOM_API f32 fathom_sqrtf(f32 x)
     return x * fathom_invsqrtf(x);
 }
 
-FATHOM_API f32 fathom_cbrtf(f32 x)
-{
-    f32 y;
-    i32 i;
-
-    if (x == 0.0f)
-    {
-        return 0.0f;
-    }
-
-    y = x;
-
-    for (i = 0; i < 8; ++i)
-    {
-        y = (2.0f * y + x / (y * y)) / 3.0f;
-    }
-
-    return y;
-}
-
 FATHOM_API FATHOM_INLINE f32 fathom_absf(f32 x)
 {
     return x < 0.0f ? -x : x;
