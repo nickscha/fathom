@@ -4,11 +4,6 @@ out vec4 FragColor;
 
 /* Uniforms provided */
 uniform vec3  iResolution;
-uniform float iTime;
-uniform float iTimeDelta;
-uniform int   iFrame;
-uniform float iFrameRate;
-uniform vec4  iMouse;
 
 uniform usampler3D uBrickMap;
 uniform sampler3D  uAtlas;
@@ -59,6 +54,27 @@ float sampleSparseSDF(vec3 worldPos)
     return (d * 2.0 - 1.0) * uTruncation;
 }
 
+float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
+    uint atlasLinear = stored - 1u;
+    
+    // Use faster math for 3D index to 3D coordinate
+    uint w = uint(uAtlasBrickDim.x);
+    uint h = uint(uAtlasBrickDim.y);
+    vec3 physicalAtlasOffset = vec3(
+        float(atlasLinear % w),
+        float((atlasLinear / w) % h),
+        float(atlasLinear / (w * h))
+    ) * float(PHYSICAL_BRICK_SIZE);
+
+    vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
+    vec3 texelCoord = physicalAtlasOffset + 1.0 + localPos;
+    
+    vec3 uInvTotalAtlasSize = 1.0 / (vec3(uAtlasBrickDim) * float(PHYSICAL_BRICK_SIZE));
+    float d = texture(uAtlas, texelCoord * uInvTotalAtlasSize).r;
+
+    return (d * 2.0 - 1.0) * uTruncation;
+}
+
 float raymarch(vec3 ro, vec3 rd)
 {
     vec3 gridMin = uGridStart;
@@ -77,15 +93,15 @@ float raymarch(vec3 ro, vec3 rd)
     vec3 invRd = 1.0 / rd;
 
     // Fast Brick Skip
-    for(int i = 0; i < 64; i++)
+    for(int i = 0; i < 80; i++)
     {
         vec3 p = ro + rd * t;
         vec3 gridPos = (p - uGridStart) / uCellSize;
         ivec3 brickCoord = ivec3(floor(gridPos / float(BRICK_SIZE)));
 
-        /* Fast Bounds Check */
+        // Bounds check
         if(any(lessThan(brickCoord, ivec3(0))) || any(greaterThanEqual(brickCoord, uBrickGridDim))) {
-            t += uCellSize; 
+            t += uCellSize * 2.0; // Larger nudge
             if(t > exitT) break;
             continue;
         }
@@ -93,23 +109,19 @@ float raymarch(vec3 ro, vec3 rd)
         uint stored = texelFetch(uBrickMap, brickCoord, 0).r;
 
         if(stored == 0u) {
-            /* Skip the whole 8x8x8 block at once */
+            // EMPTY BRICK SKIP
             vec3 brickMin = vec3(brickCoord * BRICK_SIZE);
             vec3 brickMax = brickMin + vec3(BRICK_SIZE);
-            
-            vec3 tb0 = (brickMin - gridPos) * invRd;
-            vec3 tb1 = (brickMax - gridPos) * invRd;
-            vec3 tMax = max(tb0, tb1);
+            vec3 tMax = max((brickMin - gridPos) * invRd, (brickMax - gridPos) * invRd);
             float skipDist = min(tMax.x, min(tMax.y, tMax.z));
-
             t += (skipDist + 0.01) * uCellSize;
         }
         else {
-            float d = sampleSparseSDF(p);
+            // REUSE 'stored' and 'brickCoord' to avoid redundant lookups
+            float d = sampleAtlasOnly(gridPos, stored, brickCoord);
             if(d < uCellSize * 0.1) return t;
             t += d;
         }
-
         if(t > exitT) break;
     }
     return -1.0;
@@ -150,8 +162,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   vec2 p = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
   
-  float an = 0.1 * iTime; //10.0 * iMouse.x / iResolution.x;
-
   vec3 ro = vec3(0.0, 1.0, 2.0); // ray origin
   vec3 ta = vec3(0.0, 0.0, 0.0);
 
@@ -170,7 +180,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec3 pos = ro + t * rd;
     vec3 nor = calc_normal(pos);
 
-    float ao = ambientOcclusion(pos, nor);
+    //float ao = ambientOcclusion(pos, nor);
 
     vec3 sun_dir  = normalize(vec3(0.8, 0.4, 0.2));
 
@@ -180,9 +190,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float sky_dif = clamp(0.5 + 0.5 * dot(nor, vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
     float bou_dif = clamp(0.5 + 0.5 * dot(nor, vec3(0.0, -1.0, 0.0)), 0.0, 1.0);
     col  = mate * vec3(7.0, 4.5, 3.0) * sun_dif;
-    col += mate * vec3(0.5, 0.8, 0.9) * sky_dif * ao;
+    col += mate * vec3(0.5, 0.8, 0.9) * sky_dif;
+    //col += mate * vec3(0.5, 0.8, 0.9) * sky_dif * ao;
     col += mate * vec3(0.7, 0.3, 0.2) * bou_dif;
-    col *= ao;
+    //col *= ao;
 
     //col = nor;
     //col = nor / 0.5 * pos;

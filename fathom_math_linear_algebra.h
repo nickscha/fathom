@@ -15,6 +15,8 @@ typedef struct fathom_vec3
 
 } fathom_vec3;
 
+static fathom_vec3 fathom_vec3_zero = {0.0f, 0.0f, 0.0f};
+
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_init(f32 x, f32 y, f32 z)
 {
     fathom_vec3 result;

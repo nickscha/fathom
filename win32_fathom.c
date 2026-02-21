@@ -2166,9 +2166,13 @@ FATHOM_API f32 sdf_function(fathom_vec3 position)
 {
   f32 sphere_radius = 0.5f;
   f32 sphere = fathom_sdf_sphere(position, sphere_radius);
+
+  fathom_vec3 box_pos = fathom_vec3_sub(position, fathom_vec3_init(-0.5f, 0.5f, -0.5f));
+  f32 box = fathom_sdf_box(box_pos, fathom_vec3_init(0.25f, 0.25f, 0.25f));
+
   f32 ground = position.y - (-0.25f);
 
-  return fathom_sminf(ground, sphere, 0.6f);
+  return fathom_sminf(ground, fathom_sminf(sphere, box, 0.4f), 0.6f);
 }
 
 FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, shader_main *main_shader, u32 main_vao)
@@ -2181,9 +2185,9 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
 
   if (!grid_initialized)
   {
-    fathom_vec3 grid_center = fathom_vec3_init(0.0f, 0.0f, 0.0f);
-    u32 grid_cell_count = 64;
-    f32 grid_cell_size = 0.0625f;
+    fathom_vec3 grid_center = fathom_vec3_zero;
+    u32 grid_cell_count = 128;
+    f32 grid_cell_size = 1.0f / 16.0f;
 
     s8 buffer[128];
     text t = {0};
@@ -2256,18 +2260,20 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
 
   /* General uniforms */
   glUniform3f(main_shader->loc_iResolution, (f32)state->window_width, (f32)state->window_height, 1.0f);
+
+  /*
   glUniform1f(main_shader->loc_iTime, (f32)state->iTime);
   glUniform1f(main_shader->loc_iTimeDelta, (f32)state->iTimeDelta);
   glUniform1i(main_shader->loc_iFrame, state->iFrame);
   glUniform1f(main_shader->loc_iFrameRate, (f32)state->iFrameRate);
   glUniform4f(main_shader->loc_iMouse, (f32)state->mouse_x, (f32)state->mouse_y, (f32)state->mouse_dx, (f32)state->mouse_dy);
+  */
 
   /* Grid uniforms */
   glUniform3i(main_shader->loc_brick_grid_dim, (i32)grid.grid_dim_bricks_x, (i32)grid.grid_dim_bricks_y, (i32)grid.grid_dim_bricks_z);
   glUniform3i(main_shader->loc_atlas_brick_dim, FATHOM_ATLAS_WIDTH_IN_BRICKS, FATHOM_ATLAS_HEIGHT_IN_BRICKS, FATHOM_ATLAS_DEPTH_IN_BRICKS);
   glUniform3f(main_shader->loc_grid_start, grid.start.x, grid.start.y, grid.start.z);
   glUniform1f(main_shader->loc_cell_size, grid.cell_size);
-  glUniform1f(main_shader->loc_cell_diagonal, grid.cell_space_diagonal);
   glUniform1f(main_shader->loc_truncation, grid.truncation_distance);
 
   /* Bind textures to texture units */
