@@ -1667,6 +1667,13 @@ typedef struct shader_main
   i32 loc_cell_diagonal;
   i32 loc_truncation;
 
+  /* Camera */
+  i32 loc_camera_position;
+  i32 loc_camera_forward;
+  i32 loc_camera_right;
+  i32 loc_camera_up;
+  i32 loc_camera_fov;
+
 } shader_main;
 
 typedef struct shader_font
@@ -2075,6 +2082,13 @@ FATHOM_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_f
     shader->loc_cell_size = glGetUniformLocation(shader->header.program, "uCellSize");
     shader->loc_cell_diagonal = glGetUniformLocation(shader->header.program, "uCellDiagonal");
     shader->loc_truncation = glGetUniformLocation(shader->header.program, "uTruncation");
+
+    /* Camera */
+    shader->loc_camera_position = glGetUniformLocation(shader->header.program, "camera_position");
+    shader->loc_camera_forward = glGetUniformLocation(shader->header.program, "camera_forward");
+    shader->loc_camera_right = glGetUniformLocation(shader->header.program, "camera_right");
+    shader->loc_camera_up = glGetUniformLocation(shader->header.program, "camera_up");
+    shader->loc_camera_fov = glGetUniformLocation(shader->header.program, "camera_fov");
   }
 
   VirtualFree(shader_code_fragment, 0, MEM_RELEASE);
@@ -2183,6 +2197,13 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
   static u32 brickMapTex;
   static u32 atlasTex;
 
+  /* Camera */
+  static fathom_vec3 camera_position;
+  static fathom_vec3 camera_forward;
+  static fathom_vec3 camera_right;
+  static fathom_vec3 camera_up;
+  static f32 camera_fov = 1.5f;
+
   if (!grid_initialized)
   {
     fathom_vec3 grid_center = fathom_vec3_zero;
@@ -2253,6 +2274,21 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     grid_initialized = 1;
   }
 
+  /* Camera Setup */
+  {
+    fathom_vec3 world_up = fathom_vec3_init(0.0f, 1.0f, 0.0f);
+    fathom_vec3 camera_look_at = fathom_vec3_zero;
+
+    camera_position = fathom_vec3_init(
+        fathom_sinf((f32)state->iTime) * 0.5f,
+        1.0f,
+        2.0f);
+    camera_forward = fathom_vec3_normalize(fathom_vec3_sub(camera_look_at, camera_position)); /* Z-Axis */
+    camera_right = fathom_vec3_normalize(fathom_vec3_cross(camera_forward, world_up));        /* X-Axis */
+    camera_up = fathom_vec3_normalize(fathom_vec3_cross(camera_right, camera_forward));       /* Y-Axis */
+    camera_fov = 1.5f;
+  }
+
   /******************************/
   /* Draw                       */
   /******************************/
@@ -2268,6 +2304,13 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
   glUniform1f(main_shader->loc_iFrameRate, (f32)state->iFrameRate);
   glUniform4f(main_shader->loc_iMouse, (f32)state->mouse_x, (f32)state->mouse_y, (f32)state->mouse_dx, (f32)state->mouse_dy);
   */
+
+  /* Camera uniforms */
+  glUniform3f(main_shader->loc_camera_position, camera_position.x, camera_position.y, camera_position.z);
+  glUniform3f(main_shader->loc_camera_forward, camera_forward.x, camera_forward.y, camera_forward.z);
+  glUniform3f(main_shader->loc_camera_right, camera_right.x, camera_right.y, camera_right.z);
+  glUniform3f(main_shader->loc_camera_up, camera_up.x, camera_up.y, camera_up.z);
+  glUniform1f(main_shader->loc_camera_fov, camera_fov);
 
   /* Grid uniforms */
   glUniform3i(main_shader->loc_brick_grid_dim, (i32)grid.grid_dim_bricks_x, (i32)grid.grid_dim_bricks_y, (i32)grid.grid_dim_bricks_z);

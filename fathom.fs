@@ -15,6 +15,13 @@ uniform vec3  uGridStart;
 uniform float uCellSize;
 uniform float uTruncation;
 
+/* Camera */
+uniform vec3 camera_position;
+uniform vec3 camera_forward;
+uniform vec3 camera_right;
+uniform vec3 camera_up;
+uniform float camera_fov;
+
 const int BRICK_SIZE = 8;
 const int PHYSICAL_BRICK_SIZE = 10;
 
@@ -108,14 +115,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   vec2 p = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
   
-  vec3 ro = vec3(0.0, 1.0, 2.0); // ray origin
-  vec3 ta = vec3(0.0, 0.0, 0.0);
-
-  vec3 ww = normalize(ta-ro);
-  vec3 uu = normalize(cross(ww, vec3(0, 1, 0)));
-  vec3 vv = normalize(cross(uu, ww));
-
-  vec3 rd = normalize(p.x * uu + p.y * vv + 1.5 * ww); // ray direction
+  vec3 ro = camera_position; // ray origin
+  vec3 rd = normalize(p.x * camera_right + p.y * camera_up + camera_fov * camera_forward); // ray direction
 
   vec3 col = vec3(0.4, 0.75, 1.0) - 0.7 * rd.y; // sky, darker the higher
 
