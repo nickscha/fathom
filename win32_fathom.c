@@ -2260,9 +2260,9 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
 
   /* General uniforms */
   glUniform3f(main_shader->loc_iResolution, (f32)state->window_width, (f32)state->window_height, 1.0f);
+  glUniform1f(main_shader->loc_iTime, (f32)state->iTime);
 
   /*
-  glUniform1f(main_shader->loc_iTime, (f32)state->iTime);
   glUniform1f(main_shader->loc_iTimeDelta, (f32)state->iTimeDelta);
   glUniform1i(main_shader->loc_iFrame, state->iFrame);
   glUniform1f(main_shader->loc_iFrameRate, (f32)state->iFrameRate);
