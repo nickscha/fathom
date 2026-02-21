@@ -18,46 +18,11 @@ uniform float uTruncation;
 const int BRICK_SIZE = 8;
 const int PHYSICAL_BRICK_SIZE = 10;
 
-float sampleSparseSDF(vec3 worldPos)
-{
-    vec3 gridPos = (worldPos - uGridStart) / uCellSize;
-    ivec3 brickCoord = ivec3(floor(gridPos / float(BRICK_SIZE)));
-
-    if(any(lessThan(brickCoord, ivec3(0))) || any(greaterThanEqual(brickCoord, uBrickGridDim))) {
-        return uTruncation; 
-    }
-
-    uint stored = texelFetch(uBrickMap, brickCoord, 0).r;
-    if(stored == 0u) return uTruncation; 
-
-    uint atlasLinear = stored - 1u;
-    uint sliceSize = uint(uAtlasBrickDim.x * uAtlasBrickDim.y);
-    vec3 physicalAtlasOffset = vec3(
-        float(atlasLinear % uint(uAtlasBrickDim.x)),
-        float((atlasLinear / uint(uAtlasBrickDim.x)) % uint(uAtlasBrickDim.y)),
-        float(atlasLinear / sliceSize)
-    ) * float(PHYSICAL_BRICK_SIZE);
-
-    vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
-
-    /* Add 0.5 to localPos to hit texel centers. 
-       The +1.0 moves us past the left-side apron.
-    */
-    vec3 texelCoord = physicalAtlasOffset + 1.0 + localPos;
-
-    /* Normalize using the PHYSICAL size */
-    vec3 totalAtlasSize = vec3(uAtlasBrickDim) * float(PHYSICAL_BRICK_SIZE);
-    
-    // texture() expects [0, 1]
-    float d = texture(uAtlas, texelCoord / totalAtlasSize).r;
-
-    return (d * 2.0 - 1.0) * uTruncation;
-}
+#define INV_ATLAS_SIZE (1.0 / (vec3(uAtlasBrickDim) * float(PHYSICAL_BRICK_SIZE)))
 
 float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     uint atlasLinear = stored - 1u;
     
-    // Use faster math for 3D index to 3D coordinate
     uint w = uint(uAtlasBrickDim.x);
     uint h = uint(uAtlasBrickDim.y);
     vec3 physicalAtlasOffset = vec3(
@@ -69,8 +34,7 @@ float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
     vec3 texelCoord = physicalAtlasOffset + 1.0 + localPos;
     
-    vec3 uInvTotalAtlasSize = 1.0 / (vec3(uAtlasBrickDim) * float(PHYSICAL_BRICK_SIZE));
-    float d = texture(uAtlas, texelCoord * uInvTotalAtlasSize).r;
+    float d = texture(uAtlas, texelCoord * INV_ATLAS_SIZE).r;
 
     return (d * 2.0 - 1.0) * uTruncation;
 }
@@ -100,14 +64,14 @@ float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick)
         uint stored = texelFetch(uBrickMap, brickCoord, 0).r;
 
         if(stored == 0u) {
-            // EMPTY BRICK: Skip
+            // Empty Brick: Skip
             vec3 brickMin = vec3(brickCoord * BRICK_SIZE);
             vec3 brickMax = brickMin + vec3(BRICK_SIZE);
             vec3 tMax = max((brickMin - gridPos) * invRd, (brickMax - gridPos) * invRd);
             float skipDist = min(tMax.x, min(tMax.y, tMax.z));
             t += (skipDist + 0.01) * uCellSize;
         } else {
-            // OCCUPIED
+            // Occupied
             float d = sampleAtlasOnly(gridPos, stored, brickCoord);
             if (d < uCellSize * 0.1) {
                outStored = stored;
@@ -122,20 +86,7 @@ float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick)
     return -1.0;
 }
 
-vec3 calc_normal(vec3 p)
-{
-    float e = uCellSize * 0.5; 
-    vec2 k = vec2(1.0, -1.0);
-    
-    return normalize(
-        k.xyy * sampleSparseSDF(p + k.xyy * e) +
-        k.yyx * sampleSparseSDF(p + k.yyx * e) +
-        k.yxy * sampleSparseSDF(p + k.yxy * e) +
-        k.xxx * sampleSparseSDF(p + k.xxx * e)
-    );
-}
-
-vec3 calc_normal_fast(vec3 pos, uint stored, ivec3 brickCoord)
+vec3 calc_normal(vec3 pos, uint stored, ivec3 brickCoord)
 {
     float e = uCellSize * 0.5; 
     
@@ -151,24 +102,6 @@ vec3 calc_normal_fast(vec3 pos, uint stored, ivec3 brickCoord)
                sampleAtlasOnly(gridPos - vec3(0, 0, g), stored, brickCoord);
 
     return normalize(vec3(dx, dy, dz));
-}
-
-float ambientOcclusion(vec3 pos, vec3 nor)
-{
-    float occ = 0.0;
-    float sca = 1.0;
-
-    for(int i = 0; i < 5; i++)
-    {
-        float h = uCellSize * (0.5 + 2.0 * float(i) / 4.0);
-
-        float d = sampleSparseSDF(pos + nor * h);
-
-        occ += (h - d) * sca;
-        sca *= 0.85;
-    }
-
-    return clamp(1.0 - 2.5 * occ, 0.0, 1.0);
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
@@ -193,9 +126,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   if (t > 0.0) 
   {
     vec3 pos = ro + t * rd;
-    vec3 nor = calc_normal_fast(pos, hitStored, hitBrick);
-
-    //float ao = ambientOcclusion(pos, nor);
+    vec3 nor = calc_normal(pos, hitStored, hitBrick);
 
     vec3 sun_dir  = normalize(vec3(0.8, 0.4, 0.2));
 
@@ -206,9 +137,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float bou_dif = clamp(0.5 + 0.5 * dot(nor, vec3(0.0, -1.0, 0.0)), 0.0, 1.0);
     col  = mate * vec3(7.0, 4.5, 3.0) * sun_dif;
     col += mate * vec3(0.5, 0.8, 0.9) * sky_dif;
-    //col += mate * vec3(0.5, 0.8, 0.9) * sky_dif * ao;
     col += mate * vec3(0.7, 0.3, 0.2) * bou_dif;
-    //col *= ao;
 
     //col = nor;
     //col = nor / 0.5 * pos;
