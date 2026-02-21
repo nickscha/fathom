@@ -1665,6 +1665,7 @@ typedef struct shader_main
   i32 loc_grid_start;
   i32 loc_cell_size;
   i32 loc_cell_diagonal;
+  i32 loc_truncation;
 
 } shader_main;
 
@@ -2073,6 +2074,7 @@ FATHOM_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_f
     shader->loc_grid_start = glGetUniformLocation(shader->header.program, "uGridStart");
     shader->loc_cell_size = glGetUniformLocation(shader->header.program, "uCellSize");
     shader->loc_cell_diagonal = glGetUniformLocation(shader->header.program, "uCellDiagonal");
+    shader->loc_truncation = glGetUniformLocation(shader->header.program, "uTruncation");
   }
 
   VirtualFree(shader_code_fragment, 0, MEM_RELEASE);
@@ -2233,13 +2235,13 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R8,
-                 FATHOM_ATLAS_WIDTH_IN_BRICKS * FATHOM_BRICK_SIZE,
-                 FATHOM_ATLAS_HEIGHT_IN_BRICKS * FATHOM_BRICK_SIZE,
-                 FATHOM_ATLAS_DEPTH_IN_BRICKS * FATHOM_BRICK_SIZE,
+                 FATHOM_ATLAS_WIDTH_IN_BRICKS * FATHOM_PHYSICAL_BRICK_SIZE,
+                 FATHOM_ATLAS_HEIGHT_IN_BRICKS * FATHOM_PHYSICAL_BRICK_SIZE,
+                 FATHOM_ATLAS_DEPTH_IN_BRICKS * FATHOM_PHYSICAL_BRICK_SIZE,
                  0, GL_RED, GL_UNSIGNED_BYTE, grid.atlas_data);
 
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); /* GL_LINEAR */
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); /* GL_LINEAR */
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); /* GL_LINEAR */
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); /* GL_LINEAR */
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -2266,6 +2268,7 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
   glUniform3f(main_shader->loc_grid_start, grid.start.x, grid.start.y, grid.start.z);
   glUniform1f(main_shader->loc_cell_size, grid.cell_size);
   glUniform1f(main_shader->loc_cell_diagonal, grid.cell_space_diagonal);
+  glUniform1f(main_shader->loc_truncation, grid.truncation_distance);
 
   /* Bind textures to texture units */
   glActiveTexture(GL_TEXTURE0);
