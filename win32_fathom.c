@@ -1117,6 +1117,9 @@ typedef struct win32_fathom_state
   u32 mem_atlas_bytes;
   u32 grid_sdf_invocations;
 
+  i64 grid_calc_time_start;
+  i64 grid_calc_time_end;
+
 } win32_fathom_state;
 
 FATHOM_API FATHOM_INLINE i64 win32_window_callback(void *window, u32 message, u64 wParam, i64 lParam)
@@ -2233,10 +2236,14 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
       win32_print("Could not assign memory!\n");
     }
 
+    QueryPerformanceCounter(&state->grid_calc_time_start);
+
     if (!fathom_sparse_distance_grid_calculate(&grid, sdf_function, state, grid_center, grid_cell_count, grid_cell_size))
     {
       win32_print("Could not calculate sparse grid!\n");
     }
+
+    QueryPerformanceCounter(&state->grid_calc_time_end);
 
     /* Brick Map */
     glGenTextures(1, &brickMapTex);
@@ -3011,7 +3018,8 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
 
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM BRICK MAP: \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM ATLAS    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
-          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "SDF CALLS    : ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "SDF CALLS    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "CALC TIME    : ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
 
           t.length = 0;
           text_append_f64(&t, (f64)state.mem_brick_map_bytes / 1024.0 / 1024.0, 4);
@@ -3019,6 +3027,8 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           text_append_f64(&t, (f64)state.mem_atlas_bytes / 1024.0 / 1024.0, 4);
           text_append_str(&t, "\n");
           text_append_i32(&t, (i32)state.grid_sdf_invocations);
+          text_append_str(&t, "\n");
+          text_append_f64(&t, ((f64)(state.grid_calc_time_end - state.grid_calc_time_start) * 1000.0) / (f64) perf_freq, 4);
 
           offset_memory_y = 10;
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
