@@ -2245,9 +2245,9 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     glBindTexture(GL_TEXTURE_3D, brickMapTex);
 
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R16UI,
-                 (i32)grid.grid_dim_bricks_x,
-                 (i32)grid.grid_dim_bricks_y,
-                 (i32)grid.grid_dim_bricks_z,
+                 (i32)grid.grid_dim_bricks,
+                 (i32)grid.grid_dim_bricks,
+                 (i32)grid.grid_dim_bricks,
                  0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, grid.brick_map);
 
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -2315,7 +2315,7 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
   glUniform1f(main_shader->loc_camera_fov, camera_fov);
 
   /* Grid uniforms */
-  glUniform3i(main_shader->loc_brick_grid_dim, (i32)grid.grid_dim_bricks_x, (i32)grid.grid_dim_bricks_y, (i32)grid.grid_dim_bricks_z);
+  glUniform3i(main_shader->loc_brick_grid_dim, (i32)grid.grid_dim_bricks, (i32)grid.grid_dim_bricks, (i32)grid.grid_dim_bricks);
   glUniform3i(main_shader->loc_atlas_brick_dim, FATHOM_ATLAS_WIDTH_IN_BRICKS, FATHOM_ATLAS_HEIGHT_IN_BRICKS, FATHOM_ATLAS_DEPTH_IN_BRICKS);
   glUniform3f(main_shader->loc_grid_start, grid.start.x, grid.start.y, grid.start.z);
   glUniform1f(main_shader->loc_cell_size, grid.cell_size);

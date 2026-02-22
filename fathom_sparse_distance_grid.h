@@ -40,9 +40,7 @@ typedef struct fathom_sparse_distance_grid
     f32 size_half;
 
     /* Grid Dimensions in Bricks */
-    u32 grid_dim_bricks_x;
-    u32 grid_dim_bricks_y;
-    u32 grid_dim_bricks_z;
+    u32 grid_dim_bricks;
 
     u16 *brick_map;
     u8 *atlas_data;
@@ -80,12 +78,10 @@ FATHOM_API u8 fathom_sparse_distance_grid_initialize(fathom_sparse_distance_grid
     grid->start = fathom_vec3_subf(grid_center, grid->size_half);
 
     /* Calculate Brick Grid Dimensions */
-    grid->grid_dim_bricks_x = cell_count / FATHOM_BRICK_SIZE;
-    grid->grid_dim_bricks_y = cell_count / FATHOM_BRICK_SIZE;
-    grid->grid_dim_bricks_z = cell_count / FATHOM_BRICK_SIZE;
+    grid->grid_dim_bricks = cell_count / FATHOM_BRICK_SIZE;
 
     /* Allocate Brick Map (The Indirection Grid) */
-    brick_map_count = grid->grid_dim_bricks_x * grid->grid_dim_bricks_y * grid->grid_dim_bricks_z;
+    brick_map_count = grid->grid_dim_bricks * grid->grid_dim_bricks * grid->grid_dim_bricks;
     grid->brick_map_bytes = brick_map_count * sizeof(u16);
 
     /* Allocate Atlas (The 3D Data Texture Buffer) */
@@ -135,14 +131,14 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
     grid->truncation_distance = grid->cell_size * 4.0f; /* 4 voxels of safe stepping */
 
     /* 1. Iterate over the coarse Meta-Grid (Bricks) */
-    for (bz = 0; bz < grid->grid_dim_bricks_z; ++bz)
+    for (bz = 0; bz < grid->grid_dim_bricks; ++bz)
     {
-        for (by = 0; by < grid->grid_dim_bricks_y; ++by)
+        for (by = 0; by < grid->grid_dim_bricks; ++by)
         {
-            for (bx = 0; bx < grid->grid_dim_bricks_x; ++bx)
+            for (bx = 0; bx < grid->grid_dim_bricks; ++bx)
             {
                 u8 is_brick_useful = 0;
-                u32 map_idx = fathom_get_index(bx, by, bz, grid->grid_dim_bricks_x, grid->grid_dim_bricks_y);
+                u32 map_idx = fathom_get_index(bx, by, bz, grid->grid_dim_bricks, grid->grid_dim_bricks);
                 fathom_vec3 brick_start_pos;
 
                 brick_start_pos.x = grid->start.x + (f32)(bx * FATHOM_BRICK_SIZE) * grid->cell_size;
