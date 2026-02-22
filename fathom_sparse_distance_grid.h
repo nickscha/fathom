@@ -63,12 +63,6 @@ FATHOM_API u8 fathom_sparse_distance_grid_assign_memory(fathom_sparse_distance_g
     return 1;
 }
 
-/* Helper to calculate linear index in a 3D array */
-FATHOM_API FATHOM_INLINE u32 fathom_sparse_distance_grid_get_index(u32 x, u32 y, u32 z, u32 width, u32 height)
-{
-    return x + (y * width) + (z * width * height);
-}
-
 FATHOM_API u8 fathom_sparse_distance_grid_calculate(
     fathom_sparse_distance_grid *grid,
     fathom_distance_function distance_function,
@@ -80,6 +74,7 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
     static u8 brick_temp_buffer[FATHOM_PHYSICAL_BRICK_SIZE][FATHOM_PHYSICAL_BRICK_SIZE][FATHOM_PHYSICAL_BRICK_SIZE];
 
     u32 bx, by, bz;
+
     u32 atlas_capacity_bricks;
     u32 atlas_used_bricks = 0;
     u32 atlas_voxels;
