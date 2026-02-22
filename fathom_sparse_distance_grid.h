@@ -89,6 +89,7 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
     f32 inverse_truncation_distance;
     f32 quant_scale;
     f32 apron_offset;
+    f32 cull_threshold;
 
     if (!grid || !grid->brick_map || !grid->atlas_data)
     {
@@ -107,6 +108,7 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
     inverse_truncation_distance = 1.0f / grid->truncation_distance;
     quant_scale = 127.5f * inverse_truncation_distance;
     apron_offset = (0.5f - (f32)FATHOM_BRICK_APRON) * grid->cell_size;
+    cull_threshold = brick_radius + grid->truncation_distance;
 
     /* 1. Iterate over the coarse Meta-Grid (Bricks) */
     for (bz = 0; bz < grid->grid_dim_bricks; ++bz)
@@ -126,17 +128,9 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
 
                 f32 brick_center_distance = distance_function(brick_center_pos, user_data);
 
-                /* Empty (Far Outside) */
-                if (brick_center_distance > (brick_radius + grid->truncation_distance))
+                if (fathom_absf(brick_center_distance) > cull_threshold)
                 {
-                    grid->brick_map[brick_map_index] = 0;
-                    continue;
-                }
-
-                /* Solid (Far Inside) */
-                if (brick_center_distance < -(brick_radius + grid->truncation_distance))
-                {
-                    grid->brick_map[brick_map_index] = 0xFFFF;
+                    grid->brick_map[brick_map_index] = (brick_center_distance > 0.0f) ? 0 : 0xFFFF; /* air = 0, solid = 0xFFFF */
                     continue;
                 }
 
@@ -160,27 +154,14 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
 
                             for (lx = 0; lx < FATHOM_PHYSICAL_BRICK_SIZE; ++lx, px += grid->cell_size)
                             {
-                                f32 distance = distance_function(fathom_vec3_init(px, py, pz), user_data);
-
-                                f32 distance_scaled = distance * quant_scale + 127.5f;
-                                u8 distance_quantized;
-
-                                if (distance_scaled <= 0.0f)
-                                {
-                                    distance_quantized = 0;
-                                }
-                                else if (distance_scaled >= 255.0f)
-                                {
-                                    distance_quantized = 255;
-                                }
-                                else
-                                {
-                                    distance_quantized = (u8)distance_scaled;
-                                }
-
-                                brick_temp_buffer[lz][ly][lx] = distance_quantized;
+                                f32 distance_scaled = distance_function(fathom_vec3_init(px, py, pz), user_data) * quant_scale + 127.5f;
 
                                 is_brick_useful |= (distance_scaled >= 0.0f && distance_scaled <= 255.0f);
+
+                                distance_scaled = distance_scaled < 0.0f ? 0.0f : distance_scaled;
+                                distance_scaled = distance_scaled > 255.0f ? 255.0f : distance_scaled;
+
+                                brick_temp_buffer[lz][ly][lx] = (u8)distance_scaled;
                             }
                         }
                     }
