@@ -16,10 +16,10 @@ uniform float uCellSize;
 uniform float uTruncation;
 
 /* Camera */
-uniform vec3 camera_position;
-uniform vec3 camera_forward;
-uniform vec3 camera_right;
-uniform vec3 camera_up;
+uniform vec3  camera_position;
+uniform vec3  camera_forward;
+uniform vec3  camera_right;
+uniform vec3  camera_up;
 uniform float camera_fov;
 
 const int BRICK_SIZE = 8;

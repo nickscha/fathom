@@ -2176,7 +2176,7 @@ FATHOM_API void opengl_shader_load_shader_recording(shader_recording *shader)
 #include "fathom_sparse_distance_grid.h"
 
 /* Simple Sphere SDF */
-FATHOM_API f32 sdf_function(fathom_vec3 position)
+FATHOM_API f32 sdf_function(fathom_vec3 position, void* user_data)
 {
   f32 sphere_radius = 0.5f;
   f32 sphere = fathom_sdf_sphere(position, sphere_radius);
@@ -2185,6 +2185,8 @@ FATHOM_API f32 sdf_function(fathom_vec3 position)
   f32 box = fathom_sdf_box(box_pos, fathom_vec3_init(0.25f, 0.25f, 0.25f));
 
   f32 ground = position.y - (-0.25f);
+
+  (void) user_data;
 
   return fathom_sminf(ground, fathom_sminf(sphere, box, 0.4f), 0.6f);
 }
@@ -2233,7 +2235,7 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
       win32_print("Could not assign memory!\n");
     }
 
-    if (!fathom_sparse_distance_grid_calculate(&grid, sdf_function))
+    if (!fathom_sparse_distance_grid_calculate(&grid, sdf_function, state))
     {
       win32_print("Could not calculate sparse grid!\n");
     }

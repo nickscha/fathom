@@ -28,7 +28,7 @@ FATHOM_API void *fathom_memcpy(void *dest, void *src, u32 count)
 #define FATHOM_ATLAS_HEIGHT_IN_BRICKS 16
 #define FATHOM_ATLAS_DEPTH_IN_BRICKS 16
 
-typedef f32 (*fathom_distance_function)(fathom_vec3 position);
+typedef f32 (*fathom_distance_function)(fathom_vec3 position, void *user_data);
 
 typedef struct fathom_sparse_distance_grid
 {
@@ -117,7 +117,10 @@ FATHOM_API u8 fathom_sparse_distance_grid_assign_memory(fathom_sparse_distance_g
     return 1;
 }
 
-FATHOM_API u8 fathom_sparse_distance_grid_calculate(fathom_sparse_distance_grid *grid, fathom_distance_function distance_function)
+FATHOM_API u8 fathom_sparse_distance_grid_calculate(
+    fathom_sparse_distance_grid *grid,
+    fathom_distance_function distance_function,
+    void *user_data)
 {
     u32 bx, by, bz;
     u32 lx, ly, lz;
@@ -169,7 +172,7 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(fathom_sparse_distance_grid 
                                 brick_start_pos.y + ((f32)logical_y + 0.5f) * grid->cell_size,
                                 brick_start_pos.z + ((f32)logical_z + 0.5f) * grid->cell_size);
 
-                            dist = distance_function(pos);
+                            dist = distance_function(pos, user_data);
 
                             /* Clamp to widened truncation band */
                             d = fathom_clampf(dist / grid->truncation_distance, -1.0f, 1.0f);
