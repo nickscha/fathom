@@ -1115,6 +1115,7 @@ typedef struct win32_fathom_state
 
   u32 mem_brick_map_bytes;
   u32 mem_atlas_bytes;
+  u32 grid_sdf_invocations;
 
 } win32_fathom_state;
 
@@ -2189,7 +2190,7 @@ FATHOM_API f32 sdf_function(fathom_vec3 position, void *user_data)
 
   f32 ground = position.y - (-0.25f);
 
-  (void)user_data;
+  ((win32_fathom_state *)user_data)->grid_sdf_invocations++;
 
   return fathom_sminf(ground, fathom_sminf(sphere, box, 0.4f), 0.6f);
 }
@@ -3009,12 +3010,15 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           u16 offset_memory_y = 10;
 
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM BRICK MAP: \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
-          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM ATLAS    : ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM ATLAS    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "SDF CALLS    : ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
 
           t.length = 0;
           text_append_f64(&t, (f64)state.mem_brick_map_bytes / 1024.0 / 1024.0, 4);
           text_append_str(&t, "\n");
           text_append_f64(&t, (f64)state.mem_atlas_bytes / 1024.0 / 1024.0, 4);
+          text_append_str(&t, "\n");
+          text_append_i32(&t, (i32)state.grid_sdf_invocations);
 
           offset_memory_y = 10;
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
