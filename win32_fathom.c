@@ -1113,6 +1113,9 @@ typedef struct win32_fathom_state
   s8 *gl_renderer;
   s8 *gl_vendor;
 
+  u32 mem_brick_map_bytes;
+  u32 mem_atlas_bytes;
+
 } win32_fathom_state;
 
 FATHOM_API FATHOM_INLINE i64 win32_window_callback(void *window, u32 message, u64 wParam, i64 lParam)
@@ -2176,7 +2179,7 @@ FATHOM_API void opengl_shader_load_shader_recording(shader_recording *shader)
 #include "fathom_sparse_distance_grid.h"
 
 /* Simple Sphere SDF */
-FATHOM_API f32 sdf_function(fathom_vec3 position, void* user_data)
+FATHOM_API f32 sdf_function(fathom_vec3 position, void *user_data)
 {
   f32 sphere_radius = 0.5f;
   f32 sphere = fathom_sdf_sphere(position, sphere_radius);
@@ -2186,7 +2189,7 @@ FATHOM_API f32 sdf_function(fathom_vec3 position, void* user_data)
 
   f32 ground = position.y - (-0.25f);
 
-  (void) user_data;
+  (void)user_data;
 
   return fathom_sminf(ground, fathom_sminf(sphere, box, 0.4f), 0.6f);
 }
@@ -2211,6 +2214,7 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     fathom_vec3 grid_center = fathom_vec3_zero;
     u32 grid_cell_count = 128;
     f32 grid_cell_size = 1.0f / 16.0f;
+    u32 atlas_dimensions = 16; /* TODO: hardcoded max memory = 4096 bricks */
 
     s8 buffer[128];
     text t = {0};
@@ -2218,10 +2222,13 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     t.size = 128;
 
     /* Use a grid size divisible by 8 */
-    if (!fathom_sparse_distance_grid_initialize(&grid, grid_cell_count))
+    if (!fathom_sparse_distance_grid_initialize(&grid, grid_cell_count, atlas_dimensions))
     {
       win32_print("Could not initialize grid!\n");
     }
+
+    state->mem_brick_map_bytes = grid.brick_map_bytes;
+    state->mem_atlas_bytes = grid.atlas_bytes;
 
     memory = VirtualAlloc(0, grid.brick_map_bytes + grid.atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
@@ -2262,9 +2269,9 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R8,
-                 FATHOM_ATLAS_WIDTH_IN_BRICKS * FATHOM_PHYSICAL_BRICK_SIZE,
-                 FATHOM_ATLAS_HEIGHT_IN_BRICKS * FATHOM_PHYSICAL_BRICK_SIZE,
-                 FATHOM_ATLAS_DEPTH_IN_BRICKS * FATHOM_PHYSICAL_BRICK_SIZE,
+                 (i32)grid.atlas_dim_bricks * FATHOM_PHYSICAL_BRICK_SIZE,
+                 (i32)grid.atlas_dim_bricks * FATHOM_PHYSICAL_BRICK_SIZE,
+                 (i32)grid.atlas_dim_bricks * FATHOM_PHYSICAL_BRICK_SIZE,
                  0, GL_RED, GL_UNSIGNED_BYTE, grid.atlas_data);
 
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); /* GL_LINEAR */
@@ -2316,7 +2323,7 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
 
   /* Grid uniforms */
   glUniform3i(main_shader->loc_brick_grid_dim, (i32)grid.grid_dim_bricks, (i32)grid.grid_dim_bricks, (i32)grid.grid_dim_bricks);
-  glUniform3i(main_shader->loc_atlas_brick_dim, FATHOM_ATLAS_WIDTH_IN_BRICKS, FATHOM_ATLAS_HEIGHT_IN_BRICKS, FATHOM_ATLAS_DEPTH_IN_BRICKS);
+  glUniform3i(main_shader->loc_atlas_brick_dim, (i32)grid.atlas_dim_bricks, (i32)grid.atlas_dim_bricks, (i32)grid.atlas_dim_bricks);
   glUniform3f(main_shader->loc_grid_start, grid.start.x, grid.start.y, grid.start.z);
   glUniform1f(main_shader->loc_cell_size, grid.cell_size);
   glUniform1f(main_shader->loc_truncation, grid.truncation_distance);
@@ -3008,6 +3015,23 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
         }
 
 #undef CALC_GLYPH
+
+        /* Show grid memory */
+        {
+          u16 offset_memory_x = 400;
+          u16 offset_memory_y = 10;
+
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM BRICK MAP: \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM ATLAS    : ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+
+          t.length = 0;
+          text_append_f64(&t, (f64)state.mem_brick_map_bytes / 1024.0 / 1024.0, 4);
+          text_append_str(&t, "\n");
+          text_append_f64(&t, (f64)state.mem_atlas_bytes / 1024.0 / 1024.0, 4);
+
+          offset_memory_y = 10;
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+        }
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
