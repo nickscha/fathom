@@ -44,14 +44,14 @@ typedef struct fathom_sparse_distance_grid
 
 } fathom_sparse_distance_grid;
 
-FATHOM_API u8 fathom_sparse_distance_grid_initialize(fathom_sparse_distance_grid *grid, u32 cell_count, u32 atlas_bricks_per_side)
+FATHOM_API u8 fathom_sparse_distance_grid_initialize(fathom_sparse_distance_grid *grid, u32 grid_cell_count, u32 atlas_bricks_per_side)
 {
-    if (!grid || cell_count == 0 || cell_count % FATHOM_BRICK_SIZE != 0)
+    if (!grid || grid_cell_count == 0 || grid_cell_count % FATHOM_BRICK_SIZE != 0)
     {
         return 0;
     }
 
-    grid->grid_dim_bricks = cell_count / FATHOM_BRICK_SIZE;
+    grid->grid_dim_bricks = grid_cell_count / FATHOM_BRICK_SIZE;
     grid->atlas_dim_bricks = atlas_bricks_per_side;
     grid->brick_map_bytes = grid->grid_dim_bricks * grid->grid_dim_bricks * grid->grid_dim_bricks * sizeof(u16);
     grid->atlas_bytes = grid->atlas_dim_bricks * grid->atlas_dim_bricks * grid->atlas_dim_bricks * FATHOM_BRICK_TOTAL_VOXELS * sizeof(u8);
@@ -116,11 +116,26 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
             {
                 u8 is_brick_useful = 0;
                 u32 map_idx = fathom_sparse_distance_grid_get_index(bx, by, bz, grid->grid_dim_bricks, grid->grid_dim_bricks);
-                fathom_vec3 brick_start_pos;
 
-                brick_start_pos.x = grid->start.x + (f32)(bx * FATHOM_BRICK_SIZE) * grid->cell_size;
-                brick_start_pos.y = grid->start.y + (f32)(by * FATHOM_BRICK_SIZE) * grid->cell_size;
-                brick_start_pos.z = grid->start.z + (f32)(bz * FATHOM_BRICK_SIZE) * grid->cell_size;
+                fathom_vec3 brick_start_pos = fathom_vec3_init(
+                    grid->start.x + (f32)(bx * FATHOM_BRICK_SIZE) * grid->cell_size,
+                    grid->start.y + (f32)(by * FATHOM_BRICK_SIZE) * grid->cell_size,
+                    grid->start.z + (f32)(bz * FATHOM_BRICK_SIZE) * grid->cell_size);
+
+                fathom_vec3 brick_center = fathom_vec3_init(
+                    brick_start_pos.x + (FATHOM_BRICK_SIZE * 0.5f) * grid->cell_size,
+                    brick_start_pos.y + (FATHOM_BRICK_SIZE * 0.5f) * grid->cell_size,
+                    brick_start_pos.z + (FATHOM_BRICK_SIZE * 0.5f) * grid->cell_size);
+
+                f32 brick_radius = (FATHOM_PHYSICAL_BRICK_SIZE * 0.5f) * 1.732f * grid->cell_size;
+
+                f32 center_dist = distance_function(brick_center, user_data);
+
+                /* If the brick is completly empty fast skip */
+                if (fathom_absf(center_dist) > (brick_radius + grid->truncation_distance))
+                {
+                    continue;
+                }
 
                 /* 2. Process the 10x10x10 voxels (Logical 8x8x8 + 1 voxel apron) */
                 for (lz = 0; lz < FATHOM_PHYSICAL_BRICK_SIZE; ++lz)
@@ -198,13 +213,10 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
                         }
                     }
                 }
-                else
-                {
-                    grid->brick_map[map_idx] = 0;
-                }
             }
         }
     }
+
     return 1;
 }
 

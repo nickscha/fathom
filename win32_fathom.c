@@ -2216,11 +2216,6 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     f32 grid_cell_size = 1.0f / 16.0f;
     u32 atlas_dimensions = 16; /* TODO: hardcoded max memory = 4096 bricks */
 
-    s8 buffer[128];
-    text t = {0};
-    t.buffer = buffer;
-    t.size = 128;
-
     /* Use a grid size divisible by 8 */
     if (!fathom_sparse_distance_grid_initialize(&grid, grid_cell_count, atlas_dimensions))
     {
@@ -2231,11 +2226,6 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     state->mem_atlas_bytes = grid.atlas_bytes;
 
     memory = VirtualAlloc(0, grid.brick_map_bytes + grid.atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-    text_append_str(&t, "[grid] mem: ");
-    text_append_f64(&t, (f64)(grid.brick_map_bytes + grid.atlas_bytes) / 1024.0 / 1024.0, 6);
-    text_append_str(&t, "\n");
-    win32_print(buffer);
 
     if (!memory || !fathom_sparse_distance_grid_assign_memory(&grid, memory))
     {
