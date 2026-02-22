@@ -2180,7 +2180,7 @@ FATHOM_API void opengl_shader_load_shader_recording(shader_recording *shader)
 }
 
 #include "fathom_math_sdf.h"
-#include "fathom_sparse_distance_grid.h"
+#include "fathom_sparse_grid.h"
 
 /* Simple Sphere SDF */
 FATHOM_API f32 sdf_function(fathom_vec3 position, void *user_data)
@@ -2201,7 +2201,7 @@ FATHOM_API f32 sdf_function(fathom_vec3 position, void *user_data)
 FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, shader_main *main_shader, u32 main_vao)
 {
   static u8 grid_initialized = 0;
-  static fathom_sparse_distance_grid grid = {0};
+  static fathom_sparse_grid grid = {0};
   static void *memory;
   static u32 brickMapTex;
   static u32 atlasTex;
@@ -2221,7 +2221,7 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     u32 atlas_dimensions = 16; /* TODO: hardcoded max memory = 4096 bricks */
 
     /* Use a grid size divisible by 8 */
-    if (!fathom_sparse_distance_grid_initialize(&grid, grid_cell_count, atlas_dimensions))
+    if (!fathom_sparse_grid_initialize(&grid, grid_cell_count, atlas_dimensions))
     {
       win32_print("Could not initialize grid!\n");
     }
@@ -2231,14 +2231,14 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
 
     memory = VirtualAlloc(0, grid.brick_map_bytes + grid.atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-    if (!memory || !fathom_sparse_distance_grid_assign_memory(&grid, memory))
+    if (!memory || !fathom_sparse_grid_assign_memory(&grid, memory))
     {
       win32_print("Could not assign memory!\n");
     }
 
     QueryPerformanceCounter(&state->grid_calc_time_start);
 
-    if (!fathom_sparse_distance_grid_calculate(&grid, sdf_function, state, grid_center, grid_cell_count, grid_cell_size))
+    if (!fathom_sparse_grid_calculate(&grid, sdf_function, state, grid_center, grid_cell_count, grid_cell_size))
     {
       win32_print("Could not calculate sparse grid!\n");
     }
@@ -3028,7 +3028,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           text_append_str(&t, "\n");
           text_append_i32(&t, (i32)state.grid_sdf_invocations);
           text_append_str(&t, "\n");
-          text_append_f64(&t, ((f64)(state.grid_calc_time_end - state.grid_calc_time_start) * 1000.0) / (f64) perf_freq, 4);
+          text_append_f64(&t, ((f64)(state.grid_calc_time_end - state.grid_calc_time_start) * 1000.0) / (f64)perf_freq, 4);
 
           offset_memory_y = 10;
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);

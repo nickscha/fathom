@@ -1,5 +1,5 @@
-#ifndef FATHOM_SPARSE_DISTANCE_GRID_H
-#define FATHOM_SPARSE_DISTANCE_GRID_H
+#ifndef FATHOM_SPARSE_GRID_H
+#define FATHOM_SPARSE_GRID_H
 
 #include "fathom_math_linear_algebra.h"
 
@@ -14,7 +14,7 @@
 
 typedef f32 (*fathom_distance_function)(fathom_vec3 position, void *user_data);
 
-typedef struct fathom_sparse_distance_grid
+typedef struct fathom_sparse_grid
 {
     fathom_vec3 start;       /* World space start */
     f32 cell_size;           /* The size of each cell */
@@ -28,9 +28,9 @@ typedef struct fathom_sparse_distance_grid
     u16 *brick_map;
     u8 *atlas_data;
 
-} fathom_sparse_distance_grid;
+} fathom_sparse_grid;
 
-FATHOM_API u8 fathom_sparse_distance_grid_initialize(fathom_sparse_distance_grid *grid, u32 grid_cell_count, u32 atlas_bricks_per_side)
+FATHOM_API u8 fathom_sparse_grid_initialize(fathom_sparse_grid *grid, u32 grid_cell_count, u32 atlas_bricks_per_side)
 {
     if (!grid || grid_cell_count == 0 || grid_cell_count % FATHOM_BRICK_SIZE != 0)
     {
@@ -45,7 +45,7 @@ FATHOM_API u8 fathom_sparse_distance_grid_initialize(fathom_sparse_distance_grid
     return 1;
 }
 
-FATHOM_API u8 fathom_sparse_distance_grid_assign_memory(fathom_sparse_distance_grid *grid, void *memory)
+FATHOM_API u8 fathom_sparse_grid_assign_memory(fathom_sparse_grid *grid, void *memory)
 {
     u8 *ptr = (u8 *)memory;
 
@@ -63,8 +63,8 @@ FATHOM_API u8 fathom_sparse_distance_grid_assign_memory(fathom_sparse_distance_g
     return 1;
 }
 
-FATHOM_API u8 fathom_sparse_distance_grid_calculate(
-    fathom_sparse_distance_grid *grid,
+FATHOM_API u8 fathom_sparse_grid_calculate(
+    fathom_sparse_grid *grid,
     fathom_distance_function distance_function,
     void *user_data,
     fathom_vec3 grid_center,
@@ -221,4 +221,4 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
     return 1;
 }
 
-#endif /* FATHOM_SPARSE_DISTANCE_GRID_H */
+#endif /* FATHOM_SPARSE_GRID_H */
