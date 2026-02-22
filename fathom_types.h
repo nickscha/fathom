@@ -5,6 +5,8 @@
  * # [SECTION] Compiler Specific Settings
  * #############################################################################
  */
+
+/* Inline */
 #if __STDC_VERSION__ >= 199901L
 #define FATHOM_INLINE inline
 #elif defined(__GNUC__) || defined(__clang__)
@@ -13,6 +15,15 @@
 #define FATHOM_INLINE __inline
 #else
 #define FATHOM_INLINE
+#endif
+
+/* Alignment */
+#if defined(_MSC_VER)
+#define FATHOM_ALIGN(x) __declspec(align(x))
+#elif defined(__GNUC__) || defined(__clang__)
+#define FATHOM_ALIGN(x) __attribute__((aligned(x)))
+#else
+#define FATHOM_ALIGN(x)
 #endif
 
 #define FATHOM_API static
