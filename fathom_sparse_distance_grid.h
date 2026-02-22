@@ -82,9 +82,13 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
     u32 bx, by, bz;
     u32 atlas_capacity_bricks;
     u32 atlas_used_bricks = 0;
+    u32 atlas_voxels;
+    u32 atlas_slice_size;
+    u32 brick_map_index = 0;
     f32 brick_radius;
     f32 inverse_truncation_distance;
     f32 quant_scale;
+    f32 apron_offset;
 
     if (!grid || !grid->brick_map || !grid->atlas_data)
     {
@@ -92,6 +96,8 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
     }
 
     atlas_capacity_bricks = grid->atlas_dim_bricks * grid->atlas_dim_bricks * grid->atlas_dim_bricks;
+    atlas_voxels = grid->atlas_dim_bricks * FATHOM_PHYSICAL_BRICK_SIZE;
+    atlas_slice_size = atlas_voxels * atlas_voxels;
 
     grid->cell_size = grid_cell_size;
     grid->start = fathom_vec3_subf(grid_center, (f32)grid_cell_count * grid_cell_size * 0.5f);
@@ -100,17 +106,16 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
     brick_radius = (FATHOM_PHYSICAL_BRICK_SIZE * 0.5f) * 1.7320508f * grid->cell_size;
     inverse_truncation_distance = 1.0f / grid->truncation_distance;
     quant_scale = 127.5f * inverse_truncation_distance;
+    apron_offset = (0.5f - (f32)FATHOM_BRICK_APRON) * grid->cell_size;
 
     /* 1. Iterate over the coarse Meta-Grid (Bricks) */
     for (bz = 0; bz < grid->grid_dim_bricks; ++bz)
     {
         for (by = 0; by < grid->grid_dim_bricks; ++by)
         {
-            for (bx = 0; bx < grid->grid_dim_bricks; ++bx)
+            for (bx = 0; bx < grid->grid_dim_bricks; ++bx, ++brick_map_index)
             {
                 u8 is_brick_useful = 0;
-
-                u32 brick_map_index = fathom_sparse_distance_grid_get_index(bx, by, bz, grid->grid_dim_bricks, grid->grid_dim_bricks);
 
                 fathom_vec3 brick_start_pos = fathom_vec3_init(
                     grid->start.x + (f32)(bx * FATHOM_BRICK_SIZE) * grid->cell_size,
@@ -138,13 +143,12 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
                 /* 2. Process the 10x10x10 voxels */
                 {
                     u32 lx, ly, lz;
-                    f32 base_x, base_y, base_z, pz;
 
-                    base_x = brick_start_pos.x + (0.5f - FATHOM_BRICK_APRON) * grid->cell_size;
-                    base_y = brick_start_pos.y + (0.5f - FATHOM_BRICK_APRON) * grid->cell_size;
-                    base_z = brick_start_pos.z + (0.5f - FATHOM_BRICK_APRON) * grid->cell_size;
+                    f32 base_x = brick_start_pos.x + apron_offset;
+                    f32 base_y = brick_start_pos.y + apron_offset;
+                    f32 base_z = brick_start_pos.z + apron_offset;
 
-                    pz = base_z;
+                    f32 pz = base_z;
 
                     for (lz = 0; lz < FATHOM_PHYSICAL_BRICK_SIZE; ++lz, pz += grid->cell_size)
                     {
@@ -176,10 +180,7 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
 
                                 brick_temp_buffer[lz][ly][lx] = distance_quantized;
 
-                                if (distance_scaled >= 0.0f && distance_scaled <= 255.0f)
-                                {
-                                    is_brick_useful = 1;
-                                }
+                                is_brick_useful |= (distance_scaled >= 0.0f && distance_scaled <= 255.0f);
                             }
                         }
                     }
@@ -189,8 +190,8 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
                 if (is_brick_useful)
                 {
                     u32 current_brick_idx, atlas_bx, atlas_by, atlas_bz;
-                    u32 origin_x, origin_y, origin_z, atlas_voxels;
-                    u32 atlas_slice_size, base_atlas_index, lz, ly;
+                    u32 origin_x, origin_y, origin_z;
+                    u32 base_atlas_index, lz, ly;
 
                     if (atlas_used_bricks >= atlas_capacity_bricks)
                     {
@@ -207,9 +208,6 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
                     origin_x = atlas_bx * FATHOM_PHYSICAL_BRICK_SIZE;
                     origin_y = atlas_by * FATHOM_PHYSICAL_BRICK_SIZE;
                     origin_z = atlas_bz * FATHOM_PHYSICAL_BRICK_SIZE;
-
-                    atlas_voxels = grid->atlas_dim_bricks * FATHOM_PHYSICAL_BRICK_SIZE;
-                    atlas_slice_size = atlas_voxels * atlas_voxels;
 
                     base_atlas_index = origin_x + (origin_y * atlas_voxels) + (origin_z * atlas_slice_size);
 
