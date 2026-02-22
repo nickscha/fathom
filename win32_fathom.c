@@ -2218,7 +2218,7 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     t.size = 128;
 
     /* Use a grid size divisible by 8 */
-    if (!fathom_sparse_distance_grid_initialize(&grid, grid_center, grid_cell_count, grid_cell_size))
+    if (!fathom_sparse_distance_grid_initialize(&grid, grid_cell_count))
     {
       win32_print("Could not initialize grid!\n");
     }
@@ -2235,7 +2235,7 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
       win32_print("Could not assign memory!\n");
     }
 
-    if (!fathom_sparse_distance_grid_calculate(&grid, sdf_function, state))
+    if (!fathom_sparse_distance_grid_calculate(&grid, sdf_function, state, grid_center, grid_cell_count, grid_cell_size))
     {
       win32_print("Could not calculate sparse grid!\n");
     }
