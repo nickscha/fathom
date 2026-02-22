@@ -77,6 +77,11 @@ float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick)
             vec3 tMax = max((brickMin - gridPos) * invRd, (brickMax - gridPos) * invRd);
             float skipDist = min(tMax.x, min(tMax.y, tMax.z));
             t += (skipDist + 0.01) * uCellSize;
+        } else if (stored == 65535u) {
+            // Solid Brick: Immediate hit!
+            outStored = stored;
+            outBrick = brickCoord;
+            return t; 
         } else {
             // Occupied
             float d = sampleAtlasOnly(gridPos, stored, brickCoord);

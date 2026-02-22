@@ -29,18 +29,17 @@ typedef f32 (*fathom_distance_function)(fathom_vec3 position, void *user_data);
 
 typedef struct fathom_sparse_distance_grid
 {
-    fathom_vec3 start;    /* World space start */
-    f32 cell_size;        /* The size of each cell */
-    u32 grid_dim_bricks;  /* Grid Dimension for bricks */
-    u32 atlas_dim_bricks; /* Grid Dimension for bricks: 16 = (atlas 16x16x16) + (brick 10×10×10=1,000 voxels ) = 4096 * 1000 bytes = 4mb*/
-
-    u16 *brick_map;
-    u8 *atlas_data;
+    fathom_vec3 start;       /* World space start */
+    f32 cell_size;           /* The size of each cell */
+    u32 grid_dim_bricks;     /* Grid Dimension for bricks */
+    u32 atlas_dim_bricks;    /* Grid Dimension for bricks: 16 = (atlas 16x16x16) + (brick 10×10×10=1,000 voxels ) = 4096 * 1000 bytes = 4mb*/
+    f32 truncation_distance; /* Safe voxel stepping (e.g. grid->cell_size * 4.0f) */
 
     u32 brick_map_bytes;
     u32 atlas_bytes;
 
-    f32 truncation_distance;
+    u16 *brick_map;
+    u8 *atlas_data;
 
 } fathom_sparse_distance_grid;
 
@@ -128,12 +127,19 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
                     brick_start_pos.z + (FATHOM_BRICK_SIZE * 0.5f) * grid->cell_size);
 
                 f32 brick_radius = (FATHOM_PHYSICAL_BRICK_SIZE * 0.5f) * 1.732f * grid->cell_size;
+                f32 dist_at_center = distance_function(brick_center, user_data);
 
-                f32 center_dist = distance_function(brick_center, user_data);
-
-                /* If the brick is completly empty fast skip */
-                if (fathom_absf(center_dist) > (brick_radius + grid->truncation_distance))
+                /* Empty (Far Outside) */
+                if (dist_at_center > (brick_radius + grid->truncation_distance))
                 {
+                    grid->brick_map[map_idx] = 0;
+                    continue;
+                }
+
+                /* Solid (Far Inside) */
+                if (dist_at_center < -(brick_radius + grid->truncation_distance))
+                {
+                    grid->brick_map[map_idx] = 0xFFFF; /* Special Solid Flag */
                     continue;
                 }
 
@@ -180,7 +186,6 @@ FATHOM_API u8 fathom_sparse_distance_grid_calculate(
                 /* 3. Write to Atlas or Explicitly Clear Map */
                 if (is_brick_useful)
                 {
-                    /* C89: Declare variables at top of block */
                     u32 current_brick_idx, atlas_bx, atlas_by, atlas_bz;
                     u32 origin_x, origin_y, origin_z, atlas_voxels;
 

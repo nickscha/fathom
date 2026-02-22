@@ -2278,10 +2278,7 @@ FATHOM_API void fathom_render_sparse_distance_grid(win32_fathom_state *state, sh
     fathom_vec3 world_up = fathom_vec3_init(0.0f, 1.0f, 0.0f);
     fathom_vec3 camera_look_at = fathom_vec3_zero;
 
-    camera_position = fathom_vec3_init(
-        fathom_sinf((f32)state->iTime) * 0.5f,
-        1.0f,
-        2.0f);
+    camera_position = fathom_vec3_init(fathom_sinf((f32)state->iTime) * 0.5f, 1.0f, 2.0f);
     camera_forward = fathom_vec3_normalize(fathom_vec3_sub(camera_look_at, camera_position)); /* Z-Axis */
     camera_right = fathom_vec3_normalize(fathom_vec3_cross(camera_forward, world_up));        /* X-Axis */
     camera_up = fathom_vec3_normalize(fathom_vec3_cross(camera_right, camera_forward));       /* Y-Axis */
