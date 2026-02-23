@@ -6,7 +6,7 @@
 #ifdef FATHOM_DISABLE_SIMD
 
 /* #############################################################################
- * # [SECTION] Linear Algebra Math
+ * # [SECTION] Linear Algebra Math (Scalar)
  * #############################################################################
  */
 typedef struct fathom_vec3
@@ -121,12 +121,12 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_normalize(fathom_vec3 a)
 }
 #else
 
-#include <emmintrin.h>
-
 /* #############################################################################
- * # [SECTION] Linear Algebra Math (SSE2 Optimized)
+ * # [SECTION] Linear Algebra Math (SSE2)
  * #############################################################################
  */
+#include <emmintrin.h>
+
 typedef struct FATHOM_ALIGN(16) fathom_vec3
 {
     f32 x;

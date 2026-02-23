@@ -3,8 +3,141 @@
 
 #include "fathom_types.h"
 
+#ifdef FATHOM_DISABLE_SIMD
+
 /* #############################################################################
- * # [SECTION] Basic Math
+ * # [SECTION] Basic Math (Scalar)
+ * #############################################################################
+ */
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#elif defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4699) /* MSVC-specific aliasing warning */
+#endif
+FATHOM_API FATHOM_INLINE f32 fathom_invsqrtf(f32 number)
+{
+    union
+    {
+        f32 f;
+        i32 i;
+    } conv;
+
+    f32 x2, y;
+    const f32 threehalfs = 1.5F;
+
+    x2 = number * 0.5F;
+    conv.f = number;
+    conv.i = 0x5f3759df - (conv.i >> 1); /* Magic number for approximation */
+    y = conv.f;
+    y = y * (threehalfs - (x2 * y * y)); /* One iteration of Newton's method */
+
+    return (y);
+}
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+FATHOM_API FATHOM_INLINE f32 fathom_sqrtf(f32 x)
+{
+    return x * fathom_invsqrtf(x);
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_absf(f32 x)
+{
+    union
+    {
+        f32 f;
+        u32 i;
+    } conv;
+
+    conv.f = x;
+    conv.i &= 0x7FFFFFFF; /* Clear the sign bit */
+
+    return conv.f;
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_minf(f32 a, f32 b)
+{
+    return (a < b) ? a : b;
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_maxf(f32 a, f32 b)
+{
+    return (a > b) ? a : b;
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_clampf(f32 x, f32 a, f32 b)
+{
+    f32 x1 = (x < a) ? a : x;
+    return (x1 > b) ? b : x1;
+}
+
+#else
+
+/* #############################################################################
+ * # [SECTION] Basic Math (SSE2)
+ * #############################################################################
+ */
+#include <emmintrin.h>
+
+FATHOM_API FATHOM_INLINE f32 fathom_invsqrtf(f32 number)
+{
+    /* Use the hardware reciprocal square root instruction */
+    __m128 v = _mm_set_ss(number);
+    __m128 rsqrt = _mm_rsqrt_ss(v);
+
+    /* Newton-Raphson iteration for higher precision */
+    __m128 half = _mm_set_ss(0.5f);
+    __m128 three_halfs = _mm_set_ss(1.5f);
+    __m128 muls = _mm_mul_ss(_mm_mul_ss(v, half), _mm_mul_ss(rsqrt, rsqrt));
+    rsqrt = _mm_mul_ss(rsqrt, _mm_sub_ss(three_halfs, muls));
+
+    return _mm_cvtss_f32(rsqrt);
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_sqrtf(f32 x)
+{
+    return _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)));
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_absf(f32 x)
+{
+    __m128 v = _mm_set_ss(x);
+    __m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x7FFFFFFF));
+    return _mm_cvtss_f32(_mm_and_ps(v, mask));
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_minf(f32 a, f32 b)
+{
+    __m128 va = _mm_set_ss(a);
+    __m128 vb = _mm_set_ss(b);
+    return _mm_cvtss_f32(_mm_min_ss(va, vb));
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_maxf(f32 a, f32 b)
+{
+    __m128 va = _mm_set_ss(a);
+    __m128 vb = _mm_set_ss(b);
+    return _mm_cvtss_f32(_mm_max_ss(va, vb));
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_clampf(f32 x, f32 a, f32 b)
+{
+    __m128 vx = _mm_set_ss(x);
+    __m128 va = _mm_set_ss(a);
+    __m128 vb = _mm_set_ss(b);
+    return _mm_cvtss_f32(_mm_min_ss(_mm_max_ss(vx, va), vb));
+}
+
+#endif /* FATHOM_DISABLE_SIMD */
+
+/* #############################################################################
+ * # [SECTION] Basic Math (General)
  * #############################################################################
  */
 #define FATHOM_PI2 6.28318530717958647692f
@@ -70,85 +203,6 @@ FATHOM_API FATHOM_INLINE f32 fathom_sinf(f32 x)
 FATHOM_API FATHOM_INLINE f32 fathom_cosf(f32 x)
 {
     return fathom_sinf(x + FATHOM_PI_HALF);
-}
-
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
-#pragma GCC diagnostic ignored "-Wuninitialized"
-#elif defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4699) /* MSVC-specific aliasing warning */
-#endif
-FATHOM_API FATHOM_INLINE f32 fathom_invsqrtf(f32 number)
-{
-    union
-    {
-        f32 f;
-        i32 i;
-    } conv;
-
-    f32 x2, y;
-    const f32 threehalfs = 1.5F;
-
-    x2 = number * 0.5F;
-    conv.f = number;
-    conv.i = 0x5f3759df - (conv.i >> 1); /* Magic number for approximation */
-    y = conv.f;
-    y = y * (threehalfs - (x2 * y * y)); /* One iteration of Newton's method */
-
-    return (y);
-}
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#elif defined(_MSC_VER)
-#pragma warning(pop)
-#endif
-
-FATHOM_API FATHOM_INLINE f32 fathom_sqrtf(f32 x)
-{
-    return x * fathom_invsqrtf(x);
-}
-
-FATHOM_API FATHOM_INLINE f32 fathom_absf(f32 x)
-{
-    union
-    {
-        f32 f;
-        u32 i;
-    } conv;
-
-    conv.f = x;
-    conv.i &= 0x7FFFFFFF; /* Clear the sign bit */
-
-    return conv.f;
-}
-
-FATHOM_API FATHOM_INLINE f32 fathom_minf(f32 a, f32 b)
-{
-    return (a < b) ? a : b;
-}
-
-FATHOM_API FATHOM_INLINE f32 fathom_maxf(f32 a, f32 b)
-{
-    return (a > b) ? a : b;
-}
-
-FATHOM_API FATHOM_INLINE f32 fathom_mixf(f32 a, f32 b, f32 t)
-{
-    return a + (b - a) * t;
-}
-
-FATHOM_API FATHOM_INLINE f32 fathom_floorf(f32 x)
-{
-    i32 i = (i32)x;
-    return (x < 0.0f && x != (f32)i) ? (f32)(i - 1) : (f32)i;
-}
-
-FATHOM_API FATHOM_INLINE f32 fathom_clampf(f32 x, f32 a, f32 b)
-{
-    f32 x1 = (x < a) ? a : x;
-    return (x1 > b) ? b : x1;
 }
 
 FATHOM_API FATHOM_INLINE f32 fathom_sminf(f32 a, f32 b, f32 k)
