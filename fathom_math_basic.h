@@ -80,7 +80,7 @@ FATHOM_API FATHOM_INLINE f32 fathom_cosf(f32 x)
 #pragma warning(push)
 #pragma warning(disable : 4699) /* MSVC-specific aliasing warning */
 #endif
-FATHOM_API f32 fathom_invsqrtf(f32 number)
+FATHOM_API FATHOM_INLINE f32 fathom_invsqrtf(f32 number)
 {
     union
     {
@@ -105,14 +105,23 @@ FATHOM_API f32 fathom_invsqrtf(f32 number)
 #pragma warning(pop)
 #endif
 
-FATHOM_API f32 fathom_sqrtf(f32 x)
+FATHOM_API FATHOM_INLINE f32 fathom_sqrtf(f32 x)
 {
     return x * fathom_invsqrtf(x);
 }
 
 FATHOM_API FATHOM_INLINE f32 fathom_absf(f32 x)
 {
-    return x < 0.0f ? -x : x;
+    union
+    {
+        f32 f;
+        u32 i;
+    } conv;
+
+    conv.f = x;
+    conv.i &= 0x7FFFFFFF; /* Clear the sign bit */
+
+    return conv.f;
 }
 
 FATHOM_API FATHOM_INLINE f32 fathom_minf(f32 a, f32 b)

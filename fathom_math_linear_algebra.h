@@ -30,51 +30,40 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_init(f32 x, f32 y, f32 z)
 
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_sub(fathom_vec3 a, fathom_vec3 b)
 {
-    fathom_vec3 result = a;
+    fathom_vec3 result;
 
-    result.x -= b.x;
-    result.y -= b.y;
-    result.z -= b.z;
+    result.x = a.x - b.x;
+    result.y = a.y - b.y;
+    result.z = a.z - b.z;
 
     return result;
 }
 
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_subf(fathom_vec3 a, f32 value)
 {
-    fathom_vec3 result = a;
+    fathom_vec3 result;
 
-    result.x -= value;
-    result.y -= value;
-    result.z -= value;
+    result.x = a.x - value;
+    result.y = a.y - value;
+    result.z = a.z - value;
 
     return result;
 }
 
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_addf(fathom_vec3 a, f32 value)
 {
-    fathom_vec3 result = a;
+    fathom_vec3 result;
 
-    result.x += value;
-    result.y += value;
-    result.z += value;
-
-    return result;
-}
-
-FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_divf(fathom_vec3 a, f32 value)
-{
-    fathom_vec3 result = a;
-
-    result.x /= value;
-    result.y /= value;
-    result.z /= value;
+    result.x = a.x + value;
+    result.y = a.y + value;
+    result.z = a.z + value;
 
     return result;
 }
 
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_abs(fathom_vec3 a)
 {
-    fathom_vec3 result = {0};
+    fathom_vec3 result;
 
     result.x = fathom_absf(a.x);
     result.y = fathom_absf(a.y);
@@ -85,7 +74,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_abs(fathom_vec3 a)
 
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_maxf(fathom_vec3 a, f32 value)
 {
-    fathom_vec3 result = {0};
+    fathom_vec3 result;
 
     result.x = fathom_maxf(a.x, value);
     result.y = fathom_maxf(a.y, value);
