@@ -3,6 +3,10 @@
 
 #include "fathom_types.h"
 
+/* #############################################################################
+ * # [SECTION] Basic Math (SIMD Detection)
+ * #############################################################################
+ */
 #ifdef FATHOM_DISABLE_SIMD
 #include "fathom_math_basic_scalar.h"
 #elif defined(FATHOM_ARCH_X64)

@@ -3,6 +3,10 @@
 
 #include "fathom_math_basic.h"
 
+/* #############################################################################
+ * # [SECTION] Linear Algebra Math (SIMD Detection)
+ * #############################################################################
+ */
 #ifdef FATHOM_DISABLE_SIMD
 #include "fathom_math_linear_algebra_scalar.h"
 #elif defined(FATHOM_ARCH_X64)
