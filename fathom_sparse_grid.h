@@ -4,7 +4,7 @@
 #include "fathom_math_linear_algebra.h"
 
 /* #############################################################################
- * # [SECTION] Sparse Distance Grid Setup
+ * # [SECTION] Sparse Grid Setup
  * #############################################################################
  */
 #define FATHOM_BRICK_SIZE 8
