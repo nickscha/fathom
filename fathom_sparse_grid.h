@@ -210,10 +210,6 @@ FATHOM_API u8 fathom_sparse_grid_calculate(
                         }
                     }
                 }
-                else
-                {
-                    grid->brick_map[brick_map_index] = (brick_center_distance > 0.0f) ? 0 : 0xFFFF;
-                }
             }
         }
     }
