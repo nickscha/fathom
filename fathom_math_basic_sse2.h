@@ -58,4 +58,16 @@ FATHOM_API FATHOM_INLINE f32 fathom_clampf(f32 x, f32 a, f32 b)
     return _mm_cvtss_f32(_mm_min_ss(_mm_max_ss(vx, va), vb));
 }
 
+FATHOM_API FATHOM_INLINE f32 fathom_ceilf(f32 x)
+{
+    __m128 v = _mm_set_ss(x);
+    __m128i i = _mm_cvttps_epi32(v);
+    __m128 truncated = _mm_cvtepi32_ps(i);
+    __m128 mask = _mm_cmplt_ss(truncated, v);
+    __m128 one = _mm_set_ss(1.0f);
+    __m128 adjustment = _mm_and_ps(mask, one);
+
+    return _mm_cvtss_f32(_mm_add_ss(truncated, adjustment));
+}
+
 #endif /* FATHOM_MATH_BASIC_SSE2_H */
