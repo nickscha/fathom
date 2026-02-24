@@ -11,6 +11,7 @@ uniform sampler3D  uAtlas;
 uniform ivec3 uBrickGridDim;
 uniform ivec3 uAtlasBrickDim;
 
+uniform vec3  uInvAtlasSize;
 uniform vec3  uGridStart;
 uniform float uCellSize;
 uniform float uTruncation;
@@ -24,8 +25,7 @@ uniform float camera_fov;
 
 const int BRICK_SIZE = 8;
 const int PHYSICAL_BRICK_SIZE = 10;
-
-#define INV_ATLAS_SIZE (1.0 / (vec3(uAtlasBrickDim) * float(PHYSICAL_BRICK_SIZE)))
+const float EPS = 1e-3;
 
 // 2D -> 1D hash
 float hash12(vec2 p)
@@ -50,7 +50,7 @@ float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
     vec3 texelCoord = physicalAtlasOffset + 1.0 + localPos;
     
-    float d = textureLod(uAtlas, texelCoord * INV_ATLAS_SIZE, 0.0).r;
+    float d = textureLod(uAtlas, texelCoord * uInvAtlasSize, 0.0).r;
 
     return (d * 2.0 - 1.0) * uTruncation;
 }
