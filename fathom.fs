@@ -27,6 +27,14 @@ const int PHYSICAL_BRICK_SIZE = 10;
 
 #define INV_ATLAS_SIZE (1.0 / (vec3(uAtlasBrickDim) * float(PHYSICAL_BRICK_SIZE)))
 
+// 2D -> 1D hash
+float hash12(vec2 p)
+{
+    vec3 p3  = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
 float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     uint atlasLinear = stored - 1u;
     
@@ -141,6 +149,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float sun_dif = clamp(dot(nor, sun_dir), 0.0, 1.0);
     float sky_dif = clamp(0.5 + 0.5 * dot(nor, vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
     float bou_dif = clamp(0.5 + 0.5 * dot(nor, vec3(0.0, -1.0, 0.0)), 0.0, 1.0);
+    
     col  = mate * vec3(7.0, 4.5, 3.0) * sun_dif;
     col += mate * vec3(0.5, 0.8, 0.9) * sky_dif;
     col += mate * vec3(0.7, 0.3, 0.2) * bou_dif;
@@ -150,7 +159,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   }
 
   col = pow(col, vec3(0.4545));  
-
+  col += (hash12(fragCoord) - 0.5) / 255.0; // dithering
   fragColor = vec4(col, 1.0);
 }
 
