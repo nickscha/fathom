@@ -124,6 +124,34 @@ vec3 calc_normal(vec3 pos, uint stored, ivec3 brickCoord)
     return normalize(vec3(dx, dy, dz));
 }
 
+vec3 visualize_grid(vec3 worldPos)
+{
+    vec3 gridPos = (worldPos - uGridStart) / uCellSize;
+    vec3 voxelDist = abs(fract(gridPos) - 0.0);
+
+    voxelDist = min(voxelDist, 1.0 - voxelDist);
+
+    float voxelEdge = min(min(voxelDist.x, voxelDist.y), voxelDist.z);
+    float voxelLine = 1.0 - smoothstep(0.0, 0.03, voxelEdge);
+    vec3 brickPos = gridPos / float(BRICK_SIZE);
+    vec3 brickDist = abs(fract(brickPos) - 0.0);
+    
+    brickDist = min(brickDist, 1.0 - brickDist);
+
+    float brickEdge = min(min(brickDist.x, brickDist.y), brickDist.z);
+    float brickLine = 1.0 - smoothstep(0.0, 0.02, brickEdge);
+
+    // Colors
+    vec3 voxelColor = vec3(1.0);
+    vec3 brickColor = vec3(1.0, 0.0, 0.0);
+
+    // Brick lines override voxel lines
+    vec3 col = voxelColor * voxelLine * 0.5;
+    col = mix(col, brickColor, brickLine);
+
+    return col;
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   vec2 p = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
@@ -156,6 +184,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
     //col = nor;
     //col = nor / 0.5 * pos;
+
+    // Show debug grid
+    //vec3 gridVis = visualize_grid(pos);
+    //col += gridVis;
   }
 
   col = pow(col, vec3(0.4545));  
