@@ -40,6 +40,7 @@ float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     
     uint w = uint(uAtlasBrickDim.x);
     uint h = uint(uAtlasBrickDim.y);
+    
     vec3 physicalAtlasOffset = vec3(
         float(atlasLinear % w),
         float((atlasLinear / w) % h),
@@ -49,7 +50,7 @@ float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
     vec3 texelCoord = physicalAtlasOffset + 1.0 + localPos;
     
-    float d = texture(uAtlas, texelCoord * INV_ATLAS_SIZE).r;
+    float d = textureLod(uAtlas, texelCoord * INV_ATLAS_SIZE, 0.0).r;
 
     return (d * 2.0 - 1.0) * uTruncation;
 }
