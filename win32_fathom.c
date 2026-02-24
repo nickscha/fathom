@@ -1118,6 +1118,8 @@ typedef struct win32_fathom_state
   u32 mem_brick_map_bytes;
   u32 mem_atlas_bytes;
   u32 grid_sdf_invocations;
+  u32 grid_active_brick_count;
+  u32 grid_atlas_dimensions;
 
   i64 grid_calc_time_start;
   i64 grid_calc_time_end;
@@ -2242,16 +2244,18 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
     fathom_sparse_grid_pass_01_fill_brick_map(&grid, sdf_function, state);
     grid.atlas_data = VirtualAlloc(0, grid.atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
+    invAtlas = 1.0f / ((f32)grid.atlas_dimensions * (f32)FATHOM_PHYSICAL_BRICK_SIZE);
+
     state->mem_brick_map_bytes = grid.brick_map_bytes;
     state->mem_atlas_bytes = grid.atlas_bytes;
+    state->grid_active_brick_count = grid.brick_map_active_bricks_count;
+    state->grid_atlas_dimensions = grid.atlas_dimensions;
 
     QueryPerformanceCounter(&state->grid_calc_time_start);
 
     fathom_sparse_grid_pass_02_fill_atlas(&grid, sdf_function, state);
 
     QueryPerformanceCounter(&state->grid_calc_time_end);
-
-    invAtlas = 1.0f / ((f32)grid.atlas_dimensions * (f32)FATHOM_PHYSICAL_BRICK_SIZE);
 
     /* Brick Map */
     glGenTextures(1, &brickMapTex);
@@ -3035,7 +3039,9 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM BRICK MAP: \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM ATLAS    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "SDF CALLS    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
-          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "CALC TIME    : ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "CALC TIME    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "BRICK COUNT  : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "ATLAS DIM    : ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
 
           t.length = 0;
           text_append_f64(&t, (f64)state.mem_brick_map_bytes / 1024.0 / 1024.0, 4);
@@ -3045,6 +3051,10 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           text_append_i32(&t, (i32)state.grid_sdf_invocations);
           text_append_str(&t, "\n");
           text_append_f64(&t, ((f64)(state.grid_calc_time_end - state.grid_calc_time_start) * 1000.0) / (f64)perf_freq, 4);
+          text_append_str(&t, "\n");
+          text_append_i32(&t, (i32)state.grid_active_brick_count);
+          text_append_str(&t, "\n");
+          text_append_i32(&t, (i32)state.grid_atlas_dimensions);
 
           offset_memory_y = 10;
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
