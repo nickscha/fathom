@@ -38,14 +38,16 @@ float hash12(vec2 p)
 float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     uint atlasLinear = stored - 1u;
     
-    uint w = uint(uAtlasBrickDim.x);
-    uint h = uint(uAtlasBrickDim.y);
-    
+    uint bricksPerRow = uint(uAtlasBrickDim.x);
+
+    uint bx = atlasLinear % bricksPerRow;
+    uint by = atlasLinear / bricksPerRow;
+
     vec3 physicalAtlasOffset = vec3(
-        float(atlasLinear % w),
-        float((atlasLinear / w) % h),
-        float(atlasLinear / (w * h))
-    ) * float(PHYSICAL_BRICK_SIZE);
+        float(bx * uint(PHYSICAL_BRICK_SIZE)),
+        float(by * uint(PHYSICAL_BRICK_SIZE)),
+        0.0
+    );
 
     vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
     vec3 texelCoord = physicalAtlasOffset + 1.0 + localPos;
