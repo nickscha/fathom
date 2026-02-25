@@ -73,11 +73,12 @@ float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick)
 
     float t = max(0.0, entryT);
     vec3 invRd = 1.0 / rd;
+    vec3 invCell = vec3(1.0 / uCellSize);
 
     // Fast Brick Skip
     for(int i = 0; i < 80; i++) {
         vec3 p = ro + rd * t;
-        vec3 gridPos = (p - uGridStart) / uCellSize;
+        vec3 gridPos = (p - uGridStart) * invCell;
         ivec3 brickCoord = ivec3(floor(gridPos / float(BRICK_SIZE)));
         uint stored = texelFetch(uBrickMap, brickCoord, 0).r;
 
