@@ -136,6 +136,8 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
     u32 atlas_used_count = 0;
     f32 quant_scale = 127.5f / grid->truncation_distance;
     f32 apron_offset = -((f32)FATHOM_BRICK_APRON * grid->cell_size);
+    u32 atlas_width = bricks_per_row * FATHOM_PHYSICAL_BRICK_SIZE;
+    u32 atlas_height = ((grid->brick_map_active_bricks_count + bricks_per_row - 1) / bricks_per_row) * FATHOM_PHYSICAL_BRICK_SIZE;
 
     u32 bx, by, bz;
     u32 lx, ly, lz;
@@ -153,8 +155,6 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                 u32 atlas_bx, atlas_by;
                 u32 atlas_vox_stride;
                 u32 atlas_slice_stride;
-                u32 atlas_width = bricks_per_row * FATHOM_PHYSICAL_BRICK_SIZE;
-                u32 atlas_height = ((grid->brick_map_active_bricks_count + bricks_per_row - 1) / bricks_per_row) * FATHOM_PHYSICAL_BRICK_SIZE;
 
                 if (grid->brick_map_data[map_idx] != FATHOM_BRICK_MAP_INDEX_USEFUL)
                 {
