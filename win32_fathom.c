@@ -8,6 +8,7 @@ LICENSE
 */
 
 #include "fathom_types.h"
+#include "fathom_string_builder.h"
 
 #if __STDC_VERSION__ >= 199901L
 typedef long long i64;
@@ -1448,120 +1449,6 @@ FATHOM_API void unpack_1bit_to_8bit(
   }
 }
 
-typedef struct text
-{
-  u32 size;
-  u32 length;
-  s8 *buffer;
-} text;
-
-FATHOM_API void text_append_str(text *src, s8 *s)
-{
-  u32 len = src->length;
-  u32 cap = src->size;
-
-  if (len >= cap)
-  {
-    return;
-  }
-
-  while (*s && (len + 1 < cap))
-  {
-    src->buffer[len++] = *s++;
-  }
-
-  src->buffer[len] = 0;
-  src->length = len;
-}
-
-FATHOM_API void text_append_i32(text *src, i32 v)
-{
-  s8 tmp[12];
-  i32 i = 0;
-  u32 u;
-  u32 len = src->length;
-  u32 cap = src->size;
-
-  if (len + 1 >= cap)
-  {
-    return;
-  }
-
-  if (v < 0)
-  {
-    src->buffer[len++] = '-';
-    u = (u32)(-v);
-  }
-  else
-  {
-    u = (u32)v;
-  }
-
-  if (u == 0)
-  {
-    src->buffer[len++] = '0';
-    src->buffer[len] = 0;
-    src->length = len;
-    return;
-  }
-
-  while (u && i < 12)
-  {
-    tmp[i++] = (s8)('0' + (u % 10));
-    u /= 10;
-  }
-
-  while (i-- && (len + 1 < cap))
-  {
-    src->buffer[len++] = tmp[i];
-  }
-
-  src->buffer[len] = 0;
-  src->length = len;
-}
-
-FATHOM_API void text_append_f64(text *src, f64 v, i32 decimals)
-{
-  i32 i;
-  f64 frac;
-  u32 len = src->length;
-  u32 cap = src->size;
-
-  if (len + 1 >= cap)
-  {
-    return;
-  }
-
-  if (v < 0.0)
-  {
-    src->buffer[len++] = '-';
-    v = -v;
-  }
-
-  src->length = len;
-  text_append_i32(src, (i32)v);
-  len = src->length;
-
-  if (len + 1 >= cap)
-  {
-    return;
-  }
-
-  src->buffer[len++] = '.';
-
-  frac = v - (f64)((i32)v);
-
-  for (i = 0; i < decimals && (len + 1 < cap); ++i)
-  {
-    frac *= 10.0;
-    src->buffer[len++] = (s8)('0' + (i32)frac);
-    frac -= (i32)frac;
-  }
-
-  src->buffer[len] = 0;
-  src->length = len;
-}
-
 typedef enum glyph_state_flag
 {
   GLYPH_STATE_NONE = 0,
@@ -2825,7 +2712,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
         u16 offset_x_start = 10;
         u16 offset_y_start = 10;
 
-        text t = {0};
+        fathom_sb t = {0};
         t.size = sizeof(tmp);
         t.buffer = tmp;
 
@@ -2929,7 +2816,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
     txt.length = 0;                                                                                                                         \
   } while (0)
 
-        text_append_f64(&t, state.iFrameRate, 2);
+        fathom_sb_f64(&t, state.iFrameRate, 2);
         CALC_GLYPH(t, default_color);
 
         /* Control Target FPS with arrow keys (0 = unlimited) */
@@ -2951,7 +2838,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "<", &offset_x, &offset_y, pack_rgb565(255, 0, 0), GLYPH_STATE_BLINK, font_scale);
           offset_y = (u16)(offset_y - advance_y);
 
-          text_append_f64(&t, state.target_frames_per_second, 2);
+          fathom_sb_f64(&t, state.target_frames_per_second, 2);
           txt_length_temp = t.length;
           CALC_GLYPH(t, default_color);
 
@@ -2959,82 +2846,82 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, ">", &offset_x, &offset_y, pack_rgb565(0, 255, 0), GLYPH_STATE_BLINK | GLYPH_STATE_HFLIP, font_scale);
         }
 
-        text_append_f64(&t, state.iFrameRateRaw, 2);
+        fathom_sb_f64(&t, state.iFrameRateRaw, 2);
         CALC_GLYPH(t, default_color);
-        text_append_i32(&t, state.iFrame);
+        fathom_sb_i32(&t, state.iFrame);
         CALC_GLYPH(t, default_color);
-        text_append_f64(&t, state.iTimeDelta, 6);
+        fathom_sb_f64(&t, state.iTimeDelta, 6);
         CALC_GLYPH(t, default_color);
-        text_append_f64(&t, state.iTime, 6);
+        fathom_sb_f64(&t, state.iTime, 6);
         CALC_GLYPH(t, default_color);
-        text_append_i32(&t, state.mouse_x);
-        text_append_str(&t, "/");
-        text_append_i32(&t, state.mouse_y);
+        fathom_sb_i32(&t, state.mouse_x);
+        fathom_sb_s8(&t, "/");
+        fathom_sb_i32(&t, state.mouse_y);
         CALC_GLYPH(t, default_color);
-        text_append_i32(&t, state.mouse_dx);
-        text_append_str(&t, "/");
-        text_append_i32(&t, state.mouse_dy);
+        fathom_sb_i32(&t, state.mouse_dx);
+        fathom_sb_s8(&t, "/");
+        fathom_sb_i32(&t, state.mouse_dy);
         CALC_GLYPH(t, default_color);
-        text_append_i32(&t, (i32)state.window_width);
-        text_append_str(&t, "/");
-        text_append_i32(&t, (i32)state.window_height);
+        fathom_sb_i32(&t, (i32)state.window_width);
+        fathom_sb_s8(&t, "/");
+        fathom_sb_i32(&t, (i32)state.window_height);
         CALC_GLYPH(t, default_color);
-        text_append_i32(&t, thread_count);
+        fathom_sb_i32(&t, thread_count);
         CALC_GLYPH(t, default_color);
 
         GetProcessHandleCount(GetCurrentProcess(), &handle_count);
-        text_append_i32(&t, (i32)handle_count);
+        fathom_sb_i32(&t, (i32)handle_count);
         CALC_GLYPH(t, default_color);
 
         win32_process_memory(&mem);
-        text_append_i32(&t, (i32)(mem.working_set / 1024));
+        fathom_sb_i32(&t, (i32)(mem.working_set / 1024));
         CALC_GLYPH(t, default_color);
-        text_append_i32(&t, (i32)(mem.peak_working_set / 1024));
+        fathom_sb_i32(&t, (i32)(mem.peak_working_set / 1024));
         CALC_GLYPH(t, default_color);
-        text_append_i32(&t, (i32)(mem.private_bytes / 1024));
+        fathom_sb_i32(&t, (i32)(mem.private_bytes / 1024));
         CALC_GLYPH(t, default_color);
 
         offset_y = (u16)(offset_y + advance_y * 3);
 
         if (state.controller.connected)
         {
-          text_append_str(&t, "CONNECTED");
+          fathom_sb_s8(&t, "CONNECTED");
           CALC_GLYPH(t, pack_rgb565(0, 255, 0));
-          text_append_f64(&t, state.controller.stick_left_x, 6);
-          text_append_str(&t, "/");
-          text_append_f64(&t, state.controller.stick_left_y, 6);
+          fathom_sb_f64(&t, state.controller.stick_left_x, 6);
+          fathom_sb_s8(&t, "/");
+          fathom_sb_f64(&t, state.controller.stick_left_y, 6);
           CALC_GLYPH(t, default_color);
-          text_append_f64(&t, state.controller.stick_right_x, 6);
-          text_append_str(&t, "/");
-          text_append_f64(&t, state.controller.stick_right_y, 6);
+          fathom_sb_f64(&t, state.controller.stick_right_x, 6);
+          fathom_sb_s8(&t, "/");
+          fathom_sb_f64(&t, state.controller.stick_right_y, 6);
           CALC_GLYPH(t, default_color);
-          text_append_f64(&t, state.controller.trigger_left_value, 6);
-          text_append_str(&t, "/");
-          text_append_f64(&t, state.controller.trigger_right_value, 6);
+          fathom_sb_f64(&t, state.controller.trigger_left_value, 6);
+          fathom_sb_s8(&t, "/");
+          fathom_sb_f64(&t, state.controller.trigger_right_value, 6);
           CALC_GLYPH(t, default_color);
 
-          text_append_str(&t, "");
+          fathom_sb_s8(&t, "");
 
           /* clang-format off */
-          if (state.controller.button_a)       text_append_str(&t, "A ");
-          if (state.controller.button_b)       text_append_str(&t, "B ");
-          if (state.controller.button_x)       text_append_str(&t, "X ");
-          if (state.controller.button_y)       text_append_str(&t, "Y ");
-          if (state.controller.dpad_left)      text_append_str(&t, "DLEFT ");
-          if (state.controller.dpad_right)     text_append_str(&t, "DRIGHT ");
-          if (state.controller.dpad_up)        text_append_str(&t, "DUP ");
-          if (state.controller.dpad_down)      text_append_str(&t, "DDOWN ");
-          if (state.controller.stick_left)     text_append_str(&t, "LSTICK ");
-          if (state.controller.stick_right)    text_append_str(&t, "RSTICK ");
-          if (state.controller.shoulder_left)  text_append_str(&t, "LSHOULDER ");
-          if (state.controller.shoulder_right) text_append_str(&t, "RSHOULDER ");
+          if (state.controller.button_a)       fathom_sb_s8(&t, "A ");
+          if (state.controller.button_b)       fathom_sb_s8(&t, "B ");
+          if (state.controller.button_x)       fathom_sb_s8(&t, "X ");
+          if (state.controller.button_y)       fathom_sb_s8(&t, "Y ");
+          if (state.controller.dpad_left)      fathom_sb_s8(&t, "DLEFT ");
+          if (state.controller.dpad_right)     fathom_sb_s8(&t, "DRIGHT ");
+          if (state.controller.dpad_up)        fathom_sb_s8(&t, "DUP ");
+          if (state.controller.dpad_down)      fathom_sb_s8(&t, "DDOWN ");
+          if (state.controller.stick_left)     fathom_sb_s8(&t, "LSTICK ");
+          if (state.controller.stick_right)    fathom_sb_s8(&t, "RSTICK ");
+          if (state.controller.shoulder_left)  fathom_sb_s8(&t, "LSHOULDER ");
+          if (state.controller.shoulder_right) fathom_sb_s8(&t, "RSHOULDER ");
           /* clang-format on */
 
           CALC_GLYPH(t, default_color);
         }
         else
         {
-          text_append_str(&t, "NOT FOUND");
+          fathom_sb_s8(&t, "NOT FOUND");
           CALC_GLYPH(t, pack_rgb565(255, 165, 0));
 
           offset_y = (u16)(offset_y + advance_y * 4);
@@ -3042,12 +2929,12 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
 
         if (main_shader.header.had_failure)
         {
-          text_append_str(&t, shader_info_log);
+          fathom_sb_s8(&t, shader_info_log);
           CALC_GLYPH(t, pack_rgb565(255, 0, 0));
         }
         else
         {
-          text_append_str(&t, "NONE");
+          fathom_sb_s8(&t, "NONE");
           CALC_GLYPH(t, pack_rgb565(0, 255, 0));
         }
 
@@ -3067,23 +2954,23 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MAX 3D TEXRES: ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
 
           t.length = 0;
-          text_append_f64(&t, (f64)state.mem_brick_map_bytes / 1024.0 / 1024.0, 4);
-          text_append_str(&t, "\n");
-          text_append_f64(&t, (f64)state.mem_atlas_bytes / 1024.0 / 1024.0, 4);
-          text_append_str(&t, "\n");
-          text_append_i32(&t, (i32)state.grid_sdf_invocations);
-          text_append_str(&t, "\n");
-          text_append_f64(&t, ((f64)(state.grid_calc_time_end - state.grid_calc_time_start) * 1000.0) / (f64)perf_freq, 4);
-          text_append_str(&t, "\n");
-          text_append_i32(&t, (i32)state.grid_active_brick_count);
-          text_append_str(&t, "\n");
-          text_append_i32(&t, (i32)state.grid_atlas_width);
-          text_append_str(&t, "/");
-          text_append_i32(&t, (i32)state.grid_atlas_height);
-          text_append_str(&t, "/");
-          text_append_i32(&t, (i32)state.grid_atlas_depth);
-          text_append_str(&t, "\n");
-          text_append_i32(&t, (i32)state.gl_max_3d_texture_size);
+          fathom_sb_f64(&t, (f64)state.mem_brick_map_bytes / 1024.0 / 1024.0, 4);
+          fathom_sb_s8(&t, "\n");
+          fathom_sb_f64(&t, (f64)state.mem_atlas_bytes / 1024.0 / 1024.0, 4);
+          fathom_sb_s8(&t, "\n");
+          fathom_sb_i32(&t, (i32)state.grid_sdf_invocations);
+          fathom_sb_s8(&t, "\n");
+          fathom_sb_f64(&t, ((f64)(state.grid_calc_time_end - state.grid_calc_time_start) * 1000.0) / (f64)perf_freq, 4);
+          fathom_sb_s8(&t, "\n");
+          fathom_sb_i32(&t, (i32)state.grid_active_brick_count);
+          fathom_sb_s8(&t, "\n");
+          fathom_sb_i32(&t, (i32)state.grid_atlas_width);
+          fathom_sb_s8(&t, "/");
+          fathom_sb_i32(&t, (i32)state.grid_atlas_height);
+          fathom_sb_s8(&t, "/");
+          fathom_sb_i32(&t, (i32)state.grid_atlas_depth);
+          fathom_sb_s8(&t, "\n");
+          fathom_sb_i32(&t, (i32)state.gl_max_3d_texture_size);
 
           offset_memory_y = 10;
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
@@ -3127,7 +3014,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           if (!state.screen_recording_initialized)
           {
             s8 buffer[128];
-            text t = {0};
+            fathom_sb t = {0};
 
             t.size = sizeof(buffer);
             t.buffer = buffer;
@@ -3136,13 +3023,13 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
              * Format:  fathom_capture_<window_width>x<window_height>_<target_frames_per_second>.raw
              * Example: fathom_capture_800x600_60.raw
              */
-            text_append_str(&t, "fathom_capture_");
-            text_append_i32(&t, (i32)(state.window_width));
-            text_append_str(&t, "x");
-            text_append_i32(&t, (i32)(state.window_height));
-            text_append_str(&t, "_");
-            text_append_i32(&t, (i32)(state.target_frames_per_second));
-            text_append_str(&t, ".raw");
+            fathom_sb_s8(&t, "fathom_capture_");
+            fathom_sb_i32(&t, (i32)(state.window_width));
+            fathom_sb_s8(&t, "x");
+            fathom_sb_i32(&t, (i32)(state.window_height));
+            fathom_sb_s8(&t, "_");
+            fathom_sb_i32(&t, (i32)(state.target_frames_per_second));
+            fathom_sb_s8(&t, ".raw");
 
             framebuffer = VirtualAlloc(0, state.window_width * state.window_height * 3, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
             video_file_handle = CreateFileA(t.buffer, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
