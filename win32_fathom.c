@@ -2117,9 +2117,6 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
   static fathom_sparse_grid grid = {0};
   static u32 brickMapTex;
   static u32 atlasTex;
-  static f32 invAtlasX;
-  static f32 invAtlasY;
-  static f32 invAtlasZ;
 
   /* Camera */
   static fathom_vec3 camera_position;
@@ -2138,10 +2135,6 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
     grid.brick_map_data = VirtualAlloc(0, grid.brick_map_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     fathom_sparse_grid_pass_01_fill_brick_map(&grid, sdf_function, state);
     grid.atlas_data = VirtualAlloc(0, grid.atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-    invAtlasX = 1.0f / (f32)grid.atlas_width;
-    invAtlasY = 1.0f / (f32)grid.atlas_height;
-    invAtlasZ = 1.0f / (f32)grid.atlas_depth;
 
     state->mem_brick_map_bytes = grid.brick_map_bytes;
     state->mem_atlas_bytes = grid.atlas_bytes;
@@ -2241,7 +2234,7 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
   /* Grid uniforms */
   glUniform3i(main_shader->loc_brick_grid_dim, (i32)grid.brick_map_dimensions, (i32)grid.brick_map_dimensions, (i32)grid.brick_map_dimensions);
   glUniform3i(main_shader->loc_atlas_brick_dim, (i32)grid.atlas_bricks_per_row, (i32)0, (i32)0);
-  glUniform3f(main_shader->loc_inverse_atlas_size, invAtlasX, invAtlasY, invAtlasZ);
+  glUniform3f(main_shader->loc_inverse_atlas_size, grid.atlas_inverse_dimensions.x, grid.atlas_inverse_dimensions.y, grid.atlas_inverse_dimensions.z);
   glUniform3f(main_shader->loc_grid_start, grid.start.x, grid.start.y, grid.start.z);
   glUniform1f(main_shader->loc_cell_size, grid.cell_size);
   glUniform1f(main_shader->loc_truncation, grid.truncation_distance);
@@ -2674,10 +2667,6 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
       /******************************/
       /* Main Application Logic     */
       /******************************/
-
-      /*
-      fathom_render_sparse_distance_grid(&state, &main_shader, main_vao);
-      */
       fathom_render_grid(&state, &main_shader, main_vao);
 
       /******************************/

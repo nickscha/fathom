@@ -31,6 +31,7 @@ typedef struct fathom_sparse_grid
     u32 atlas_width;
     u32 atlas_height;
     u32 atlas_depth;
+    fathom_vec3 atlas_inverse_dimensions;
     u32 atlas_bytes;
 #ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
     u8 *atlas_data;
@@ -129,6 +130,10 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
         grid->atlas_height = bricks_per_col * FATHOM_PHYSICAL_BRICK_SIZE;
         grid->atlas_depth = FATHOM_PHYSICAL_BRICK_SIZE;
         grid->atlas_bytes = grid->atlas_width * grid->atlas_height * grid->atlas_depth * sizeof(u8);
+        grid->atlas_inverse_dimensions = fathom_vec3_init(
+            1.0f / (f32)grid->atlas_width,
+            1.0f / (f32)grid->atlas_height,
+            1.0f / (f32)grid->atlas_depth);
     }
 
     return 1;
