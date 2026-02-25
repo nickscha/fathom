@@ -1563,7 +1563,6 @@ typedef struct shader_main
   i32 loc_brick_map_texture;
   i32 loc_atlas_texture;
 
-  i32 loc_brick_grid_dim;
   i32 loc_atlas_brick_dim;
 
   i32 loc_inverse_atlas_size;
@@ -1981,7 +1980,6 @@ FATHOM_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_f
     shader->loc_brick_map_texture = glGetUniformLocation(shader->header.program, "uBrickMap");
     shader->loc_atlas_texture = glGetUniformLocation(shader->header.program, "uAtlas");
 
-    shader->loc_brick_grid_dim = glGetUniformLocation(shader->header.program, "uBrickGridDim");
     shader->loc_atlas_brick_dim = glGetUniformLocation(shader->header.program, "uAtlasBrickDim");
     shader->loc_inverse_atlas_size = glGetUniformLocation(shader->header.program, "uInvAtlasSize");
     shader->loc_grid_start = glGetUniformLocation(shader->header.program, "uGridStart");
@@ -2217,13 +2215,6 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
   glUniform3f(main_shader->loc_iResolution, (f32)state->window_width, (f32)state->window_height, 1.0f);
   glUniform1f(main_shader->loc_iTime, (f32)state->iTime);
 
-  /*
-  glUniform1f(main_shader->loc_iTimeDelta, (f32)state->iTimeDelta);
-  glUniform1i(main_shader->loc_iFrame, state->iFrame);
-  glUniform1f(main_shader->loc_iFrameRate, (f32)state->iFrameRate);
-  glUniform4f(main_shader->loc_iMouse, (f32)state->mouse_x, (f32)state->mouse_y, (f32)state->mouse_dx, (f32)state->mouse_dy);
-  */
-
   /* Camera uniforms */
   glUniform3f(main_shader->loc_camera_position, camera_position.x, camera_position.y, camera_position.z);
   glUniform3f(main_shader->loc_camera_forward, camera_forward.x, camera_forward.y, camera_forward.z);
@@ -2232,7 +2223,6 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
   glUniform1f(main_shader->loc_camera_fov, camera_fov);
 
   /* Grid uniforms */
-  glUniform3i(main_shader->loc_brick_grid_dim, (i32)grid.brick_map_dimensions, (i32)grid.brick_map_dimensions, (i32)grid.brick_map_dimensions);
   glUniform3i(main_shader->loc_atlas_brick_dim, (i32)grid.atlas_bricks_per_row, (i32)0, (i32)0);
   glUniform3f(main_shader->loc_inverse_atlas_size, grid.atlas_inverse_dimensions.x, grid.atlas_inverse_dimensions.y, grid.atlas_inverse_dimensions.z);
   glUniform3f(main_shader->loc_grid_start, grid.start.x, grid.start.y, grid.start.z);

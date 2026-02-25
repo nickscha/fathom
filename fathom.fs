@@ -8,7 +8,6 @@ uniform vec3  iResolution;
 uniform usampler3D uBrickMap;
 uniform sampler3D  uAtlas;
 
-uniform ivec3 uBrickGridDim;
 uniform ivec3 uAtlasBrickDim;
 
 uniform vec3  uInvAtlasSize;
@@ -65,7 +64,7 @@ float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
 float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick)
 {
     vec3 gridMin = uGridStart;
-    vec3 gridMax = uGridStart + vec3(uBrickGridDim * BRICK_SIZE) * uCellSize;
+    vec3 gridMax = uGridStart + vec3(textureSize(uBrickMap, 0) * BRICK_SIZE) * uCellSize;
     
     vec3 t0 = (gridMin - ro) / rd;
     vec3 t1 = (gridMax - ro) / rd;
