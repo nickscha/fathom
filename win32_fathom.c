@@ -520,10 +520,12 @@ static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 #define GL_RED 0x1903
 #define GL_RED_INTEGER 0x8D94
 #define GL_R8 0x8229
+#define GL_R8UI 0x8232
 #define GL_R8_SNORM 0x8F94
 #define GL_R16UI 0x8234
 #define GL_TEXTURE0 0x84C0
 #define GL_TEXTURE1 0x84C1
+#define GL_TEXTURE2 0x84C2
 #define GL_BLEND 0x0BE2
 #define GL_SRC_ALPHA 0x0302
 #define GL_ONE_MINUS_SRC_ALPHA 0x0303
@@ -1562,6 +1564,7 @@ typedef struct shader_main
 
   i32 loc_brick_map_texture;
   i32 loc_atlas_texture;
+  i32 loc_material_texture;
 
   i32 loc_atlas_brick_dim;
 
@@ -1979,6 +1982,7 @@ FATHOM_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_f
 
     shader->loc_brick_map_texture = glGetUniformLocation(shader->header.program, "uBrickMap");
     shader->loc_atlas_texture = glGetUniformLocation(shader->header.program, "uAtlas");
+    shader->loc_material_texture = glGetUniformLocation(shader->header.program, "uMaterial");
 
     shader->loc_atlas_brick_dim = glGetUniformLocation(shader->header.program, "uAtlasBrickDim");
     shader->loc_inverse_atlas_size = glGetUniformLocation(shader->header.program, "uInvAtlasSize");
@@ -2080,21 +2084,7 @@ FATHOM_API void opengl_shader_load_shader_recording(shader_recording *shader)
 #include "fathom_sparse_grid.h"
 
 /* Simple Sphere SDF */
-f32 sdf_function2(fathom_vec3 position, void *user_data)
-{
-  f32 sphere_radius = 0.5f;
-  f32 sphere = fathom_sdf_sphere(position, sphere_radius);
-
-  fathom_vec3 box_pos = fathom_vec3_sub(position, fathom_vec3_init(-0.5f, 0.5f, -0.5f));
-  f32 box = fathom_sdf_box(box_pos, fathom_vec3_init(0.25f, 0.25f, 0.25f));
-
-  ((win32_fathom_state *)user_data)->grid_sdf_invocations++;
-
-  return fathom_sminf(sphere, box, 0.4f);
-}
-
-/* Simple Sphere SDF */
-f32 sdf_function(fathom_vec3 position, void *user_data)
+fathom_grid_data sdf_function(fathom_vec3 position, void *user_data)
 {
   f32 sphere_radius = 0.5f;
   f32 sphere = fathom_sdf_sphere(position, sphere_radius);
@@ -2104,9 +2094,13 @@ f32 sdf_function(fathom_vec3 position, void *user_data)
 
   f32 ground = position.y - (-0.25f);
 
+  fathom_grid_data d;
+  d.distance = fathom_sminf(ground, fathom_sminf(sphere, box, 0.4f), 0.6f);
+  d.material = (sphere < box && sphere < ground) ? 1 : 0;
+
   ((win32_fathom_state *)user_data)->grid_sdf_invocations++;
 
-  return fathom_sminf(ground, fathom_sminf(sphere, box, 0.4f), 0.6f);
+  return d;
 }
 
 void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32 main_vao)
@@ -2115,6 +2109,7 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
   static fathom_sparse_grid grid = {0};
   static u32 brickMapTex;
   static u32 atlasTex;
+  static u32 materialTex;
 
   /* Camera */
   static fathom_vec3 camera_position;
@@ -2133,6 +2128,7 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
     grid.brick_map_data = VirtualAlloc(0, grid.brick_map_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     fathom_sparse_grid_pass_01_fill_brick_map(&grid, sdf_function, state);
     grid.atlas_data = VirtualAlloc(0, grid.atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    grid.material_data = VirtualAlloc(0, grid.atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
     state->mem_brick_map_bytes = grid.brick_map_bytes;
     state->mem_atlas_bytes = grid.atlas_bytes;
@@ -2191,6 +2187,21 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);
 
+    /* Material Texture */
+    glGenTextures(1, &materialTex);
+    glBindTexture(GL_TEXTURE_3D, materialTex);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R8UI,
+                 (i32)grid.atlas_width,
+                 (i32)grid.atlas_height,
+                 (i32)grid.atlas_depth,
+                 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, grid.material_data);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
     grid_initialized = 1;
   }
 
@@ -2237,6 +2248,10 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_3D, atlasTex);
   glUniform1i(main_shader->loc_atlas_texture, 1);
+
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_3D, materialTex);
+  glUniform1i(main_shader->loc_material_texture, 2);
 
   glBindVertexArray(main_vao);
   glDrawArrays(GL_TRIANGLES, 0, 3);

@@ -16,7 +16,13 @@
 #define FATHOM_BRICK_MAP_INDEX_SOLID 0xFFFF  /* SOLID (far inside): Skip Atlas Data */
 #define FATHOM_BRICK_MAP_INDEX_USEFUL 0xFFFE /* USABLE: Sentinal for useable brick. Use this for Atlas Data */
 
-typedef f32 (*fathom_sparse_grid_distance_function)(fathom_vec3 position, void *user_data);
+typedef struct fathom_grid_data
+{
+    f32 distance;
+    u8 material;
+} fathom_grid_data;
+
+typedef fathom_grid_data (*fathom_grid_distance_function)(fathom_vec3 position, void *user_data);
 
 typedef struct fathom_sparse_grid
 {
@@ -38,6 +44,8 @@ typedef struct fathom_sparse_grid
 #else
     s8 *atlas_data;
 #endif
+
+    u8 *material_data;
 
     /* Data for shader upload */
     fathom_vec3 start;
@@ -72,7 +80,7 @@ FATHOM_API u8 fathom_sparse_grid_initialize(fathom_sparse_grid *grid, fathom_vec
     return 1;
 }
 
-FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid, fathom_sparse_grid_distance_function distance_function, void *user_data)
+FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid, fathom_grid_distance_function distance_function, void *user_data)
 {
     u32 brick_map_index = 0;
     u32 active_brick_count = 0;
@@ -98,8 +106,8 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
             for (bx = 0; bx < grid->brick_map_dimensions; ++bx, px += brick_step, ++brick_map_index)
             {
                 fathom_vec3 center = fathom_vec3_init(px + center_off, py + center_off, pz + center_off);
-
-                f32 distance = distance_function(center, user_data);
+                fathom_grid_data data = distance_function(center, user_data);
+                f32 distance = data.distance;
 
                 if (fathom_absf(distance) > grid->cull_threshold)
                 {
@@ -139,7 +147,7 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
     return 1;
 }
 
-FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fathom_sparse_grid_distance_function distance_function, void *user_data)
+FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fathom_grid_distance_function distance_function, void *user_data)
 {
     u32 bricks_per_row = grid->atlas_bricks_per_row;
     u32 atlas_used_count = 0;
@@ -210,11 +218,13 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                         s8 *dst_row = &grid->atlas_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
 #endif
 
+                        u8 *dst_material_row = &grid->material_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
+
                         for (lx = 0; lx < FATHOM_PHYSICAL_BRICK_SIZE; ++lx)
                         {
                             f32 px = brick_min.x + apron_offset + ((f32)lx * grid->cell_size);
-
-                            f32 dist = distance_function(fathom_vec3_init(px, py, pz), user_data);
+                            fathom_grid_data data = distance_function(fathom_vec3_init(px, py, pz), user_data);
+                            f32 dist = data.distance;
 
 #ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
                             /* Quantize: map [-trunc, +trunc] to [0, 255] */
@@ -245,6 +255,8 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
 
                             dst_row[lx] = (s8)val;
 #endif
+
+                            dst_material_row[lx] = data.material;
                         }
                     }
                 }

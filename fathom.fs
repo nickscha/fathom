@@ -7,6 +7,7 @@ uniform vec3  iResolution;
 
 uniform usampler3D uBrickMap;
 uniform sampler3D  uAtlas;
+uniform usampler3D uMaterial;
 
 uniform ivec3 uAtlasBrickDim;
 
@@ -157,6 +158,26 @@ vec3 visualize_grid(vec3 worldPos)
     return col;
 }
 
+uint sampleMaterial(vec3 gridPos, uint stored, ivec3 brickCoord)
+{
+    uint atlasLinear = stored - 1u;
+    uint bricksPerRow = uint(uAtlasBrickDim.x);
+
+    uint bx = atlasLinear % bricksPerRow;
+    uint by = atlasLinear / bricksPerRow;
+
+    ivec3 physicalAtlasOffset = ivec3(
+        int(bx * uint(PHYSICAL_BRICK_SIZE)),
+        int(by * uint(PHYSICAL_BRICK_SIZE)),
+        0
+    );
+
+    vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
+    ivec3 texelCoord = physicalAtlasOffset + ivec3(1) + ivec3(localPos);
+
+    return texelFetch(uMaterial, texelCoord, 0).r;
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   vec2 p = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
@@ -175,10 +196,17 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec3 pos = ro + t * rd;
     vec3 nor = calc_normal(pos, hitStored, hitBrick);
 
-    vec3 sun_dir  = normalize(vec3(0.8, 0.4, 0.2));
-
+    vec3 gridPos = (pos - uGridStart) / uCellSize;
+    uint matID = sampleMaterial(gridPos, hitStored, hitBrick);
+    
     vec3 mate = vec3(0.18);
-    vec3  lig = normalize( vec3(-0.1, 0.3, 0.6) );
+
+    if(matID == 1u) {
+        mate = vec3(0.0, 0.5, 0.0);
+    }
+
+    vec3 sun_dir = normalize(vec3(0.8, 0.4, 0.2));
+    vec3 lig = normalize( vec3(-0.1, 0.3, 0.6) );
     float sun_dif = clamp(dot(nor, sun_dir), 0.0, 1.0);
     float sky_dif = clamp(0.5 + 0.5 * dot(nor, vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
     float bou_dif = clamp(0.5 + 0.5 * dot(nor, vec3(0.0, -1.0, 0.0)), 0.0, 1.0);
