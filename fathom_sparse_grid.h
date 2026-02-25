@@ -32,7 +32,11 @@ typedef struct fathom_sparse_grid
     u32 atlas_height;
     u32 atlas_depth;
     u32 atlas_bytes;
+#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
     u8 *atlas_data;
+#else
+    s8 *atlas_data;
+#endif
 
     /* Data for shader upload */
     fathom_vec3 start;
@@ -134,7 +138,13 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
 {
     u32 bricks_per_row = grid->atlas_bricks_per_row;
     u32 atlas_used_count = 0;
+
+#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
     f32 quant_scale = 127.5f / grid->truncation_distance;
+#else
+    f32 quant_scale = 127.0f / grid->truncation_distance;
+#endif
+
     f32 apron_offset = -((f32)FATHOM_BRICK_APRON * grid->cell_size);
     u32 atlas_width = bricks_per_row * FATHOM_PHYSICAL_BRICK_SIZE;
     u32 atlas_height = ((grid->brick_map_active_bricks_count + bricks_per_row - 1) / bricks_per_row) * FATHOM_PHYSICAL_BRICK_SIZE;
@@ -189,7 +199,11 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                         u32 dst_y = (atlas_by * FATHOM_PHYSICAL_BRICK_SIZE) + ly;
                         u32 dst_z = lz;
 
+#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
                         u8 *dst_row = &grid->atlas_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
+#else
+                        s8 *dst_row = &grid->atlas_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
+#endif
 
                         for (lx = 0; lx < FATHOM_PHYSICAL_BRICK_SIZE; ++lx)
                         {
@@ -197,6 +211,7 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
 
                             f32 dist = distance_function(fathom_vec3_init(px, py, pz), user_data);
 
+#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
                             /* Quantize: map [-trunc, +trunc] to [0, 255] */
                             f32 val = (dist * quant_scale) + 127.5f;
 
@@ -210,6 +225,21 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                             }
 
                             dst_row[lx] = (u8)val;
+#else
+                            /* Quantize: map [-trunc, +trunc] to [-127, 127] */
+                            f32 val = dist * quant_scale;
+
+                            if (val < -127.0f)
+                            {
+                                val = -127.0f;
+                            }
+                            if (val > 127.0f)
+                            {
+                                val = 127.0f;
+                            }
+
+                            dst_row[lx] = (s8)val;
+#endif
                         }
                     }
                 }

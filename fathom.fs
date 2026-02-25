@@ -54,7 +54,11 @@ float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     
     float d = textureLod(uAtlas, texelCoord * uInvAtlasSize, 0.0).r;
 
+#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
     return (d * 2.0 - 1.0) * uTruncation;
+#else 
+    return d * uTruncation;
+#endif
 }
 
 float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick)

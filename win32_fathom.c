@@ -497,7 +497,7 @@ static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 #define GL_STATIC_DRAW 0x88E4
 #define GL_DYNAMIC_DRAW 0x88E8
 #define GL_ARRAY_BUFFER 0x8892
-
+#define GL_BYTE 0x1400
 #define GL_UNSIGNED_BYTE 0x1401
 #define GL_TEXTURE_2D 0x0DE1
 #define GL_TEXTURE_3D 0x806F
@@ -517,6 +517,7 @@ static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 #define GL_RED 0x1903
 #define GL_RED_INTEGER 0x8D94
 #define GL_R8 0x8229
+#define GL_R8_SNORM 0x8F94
 #define GL_R16UI 0x8234
 #define GL_TEXTURE0 0x84C0
 #define GL_TEXTURE1 0x84C1
@@ -2283,11 +2284,19 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
     glBindTexture(GL_TEXTURE_3D, atlasTex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R8,
                  (i32)grid.atlas_width,
                  (i32)grid.atlas_height,
                  (i32)grid.atlas_depth,
                  0, GL_RED, GL_UNSIGNED_BYTE, grid.atlas_data);
+#else
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R8_SNORM,
+                 (i32)grid.atlas_width,
+                 (i32)grid.atlas_height,
+                 (i32)grid.atlas_depth,
+                 0, GL_RED, GL_BYTE, grid.atlas_data);
+#endif
 
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); /* GL_LINEAR */
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); /* GL_LINEAR */
