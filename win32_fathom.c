@@ -441,6 +441,7 @@ WIN32_API(void)   glTexParameteri(u32 target, u32 pname, i32 param);
 WIN32_API(void)   glPixelStorei(u32 pname, i32 param);
 WIN32_API(void)   glReadPixels(i32 x, i32 y, i32 width, i32 height, i32 format, i32 type, void  *pixels);
 WIN32_API(void)   glBlendFunc(u32 sfactor, u32 dfactor);
+WIN32_API(void)   glGetIntegerv(u32 pname, i32 *params);
 
 /* clang-format on */
 
@@ -501,6 +502,7 @@ static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 #define GL_UNSIGNED_BYTE 0x1401
 #define GL_TEXTURE_2D 0x0DE1
 #define GL_TEXTURE_3D 0x806F
+#define GL_MAX_3D_TEXTURE_SIZE 0x8073
 #define GL_NEAREST 0x2600
 #define GL_LINEAR 0x2601
 #define GL_TEXTURE_MIN_FILTER 0x2801
@@ -1115,12 +1117,15 @@ typedef struct win32_fathom_state
   s8 *gl_version;
   s8 *gl_renderer;
   s8 *gl_vendor;
+  i32 gl_max_3d_texture_size;
 
   u32 mem_brick_map_bytes;
   u32 mem_atlas_bytes;
   u32 grid_sdf_invocations;
   u32 grid_active_brick_count;
-  u32 grid_atlas_dimensions;
+  u32 grid_atlas_width;
+  u32 grid_atlas_height;
+  u32 grid_atlas_depth;
 
   i64 grid_calc_time_start;
   i64 grid_calc_time_end;
@@ -2254,7 +2259,9 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
     state->mem_brick_map_bytes = grid.brick_map_bytes;
     state->mem_atlas_bytes = grid.atlas_bytes;
     state->grid_active_brick_count = grid.brick_map_active_bricks_count;
-    state->grid_atlas_dimensions = grid.atlas_width;
+    state->grid_atlas_width = grid.atlas_width;
+    state->grid_atlas_height = grid.atlas_height;
+    state->grid_atlas_depth = grid.atlas_depth;
 
     QueryPerformanceCounter(&state->grid_calc_time_start);
 
@@ -2443,6 +2450,8 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
     win32_print("[ERROR] Could not create opengl context!\n");
     return 1;
   }
+
+  glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &state.gl_max_3d_texture_size);
 
   /* Avoid clear color flickering */
   glViewport(0, 0, (i32)state.window_width, (i32)state.window_height);
@@ -3054,7 +3063,8 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "SDF CALLS    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "CALC TIME    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "BRICK COUNT  : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
-          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "ATLAS DIM    : ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "ATLAS DIM    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MAX 3D TEXRES: ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
 
           t.length = 0;
           text_append_f64(&t, (f64)state.mem_brick_map_bytes / 1024.0 / 1024.0, 4);
@@ -3067,7 +3077,13 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           text_append_str(&t, "\n");
           text_append_i32(&t, (i32)state.grid_active_brick_count);
           text_append_str(&t, "\n");
-          text_append_i32(&t, (i32)state.grid_atlas_dimensions);
+          text_append_i32(&t, (i32)state.grid_atlas_width);
+          text_append_str(&t, "/");
+          text_append_i32(&t, (i32)state.grid_atlas_height);
+          text_append_str(&t, "/");
+          text_append_i32(&t, (i32)state.grid_atlas_depth);
+          text_append_str(&t, "\n");
+          text_append_i32(&t, (i32)state.gl_max_3d_texture_size);
 
           offset_memory_y = 10;
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
