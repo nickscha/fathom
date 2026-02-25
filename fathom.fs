@@ -113,19 +113,16 @@ float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick)
 vec3 calc_normal(vec3 pos, uint stored, ivec3 brickCoord)
 {
     float e = uCellSize * 0.5; 
-    
-    vec3 gridPos = (pos - uGridStart) / uCellSize;
+    vec3 gP = (pos - uGridStart) / uCellSize;
+    float gE = e / uCellSize;
 
-    float g = e / uCellSize;
-    
-    float dx = sampleAtlasOnly(gridPos + vec3(g, 0, 0), stored, brickCoord) - 
-               sampleAtlasOnly(gridPos - vec3(g, 0, 0), stored, brickCoord);
-    float dy = sampleAtlasOnly(gridPos + vec3(0, g, 0), stored, brickCoord) - 
-               sampleAtlasOnly(gridPos - vec3(0, g, 0), stored, brickCoord);
-    float dz = sampleAtlasOnly(gridPos + vec3(0, 0, g), stored, brickCoord) - 
-               sampleAtlasOnly(gridPos - vec3(0, 0, g), stored, brickCoord);
-
-    return normalize(vec3(dx, dy, dz));
+    const vec2 k = vec2(1.0, -1.0);
+    return normalize(
+        k.xyy * sampleAtlasOnly(gP + k.xyy * gE, stored, brickCoord) +
+        k.yyx * sampleAtlasOnly(gP + k.yyx * gE, stored, brickCoord) +
+        k.yxy * sampleAtlasOnly(gP + k.yxy * gE, stored, brickCoord) +
+        k.xxx * sampleAtlasOnly(gP + k.xxx * gE, stored, brickCoord)
+    );
 }
 
 vec3 visualize_grid(vec3 worldPos)
