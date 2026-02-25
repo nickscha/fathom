@@ -52,7 +52,8 @@ float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
     vec3 texelCoord = physicalAtlasOffset + 1.0 + localPos;
     
-    float d = textureLod(uAtlas, texelCoord * uInvAtlasSize, 0.0).r;
+    //float d = textureLod(uAtlas, texelCoord * uInvAtlasSize, 0.0).r;
+    float d = texture(uAtlas, texelCoord * uInvAtlasSize).r;
 
 #ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
     return (d * 2.0 - 1.0) * uTruncation;
