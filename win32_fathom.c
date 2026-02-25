@@ -2224,7 +2224,9 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
   static fathom_sparse_grid grid = {0};
   static u32 brickMapTex;
   static u32 atlasTex;
-  static f32 invAtlas;
+  static f32 invAtlasX;
+  static f32 invAtlasY;
+  static f32 invAtlasZ;
 
   /* Camera */
   static fathom_vec3 camera_position;
@@ -2244,12 +2246,14 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
     fathom_sparse_grid_pass_01_fill_brick_map(&grid, sdf_function, state);
     grid.atlas_data = VirtualAlloc(0, grid.atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-    invAtlas = 1.0f / ((f32)grid.atlas_dimensions * (f32)FATHOM_PHYSICAL_BRICK_SIZE);
+    invAtlasX = 1.0f / (f32)grid.atlas_width;
+    invAtlasY = 1.0f / (f32)grid.atlas_height;
+    invAtlasZ = 1.0f / (f32)grid.atlas_depth;
 
     state->mem_brick_map_bytes = grid.brick_map_bytes;
     state->mem_atlas_bytes = grid.atlas_bytes;
     state->grid_active_brick_count = grid.brick_map_active_bricks_count;
-    state->grid_atlas_dimensions = grid.atlas_dimensions;
+    state->grid_atlas_dimensions = grid.atlas_width;
 
     QueryPerformanceCounter(&state->grid_calc_time_start);
 
@@ -2280,9 +2284,9 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R8,
-                 (i32)grid.atlas_dimensions * FATHOM_PHYSICAL_BRICK_SIZE,
-                 (i32)grid.atlas_dimensions * FATHOM_PHYSICAL_BRICK_SIZE,
-                 (i32)grid.atlas_dimensions * FATHOM_PHYSICAL_BRICK_SIZE,
+                 (i32)grid.atlas_width,
+                 (i32)grid.atlas_height,
+                 (i32)grid.atlas_depth,
                  0, GL_RED, GL_UNSIGNED_BYTE, grid.atlas_data);
 
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); /* GL_LINEAR */
@@ -2333,8 +2337,8 @@ void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32
 
   /* Grid uniforms */
   glUniform3i(main_shader->loc_brick_grid_dim, (i32)grid.brick_map_dimensions, (i32)grid.brick_map_dimensions, (i32)grid.brick_map_dimensions);
-  glUniform3i(main_shader->loc_atlas_brick_dim, (i32)grid.atlas_dimensions, (i32)grid.atlas_dimensions, (i32)grid.atlas_dimensions);
-  glUniform3f(main_shader->loc_inverse_atlas_size, invAtlas, invAtlas, invAtlas);
+  glUniform3i(main_shader->loc_atlas_brick_dim, (i32)grid.atlas_bricks_per_row, (i32)0, (i32)0);
+  glUniform3f(main_shader->loc_inverse_atlas_size, invAtlasX, invAtlasY, invAtlasZ);
   glUniform3f(main_shader->loc_grid_start, grid.start.x, grid.start.y, grid.start.z);
   glUniform1f(main_shader->loc_cell_size, grid.cell_size);
   glUniform1f(main_shader->loc_truncation, grid.truncation_distance);

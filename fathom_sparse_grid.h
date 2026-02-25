@@ -27,7 +27,10 @@ typedef struct fathom_sparse_grid
     u16 *brick_map_data;
 
     /* Second Pass: Fill Atlas */
-    u32 atlas_dimensions;
+    u32 atlas_bricks_per_row;
+    u32 atlas_width;
+    u32 atlas_height;
+    u32 atlas_depth;
     u32 atlas_bytes;
     u8 *atlas_data;
 
@@ -114,17 +117,14 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
 
     /* Calculate atlas dimensions and bytes required (e.g. how big does the atlas 3d texture needs to be to fit all relevant bricks)*/
     {
-        u32 atlas_dimensions = 0;
-        u32 total_atlas_voxels_side;
+        u32 bricks_per_row = (u32)fathom_ceilf(fathom_sqrtf((f32)active_brick_count));
+        u32 bricks_per_col = (active_brick_count + bricks_per_row - 1) / bricks_per_row;
 
-        while (atlas_dimensions * atlas_dimensions * atlas_dimensions < grid->brick_map_active_bricks_count)
-        {
-            atlas_dimensions++;
-        }
-
-        grid->atlas_dimensions = atlas_dimensions;
-        total_atlas_voxels_side = grid->atlas_dimensions * FATHOM_PHYSICAL_BRICK_SIZE;
-        grid->atlas_bytes = (total_atlas_voxels_side * total_atlas_voxels_side * total_atlas_voxels_side) * sizeof(u8);
+        grid->atlas_bricks_per_row = bricks_per_row;
+        grid->atlas_width = bricks_per_row * FATHOM_PHYSICAL_BRICK_SIZE;
+        grid->atlas_height = bricks_per_col * FATHOM_PHYSICAL_BRICK_SIZE;
+        grid->atlas_depth = FATHOM_PHYSICAL_BRICK_SIZE;
+        grid->atlas_bytes = grid->atlas_width * grid->atlas_height * grid->atlas_depth * sizeof(u8);
     }
 
     return 1;
@@ -132,7 +132,7 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
 
 FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fathom_sparse_grid_distance_function distance_function, void *user_data)
 {
-    u32 atlas_bricks_per_side = grid->atlas_dimensions;
+    u32 bricks_per_row = grid->atlas_bricks_per_row;
     u32 atlas_used_count = 0;
     f32 quant_scale = 127.5f / grid->truncation_distance;
     f32 apron_offset = -((f32)FATHOM_BRICK_APRON * grid->cell_size);
@@ -150,9 +150,11 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
 
                 fathom_vec3 brick_min;
                 u32 cur_idx;
-                u32 atlas_bx, atlas_by, atlas_bz;
+                u32 atlas_bx, atlas_by;
                 u32 atlas_vox_stride;
                 u32 atlas_slice_stride;
+                u32 atlas_width = bricks_per_row * FATHOM_PHYSICAL_BRICK_SIZE;
+                u32 atlas_height = ((grid->brick_map_active_bricks_count + bricks_per_row - 1) / bricks_per_row) * FATHOM_PHYSICAL_BRICK_SIZE;
 
                 if (grid->brick_map_data[map_idx] != FATHOM_BRICK_MAP_INDEX_USEFUL)
                 {
@@ -167,13 +169,12 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
 
                 /* 2. Determine Atlas Destination (Brick Coordinates) */
                 cur_idx = atlas_used_count++;
-                atlas_bx = cur_idx % atlas_bricks_per_side;
-                atlas_by = (cur_idx / atlas_bricks_per_side) % atlas_bricks_per_side;
-                atlas_bz = cur_idx / (atlas_bricks_per_side * atlas_bricks_per_side);
+                atlas_bx = cur_idx % bricks_per_row;
+                atlas_by = cur_idx / bricks_per_row;
 
                 /* 3. Voxel Fill Loop */
-                atlas_vox_stride = atlas_bricks_per_side * FATHOM_PHYSICAL_BRICK_SIZE;
-                atlas_slice_stride = atlas_vox_stride * atlas_vox_stride;
+                atlas_vox_stride = atlas_width;
+                atlas_slice_stride = atlas_width * atlas_height;
 
                 for (lz = 0; lz < FATHOM_PHYSICAL_BRICK_SIZE; ++lz)
                 {
@@ -186,7 +187,7 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                         /* Calculate destination pointer for this row (x-line) in the atlas */
                         u32 dst_x = atlas_bx * FATHOM_PHYSICAL_BRICK_SIZE;
                         u32 dst_y = (atlas_by * FATHOM_PHYSICAL_BRICK_SIZE) + ly;
-                        u32 dst_z = (atlas_bz * FATHOM_PHYSICAL_BRICK_SIZE) + lz;
+                        u32 dst_z = lz;
 
                         u8 *dst_row = &grid->atlas_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
 
