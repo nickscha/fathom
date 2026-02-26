@@ -35,6 +35,13 @@ float hash12(vec2 p)
     return fract((p3.x + p3.y) * p3.z);
 }
 
+float hash13(vec3 p)
+{
+    p = fract(p * 0.1031);
+    p += dot(p, p.zyx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
 float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
     uint atlasLinear = stored - 1u;
     
@@ -179,6 +186,60 @@ uint sampleMaterial(vec3 gridPos, uint stored, ivec3 brickCoord)
     return texelFetch(uMaterial, texelCoord, 0).r;
 }
 
+vec3 getMatColor(uint id) {
+    if(id == 1u) return vec3(0.0, 0.5, 0.0); 
+    if(id == 2u) return vec3(0.5, 0.2, 0.1);
+    return vec3(0.18);
+}
+
+vec3 sampleMaterialSmooth(vec3 gridPos, uint stored, ivec3 brickCoord)
+{
+    uint atlasLinear = stored - 1u;
+    uint bricksPerRow = uint(uAtlasBrickDim.x);
+    uint bx = atlasLinear % bricksPerRow;
+    uint by = atlasLinear / bricksPerRow;
+
+    vec3 physicalAtlasOffset = vec3(
+        float(bx * uint(PHYSICAL_BRICK_SIZE)),
+        float(by * uint(PHYSICAL_BRICK_SIZE)),
+        0.0
+    );
+
+    vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
+    vec3 samplePos = physicalAtlasOffset + 1.0 + localPos - 0.5;
+    
+    ivec3 iPos = ivec3(floor(samplePos));
+    vec3 f = fract(samplePos);
+
+    uint m000 = texelFetch(uMaterial, iPos + ivec3(0,0,0), 0).r;
+    uint m100 = texelFetch(uMaterial, iPos + ivec3(1,0,0), 0).r;
+    uint m010 = texelFetch(uMaterial, iPos + ivec3(0,1,0), 0).r;
+    uint m110 = texelFetch(uMaterial, iPos + ivec3(1,1,0), 0).r;
+    uint m001 = texelFetch(uMaterial, iPos + ivec3(0,0,1), 0).r;
+    uint m101 = texelFetch(uMaterial, iPos + ivec3(1,0,1), 0).r;
+    uint m011 = texelFetch(uMaterial, iPos + ivec3(0,1,1), 0).r;
+    uint m111 = texelFetch(uMaterial, iPos + ivec3(1,1,1), 0).r;
+
+    vec3 c000 = getMatColor(m000);
+    vec3 c100 = getMatColor(m100);
+    vec3 c010 = getMatColor(m010);
+    vec3 c110 = getMatColor(m110);
+    vec3 c001 = getMatColor(m001);
+    vec3 c101 = getMatColor(m101);
+    vec3 c011 = getMatColor(m011);
+    vec3 c111 = getMatColor(m111);
+
+    vec3 col_x00 = mix(c000, c100, f.x);
+    vec3 col_x10 = mix(c010, c110, f.x);
+    vec3 col_x01 = mix(c001, c101, f.x);
+    vec3 col_x11 = mix(c011, c111, f.x);
+
+    vec3 col_xy0 = mix(col_x00, col_x10, f.y);
+    vec3 col_xy1 = mix(col_x01, col_x11, f.y);
+
+    return mix(col_xy0, col_xy1, f.z);
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   vec2 p = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
@@ -199,13 +260,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec3 nor = calc_normal(pos, hitStored, hitBrick);
 
     vec3 gridPos = (pos - uGridStart) / uCellSize;
-    uint matID = sampleMaterial(gridPos, hitStored, hitBrick);
-    
-    vec3 mate = vec3(0.18);
-
-    if(matID == 1u) {
-        mate = vec3(0.0, 0.5, 0.0);
-    }
+    vec3 mate = sampleMaterialSmooth(gridPos, hitStored, hitBrick);
 
     vec3 sun_dir = normalize(vec3(0.8, 0.4, 0.2));
     vec3 lig = normalize( vec3(-0.1, 0.3, 0.6) );
@@ -219,10 +274,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
     //col = nor;
     //col = nor / 0.5 * pos;
-
-    // Show debug grid
     //vec3 gridVis = visualize_grid(pos);
     //col += gridVis;
+    //col = vec3(hash13(vec3(hitBrick) + 0.0), hash13(vec3(hitBrick) + 17.0), hash13(vec3(hitBrick) + 37.0));
   }
 
   col = pow(col, vec3(0.4545));  

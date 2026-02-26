@@ -2096,7 +2096,16 @@ fathom_grid_data sdf_function(fathom_vec3 position, void *user_data)
 
   fathom_grid_data d;
   d.distance = fathom_sminf(ground, fathom_sminf(sphere, box, 0.4f), 0.6f);
-  d.material = (sphere < box && sphere < ground) ? 1 : 0;
+  d.material = 0;
+
+  if (sphere < box && sphere < ground)
+  {
+    d.material = 1;
+  }
+  else if (box < sphere && box < ground)
+  {
+    d.material = 2;
+  }
 
   ((win32_fathom_state *)user_data)->grid_sdf_invocations++;
 
