@@ -262,8 +262,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec3 gridPos = (pos - uGridStart) / uCellSize;
     vec3 mate = sampleMaterialSmooth(gridPos, hitStored, hitBrick);
 
-    vec3 sun_dir = normalize(vec3(0.8, 0.4, 0.2));
-    vec3 lig = normalize( vec3(-0.1, 0.3, 0.6) );
+    vec3  sun_dir = normalize(vec3(0.8, 0.4, 0.2));
     float sun_dif = clamp(dot(nor, sun_dir), 0.0, 1.0);
     float sky_dif = clamp(0.5 + 0.5 * dot(nor, vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
     float bou_dif = clamp(0.5 + 0.5 * dot(nor, vec3(0.0, -1.0, 0.0)), 0.0, 1.0);
