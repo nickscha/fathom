@@ -62,7 +62,7 @@ float sampleAtlasOnly(vec3 gridPos, uint stored, ivec3 brickCoord) {
 #endif
 }
 
-float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick)
+float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick, out float outDistance)
 {
     vec3 gridMin = uGridStart;
     vec3 gridMax = uGridStart + vec3(textureSize(uBrickMap, 0) * BRICK_SIZE) * uCellSize;
@@ -105,6 +105,7 @@ float raymarch(vec3 ro, vec3 rd, out uint outStored, out ivec3 outBrick)
             if (d < uCellSize * 0.1) {
                outStored = stored;
                outBrick = brickCoord;
+               outDistance = d;
                return t;
             }
             t += d;
@@ -187,9 +188,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
   vec3 col = vec3(0.4, 0.75, 1.0) - 0.7 * rd.y; // sky, darker the higher
 
-  uint hitStored;
+  uint  hitStored;
   ivec3 hitBrick;
-  float t = raymarch(ro, rd, hitStored, hitBrick);
+  float hitDistance;
+  float t = raymarch(ro, rd, hitStored, hitBrick, hitDistance);
 
   if (t > 0.0) 
   {
