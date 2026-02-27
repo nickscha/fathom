@@ -43,6 +43,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_sub(fathom_vec3 a, fathom_vec3 
     res = _mm_sub_ps(va, vb);
 
     _mm_store_ps((f32 *)&result, res);
+
     return result;
 }
 
@@ -57,6 +58,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_subf(fathom_vec3 a, f32 value)
     res = _mm_sub_ps(va, vval);
 
     _mm_store_ps((f32 *)&result, res);
+
     return result;
 }
 
@@ -71,6 +73,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_addf(fathom_vec3 a, f32 value)
     res = _mm_add_ps(va, vval);
 
     _mm_store_ps((f32 *)&result, res);
+
     return result;
 }
 
@@ -84,6 +87,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_divf(fathom_vec3 a, f32 value)
     res = _mm_div_ps(va, vval);
 
     _mm_store_ps((f32 *)&result, res);
+
     return result;
 }
 
@@ -98,6 +102,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_abs(fathom_vec3 a)
     res = _mm_and_ps(va, mask);
 
     _mm_store_ps((f32 *)&result, res);
+
     return result;
 }
 
@@ -112,6 +117,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_maxf(fathom_vec3 a, f32 value)
     res = _mm_max_ps(va, vval);
 
     _mm_store_ps((f32 *)&result, res);
+
     return result;
 }
 
@@ -150,6 +156,7 @@ FATHOM_API FATHOM_INLINE f32 fathom_vec3_length(fathom_vec3 a)
     sum2 = _mm_add_ps(sum1, shuf2);
 
     root = _mm_sqrt_ss(sum2);
+
     return _mm_cvtss_f32(root);
 }
 
@@ -173,6 +180,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_cross(fathom_vec3 a, fathom_vec
     sub = _mm_sub_ps(mul1, mul2);
 
     _mm_store_ps((f32 *)&result, sub);
+
     return result;
 }
 
@@ -221,7 +229,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_normalize(fathom_vec3 a)
 #define FATHOM_MAT2X2_AT(row, col) ((col) * 2 + (row)) /* Column-major order */
 #endif
 
-typedef struct fathom_mat2x2
+typedef struct FATHOM_ALIGN(16) fathom_mat2x2
 {
     f32 e[FATHOM_MAT2X2_ELEMENT_COUNT];
 
@@ -230,6 +238,7 @@ typedef struct fathom_mat2x2
 FATHOM_API FATHOM_INLINE fathom_mat2x2 fathom_mat2x2_init(f32 m00, f32 m01, f32 m10, f32 m11)
 {
     fathom_mat2x2 result;
+    
     __m128 m;
 
 #ifdef FATHOM_MAT_ROW_MAJOR_ORDER
@@ -240,7 +249,8 @@ FATHOM_API FATHOM_INLINE fathom_mat2x2 fathom_mat2x2_init(f32 m00, f32 m01, f32 
     m = _mm_set_ps(m11, m01, m10, m00);
 #endif
 
-    _mm_storeu_ps(result.e, m);
+    _mm_store_ps(result.e, m);
+
     return result;
 }
 

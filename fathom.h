@@ -115,7 +115,11 @@ u8 fathom_update_stub(fathom_platform_api *api, fathom_platform_window *window, 
     return 0;
 }
 
-typedef u8 (*fathom_update_function)(fathom_platform_api *api, fathom_platform_window *window, fathom_platform_input *input);
+typedef u8 (*fathom_update_function)(
+    fathom_platform_api *api,       /* Platform provided functinos */
+    fathom_platform_window *window, /* Platform window informatino */
+    fathom_platform_input *input    /* Platform input */
+);
 
 static fathom_update_function fathom_update = fathom_update_stub;
 

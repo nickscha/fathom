@@ -7,7 +7,6 @@
  * # [SECTION] Bitmap Font
  * #############################################################################
  */
-
 /* 1-bit bitmap, packed, row-major */
 /* width=210, height=7 */
 /* Charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:%+-.<" */
