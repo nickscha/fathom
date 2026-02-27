@@ -34,4 +34,29 @@ static u8 fathom_font[] = {
     0xFE, 0x33, 0x74, 0x1B, 0x17, 0x11, 0xC4, 0x54, 0x49, 0xF7, 0x3B, 0xFE,
     0x17, 0x9C, 0x47, 0x38, 0x13, 0x00, 0x00, 0x61, 0x00};
 
+/* clang-format off */
+/* Charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:%+-.<" */
+FATHOM_API i32 fathom_font_s8_to_index(s8 c)
+{
+  /* Convert to uppercase */
+  if (c >= 'a' && c <= 'z')
+  {
+    c = (s8)(c - 'a' + 'A');
+  }
+
+  if (c >= 'A' && c <= 'Z') return c - 'A';
+  if (c >= '0' && c <= '9') return 26 + (c - '0');
+  if (c == ':') return 36;
+  if (c == '%') return 37;
+  if (c == '/') return 38;
+  if (c == '+') return 39;
+  if (c == '-') return 40;
+  if (c == '.') return 41;
+  if (c == '<') return 42;
+  if (c == '>') return 42;
+
+  return -1;
+}
+/* clang-format on */
+
 #endif /* FATHOM_FONT_H */

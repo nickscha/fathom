@@ -1377,30 +1377,6 @@ FATHOM_API void win32_window_enter_windowed(win32_fathom_state *state)
  * # [SECTION] Font Loading and Parsing
  * #############################################################################
  */
-/* clang-format off */
-/* Charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:%+-.<" */
-FATHOM_API i32 font_char_to_glyph_index(s8 c)
-{
-  /* Convert to uppercase */
-  if (c >= 'a' && c <= 'z')
-  {
-    c = (s8)(c - 'a' + 'A');
-  }
-
-  if (c >= 'A' && c <= 'Z') return c - 'A';
-  if (c >= '0' && c <= '9') return 26 + (c - '0');
-  if (c == ':') return 36;
-  if (c == '%') return 37;
-  if (c == '/') return 38;
-  if (c == '+') return 39;
-  if (c == '-') return 40;
-  if (c == '.') return 41;
-  if (c == '<') return 42;
-  if (c == '>') return 42;
-
-  return -1;
-}
-/* clang-format on */
 
 FATHOM_API void unpack_1bit_to_8bit(
     u8 *dst, /* width * height bytes */
@@ -1495,7 +1471,7 @@ FATHOM_API void glyph_add(
       continue;
     }
 
-    glyph_index = font_char_to_glyph_index(c);
+    glyph_index = fathom_font_s8_to_index(c);
 
     if (glyph_index < 0)
     {
