@@ -74,6 +74,19 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_addf(fathom_vec3 a, f32 value)
     return result;
 }
 
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_divf(fathom_vec3 a, f32 value)
+{
+    fathom_vec3 result;
+    __m128 va, vval, res;
+
+    va = _mm_load_ps((const f32 *)&a);
+    vval = _mm_set1_ps(value); /* Broadcast value to all 4 slots */
+    res = _mm_div_ps(va, vval);
+
+    _mm_store_ps((f32 *)&result, res);
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_abs(fathom_vec3 a)
 {
     fathom_vec3 result;
@@ -198,6 +211,61 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_normalize(fathom_vec3 a)
     _mm_store_ps((f32 *)&result, res);
 
     return result;
+}
+
+#define FATHOM_MAT2X2_ELEMENT_COUNT 4
+
+#ifdef FATHOM_MAT_ROW_MAJOR_ORDER
+#define FATHOM_MAT2X2_AT(row, col) ((row) * 2 + (col)) /* Row-major order */
+#else
+#define FATHOM_MAT2X2_AT(row, col) ((col) * 2 + (row)) /* Column-major order */
+#endif
+
+typedef struct fathom_mat2x2
+{
+    f32 e[FATHOM_MAT2X2_ELEMENT_COUNT];
+
+} fathom_mat2x2;
+
+FATHOM_API FATHOM_INLINE fathom_mat2x2 fathom_mat2x2_init(f32 m00, f32 m01, f32 m10, f32 m11)
+{
+    fathom_mat2x2 result;
+    __m128 m;
+
+#ifdef FATHOM_MAT_ROW_MAJOR_ORDER
+    /* Row-major: [m11, m10, m01, m00] */
+    m = _mm_set_ps(m11, m10, m01, m00);
+#else
+    /* Column-major: [m11, m01, m10, m00] */
+    m = _mm_set_ps(m11, m01, m10, m00);
+#endif
+
+    _mm_storeu_ps(result.e, m);
+    return result;
+}
+
+FATHOM_API FATHOM_INLINE fathom_mat2x2 fathom_mat2x2_rot2d(f32 angle)
+{
+    f32 s = fathom_sinf(angle);
+    f32 c = fathom_cosf(angle);
+
+    return fathom_mat2x2_init(c, -s, s, c);
+}
+
+FATHOM_API FATHOM_INLINE void fathom_vec2_mul_mat2x2(f32 *a, f32 *b, fathom_mat2x2 m)
+{
+    __m128 r0, r1, v_x, v_y, res;
+
+    r0 = _mm_set_ps(0.0f, 0.0f, m.e[FATHOM_MAT2X2_AT(0, 1)], m.e[FATHOM_MAT2X2_AT(0, 0)]);
+    r1 = _mm_set_ps(0.0f, 0.0f, m.e[FATHOM_MAT2X2_AT(1, 1)], m.e[FATHOM_MAT2X2_AT(1, 0)]);
+
+    v_x = _mm_set1_ps(*a);
+    v_y = _mm_set1_ps(*b);
+
+    res = _mm_add_ps(_mm_mul_ps(v_x, r0), _mm_mul_ps(v_y, r1));
+
+    *a = _mm_cvtss_f32(res);
+    *b = _mm_cvtss_f32(_mm_shuffle_ps(res, res, _MM_SHUFFLE(1, 1, 1, 1)));
 }
 
 #endif /* FATHOM_MATH_LINEAR_ALGEBRA_SSE2_H */
