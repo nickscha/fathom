@@ -17,8 +17,12 @@
  * # [SECTION] Basic Math (General, No faster SIMD substitution)
  * #############################################################################
  */
+#define FATHOM_PI 3.14159265358979323846f
 #define FATHOM_PI2 6.28318530717958647692f
 #define FATHOM_PI_HALF 1.57079632679489661923f
+#define FATHOM_DEG_TO_RAD(deg) ((deg) * (FATHOM_PI / 180.0f))
+#define FATHOM_RAD_TO_DEG(rad) ((rad) * (180.0f / FATHOM_PI))
+
 #define FATHOM_SIN_LUT_SIZE 256
 
 static f32 fathom_sin_lut[FATHOM_SIN_LUT_SIZE] = {
