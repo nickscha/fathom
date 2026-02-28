@@ -28,8 +28,10 @@ typedef long i64;
 typedef unsigned long u64;
 #endif
 
-FATHOM_TYPES_STATIC_ASSERT(sizeof(u64) == 8, u64_size_must_be_8);
-FATHOM_TYPES_STATIC_ASSERT(sizeof(i64) == 8, i64_size_must_be_8);
+#define FATHOM_WIN32_TYPES_STATIC_ASSERT(c, m) typedef char fathom_types_assert_##m[(c) ? 1 : -1]
+FATHOM_WIN32_TYPES_STATIC_ASSERT(sizeof(u64) == 8, u64_size_must_be_8);
+FATHOM_WIN32_TYPES_STATIC_ASSERT(sizeof(i64) == 8, i64_size_must_be_8);
+#undef FATHOM_WIN32_TYPES_STATIC_ASSERT
 
 /* Unfortunaly "modern" compilers sometimes inject memset intrinsics in the generated code
  * even if the application does not call memset and even with -fno-builtin, ... set.
