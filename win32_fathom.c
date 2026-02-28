@@ -875,15 +875,15 @@ static u32 opengl_failed_function_load_count = 0;
 
 FATHOM_API PROC win32_opengl_load_function(s8 *name)
 {
-  static void *gl_lib = 0;
+  static void *win32_opengl_lib = 0;
 
   PROC gl_function;
 
-  if (!gl_lib)
+  if (!win32_opengl_lib)
   {
-    gl_lib = LoadLibraryA("opengl32.dll");
+    win32_opengl_lib = LoadLibraryA("opengl32.dll");
 
-    if (!gl_lib)
+    if (!win32_opengl_lib)
     {
       return (void *)0;
     }
@@ -891,12 +891,13 @@ FATHOM_API PROC win32_opengl_load_function(s8 *name)
 
   if (!wglGetProcAddress)
   {
-    *(void **)(&wglGetProcAddress) = GetProcAddress(gl_lib, "wglGetProcAddress");
+    *(void **)(&wglGetProcAddress) = GetProcAddress(win32_opengl_lib, "wglGetProcAddress");
 
     if (!wglGetProcAddress)
     {
-      FreeLibrary(gl_lib);
-      gl_lib = (void *)0;
+      win32_print("[opengl] FATAL: cannot load wglGetProcAddress!\n");
+      FreeLibrary(win32_opengl_lib);
+      win32_opengl_lib = (void *)0;
       return (void *)0;
     }
   }
@@ -906,10 +907,7 @@ FATHOM_API PROC win32_opengl_load_function(s8 *name)
   /* Some GPU drivers do not return a valid null pointer if requested OpenGL function is not available */
   if (gl_function == (PROC)0 || gl_function == (PROC)0x1 || gl_function == (PROC)0x2 || gl_function == (PROC)0x3 || gl_function == (PROC)-1)
   {
-    void *object_ptr;
-
-    object_ptr = (void *)GetProcAddress(gl_lib, name);
-
+    void *object_ptr = (void *)GetProcAddress(win32_opengl_lib, name);
     gl_function = *(PROC *)&object_ptr;
   }
 
