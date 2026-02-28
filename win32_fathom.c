@@ -875,19 +875,38 @@ static u32 opengl_failed_function_load_count = 0;
 
 FATHOM_API PROC win32_opengl_load_function(s8 *name)
 {
-  PROC gl_function = wglGetProcAddress(name);
+  static void *gl_lib = 0;
+
+  PROC gl_function;
+
+  if (!gl_lib)
+  {
+    gl_lib = LoadLibraryA("opengl32.dll");
+
+    if (!gl_lib)
+    {
+      return (void *)0;
+    }
+  }
+
+  if (!wglGetProcAddress)
+  {
+    *(void **)(&wglGetProcAddress) = GetProcAddress(gl_lib, "wglGetProcAddress");
+
+    if (!wglGetProcAddress)
+    {
+      FreeLibrary(gl_lib);
+      gl_lib = (void *)0;
+      return (void *)0;
+    }
+  }
+
+  gl_function = wglGetProcAddress(name);
 
   /* Some GPU drivers do not return a valid null pointer if requested OpenGL function is not available */
   if (gl_function == (PROC)0 || gl_function == (PROC)0x1 || gl_function == (PROC)0x2 || gl_function == (PROC)0x3 || gl_function == (PROC)-1)
   {
-    /* Try falling back to opengl32 */
-    static void *gl_lib = 0;
     void *object_ptr;
-
-    if (!gl_lib)
-    {
-      gl_lib = GetModuleHandleA("opengl32.dll");
-    }
 
     object_ptr = (void *)GetProcAddress(gl_lib, name);
 
@@ -964,6 +983,8 @@ FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_fathom_state *state)
     return 0;
   }
 
+  win32_fathom_opengl_load_functions(win32_opengl_load_function, 1);
+
   fake_rc = wglCreateContext(fake_device_context);
 
   if (!fake_rc || !wglMakeCurrent(fake_device_context, fake_rc))
@@ -994,7 +1015,7 @@ FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_fathom_state *state)
   state->device_context = GetDC(state->window_handle);
 
   /* Load wgl and common opengl function */
-  win32_fathom_opengl_load_functions(win32_opengl_load_function);
+  win32_fathom_opengl_load_functions(win32_opengl_load_function, 0);
   fathom_opengl_load_functions(win32_opengl_load_function);
 
   if (opengl_failed_function_load_count > 0)

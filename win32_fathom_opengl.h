@@ -7,6 +7,8 @@
  * # [SECTION] Win32 OpenGL functions
  * #############################################################################
  */
+#define WIN32_OPENGL_API(r) __declspec(dllimport) r __stdcall
+
 #define WGL_DRAW_TO_WINDOW_ARB 0x2001
 #define WGL_SUPPORT_OPENGL_ARB 0x2010
 #define WGL_DOUBLE_BUFFER_ARB 0x2011
@@ -25,18 +27,19 @@
 #define WGL_CONTEXT_FLAGS_ARB 0x2094
 #define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB 0x00000002
 
-#define WIN32_OPENGL_API(r) __declspec(dllimport) r __stdcall
-
 typedef void *(*PROC)(void);
 
-/* clang-format off */
-WIN32_OPENGL_API(void *) wglCreateContext(void *unnamedParam1);
-WIN32_OPENGL_API(void *) wglGetCurrentContext(void);
-WIN32_OPENGL_API(void *) wglGetCurrentDC(void);
-WIN32_OPENGL_API(i32)    wglDeleteContext(void *unnamedParam1);
-WIN32_OPENGL_API(i32)    wglMakeCurrent(void *unnamedParam1, void *unnamedParam2);
-WIN32_OPENGL_API(PROC)   wglGetProcAddress(s8 *unnamedParam1);
-/* clang-format on */
+typedef PROC(__stdcall *PFNWGLGETPROCADDRESSPROC)(char *);
+static PFNWGLGETPROCADDRESSPROC wglGetProcAddress;
+
+typedef void *(*PFNWGLCREATECONTEXTPROC)(void *unnamedParam1);
+static PFNWGLCREATECONTEXTPROC wglCreateContext;
+
+typedef i32 (*PFNWGLDELETECONTEXTPROC)(void *unnamedParam1);
+static PFNWGLDELETECONTEXTPROC wglDeleteContext;
+
+typedef i32 (*PFNWGLMAKECURRENTPROC)(void *unnamedParam1, void *unnamedParam2);
+static PFNWGLMAKECURRENTPROC wglMakeCurrent;
 
 typedef i32 (*PFNWGLCHOOSEPIXELFORMATARBPROC)(void *hdc, i32 *piAttribIList, f32 *pfAttribFList, u32 nMaxFormats, i32 *piFormats, u32 *nNumFormats);
 static PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
@@ -53,7 +56,7 @@ static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
  */
 typedef PROC (*win32_fathom_opengl_function_loader)(s8 *function_name);
 
-FATHOM_API FATHOM_INLINE u8 win32_fathom_opengl_load_functions(win32_fathom_opengl_function_loader load)
+FATHOM_API FATHOM_INLINE u8 win32_fathom_opengl_load_functions(win32_fathom_opengl_function_loader load, u8 wglCore)
 {
     if (!load)
     {
@@ -65,9 +68,18 @@ FATHOM_API FATHOM_INLINE u8 win32_fathom_opengl_load_functions(win32_fathom_open
 #endif
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-function-type"
-    wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)load("wglChoosePixelFormatARB");
-    wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)load("wglCreateContextAttribsARB");
-    wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)load("wglSwapIntervalEXT");
+    if (wglCore)
+    {
+        wglCreateContext = (PFNWGLCREATECONTEXTPROC)load("wglCreateContext");
+        wglDeleteContext = (PFNWGLDELETECONTEXTPROC)load("wglDeleteContext");
+        wglMakeCurrent = (PFNWGLMAKECURRENTPROC)load("wglMakeCurrent");
+    }
+    else
+    {
+        wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)load("wglChoosePixelFormatARB");
+        wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)load("wglCreateContextAttribsARB");
+        wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)load("wglSwapIntervalEXT");
+    }
 #pragma GCC diagnostic pop
 
     return 1;

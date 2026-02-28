@@ -10,7 +10,7 @@ set DEF_COMPILER_FLAGS=-mwindows -march=native -mtune=native ^
 -Wall -Wextra -Werror -Wvla -Wconversion -Wdouble-promotion -Wsign-conversion ^
 -Wmissing-field-initializers -Wuninitialized -Winit-self -Wunused -Wunused-macros -Wunused-local-typedefs
 
-set DEF_FLAGS_LINKER=-lkernel32 -luser32 -lgdi32 -lopengl32
+set DEF_FLAGS_LINKER=-lkernel32 -luser32 -lgdi32
 
 cc -s -O2 %DEF_COMPILER_FLAGS% %PLATFORM_NAME%.c %ICON_DATA% -o %PLATFORM_NAME%.exe %DEF_FLAGS_LINKER%
 %PLATFORM_NAME%.exe
