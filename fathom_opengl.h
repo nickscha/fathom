@@ -158,6 +158,63 @@ typedef void (*PFNGLDRAWARRAYSINSTANCED)(i32 mode, i32 first, i32 count, u32 pri
 static PFNGLDRAWARRAYSINSTANCED glDrawArraysInstanced;
 
 /* #############################################################################
+ * # [SECTION] OpenGL Function Loader
+ * #############################################################################
+ */
+typedef void *(*fathom_opengl_proc)(void);
+typedef fathom_opengl_proc (*fathom_opengl_function_loader)(s8 *function_name);
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4068)
+#endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+FATHOM_API u8 fathom_opengl_load_functions(fathom_opengl_function_loader load)
+{
+    if (!load)
+    {
+        return 0;
+    }
+
+    glCreateShader = (PFNGLCREATESHADERPROC)load("glCreateShader");
+    glCreateProgram = (PFNGLCREATEPROGRAMPROC)load("glCreateProgram");
+    glDeleteProgram = (PFNGLDELETEPROGRAMPROC)load("glDeleteProgram");
+    glAttachShader = (PFNGLATTACHSHADERPROC)load("glAttachShader");
+    glShaderSource = (PFNGLSHADERSOURCEPROC)load("glShaderSource");
+    glCompileShader = (PFNGLCOMPILESHADERPROC)load("glCompileShader");
+    glGetShaderiv = (PFNGLGETSHADERIVPROC)load("glGetShaderiv");
+    glGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)load("glGetShaderInfoLog");
+    glLinkProgram = (PFNGLLINKPROGRAMPROC)load("glLinkProgram");
+    glGetProgramiv = (PFNGLGETPROGRAMIVPROC)load("glGetProgramiv");
+    glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)load("glGetProgramInfoLog");
+    glDeleteShader = (PFNGLDELETESHADERPROC)load("glDeleteShader");
+    glDrawArrays = (PFNGLDRAWARRAYSPROC)load("glDrawArrays");
+    glUseProgram = (PFNGLUSEPROGRAMPROC)load("glUseProgram");
+    glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)load("glGenVertexArrays");
+    glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)load("glBindVertexArray");
+    glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)load("glGetUniformLocation");
+    glUniform1f = (PFNGLUNIFORM1FPROC)load("glUniform1f");
+    glUniform1i = (PFNGLUNIFORM1IPROC)load("glUniform1i");
+    glUniform3f = (PFNGLUNIFORM3FPROC)load("glUniform3f");
+    glUniform3i = (PFNGLUNIFORM3IPROC)load("glUniform3i");
+    glUniform4f = (PFNGLUNIFORM4FPROC)load("glUniform4f");
+    glUniform4fv = (PFNGLUNIFORM4FVPROC)load("glUniform4fv");
+    glActiveTexture = (PFNGLACTIVETEXTUREPROC)load("glActiveTexture");
+    glTexImage3D = (PFNGLTEXIMAGE3DPROC)load("glTexImage3D");
+    glGenBuffers = (PFNGLGENBUFFERSPROC)load("glGenBuffers");
+    glBindBuffer = (PFNGLBINDBUFFERPROC)load("glBindBuffer");
+    glBufferData = (PFNGLBUFFERDATAPROC)load("glBufferData");
+    glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)load("glEnableVertexAttribArray");
+    glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)load("glVertexAttribPointer");
+    glVertexAttribIPointer = (PFNGLVERTEXATTRIBIPOINTERPROC)load("glVertexAttribIPointer");
+    glVertexAttribDivisor = (PFNGLVERTEXATTRIBDIVISORPROC)load("glVertexAttribDivisor");
+    glDrawArraysInstanced = (PFNGLDRAWARRAYSINSTANCED)load("glDrawArraysInstanced");
+
+    return 1;
+}
+#pragma GCC diagnostic pop
+
+/* #############################################################################
  * # [SECTION] OpenGL Shader Compilation and Creation
  * #############################################################################
  */
@@ -165,7 +222,7 @@ typedef void (*fathom_opengl_print)(s8 *string);
 
 static s8 shader_info_log[1024];
 
-FATHOM_API i32 opengl_shader_compile(s8 *shaderCode, u32 shaderType, fathom_opengl_print print)
+FATHOM_API i32 fathom_opengl_shader_compile(s8 *shaderCode, u32 shaderType, fathom_opengl_print print)
 {
     u32 shaderId = glCreateShader(shaderType);
     i32 success;
@@ -188,20 +245,20 @@ FATHOM_API i32 opengl_shader_compile(s8 *shaderCode, u32 shaderType, fathom_open
     return (i32)shaderId;
 }
 
-FATHOM_API i32 opengl_shader_create(u32 *shader_program, s8 *shader_vertex_code, s8 *shader_fragment_code, fathom_opengl_print print)
+FATHOM_API i32 fathom_opengl_shader_create(u32 *shader_program, s8 *shader_vertex_code, s8 *shader_fragment_code, fathom_opengl_print print)
 {
     i32 vertex_shader_id;
     i32 fragment_shader_id;
     i32 success;
 
-    vertex_shader_id = opengl_shader_compile(shader_vertex_code, GL_VERTEX_SHADER, print);
+    vertex_shader_id = fathom_opengl_shader_compile(shader_vertex_code, GL_VERTEX_SHADER, print);
 
     if (vertex_shader_id == -1)
     {
         return 0;
     }
 
-    fragment_shader_id = opengl_shader_compile(shader_fragment_code, GL_FRAGMENT_SHADER, print);
+    fragment_shader_id = fathom_opengl_shader_compile(shader_fragment_code, GL_FRAGMENT_SHADER, print);
 
     if (fragment_shader_id == -1)
     {

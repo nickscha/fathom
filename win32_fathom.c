@@ -872,7 +872,7 @@ typedef struct shader_recording
 
 static u32 opengl_failed_function_load_count = 0;
 
-FATHOM_API PROC opengl_load_function(s8 *name)
+FATHOM_API PROC win32_opengl_load_function(s8 *name)
 {
   PROC gl_function = wglGetProcAddress(name);
 
@@ -998,46 +998,12 @@ FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_fathom_state *state)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-function-type"
   /* Core WGL functions */
-  wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)opengl_load_function("wglChoosePixelFormatARB");
-  wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)opengl_load_function("wglCreateContextAttribsARB");
-  wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)opengl_load_function("wglSwapIntervalEXT");
-
-  /* OpenGL 1.1+ Functions that are part of the GPU driver rather than opengl32.dll */
-  glCreateShader = (PFNGLCREATESHADERPROC)opengl_load_function("glCreateShader");
-  glCreateProgram = (PFNGLCREATEPROGRAMPROC)opengl_load_function("glCreateProgram");
-  glDeleteProgram = (PFNGLDELETEPROGRAMPROC)opengl_load_function("glDeleteProgram");
-  glAttachShader = (PFNGLATTACHSHADERPROC)opengl_load_function("glAttachShader");
-  glShaderSource = (PFNGLSHADERSOURCEPROC)opengl_load_function("glShaderSource");
-  glCompileShader = (PFNGLCOMPILESHADERPROC)opengl_load_function("glCompileShader");
-  glGetShaderiv = (PFNGLGETSHADERIVPROC)opengl_load_function("glGetShaderiv");
-  glGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)opengl_load_function("glGetShaderInfoLog");
-  glLinkProgram = (PFNGLLINKPROGRAMPROC)opengl_load_function("glLinkProgram");
-  glGetProgramiv = (PFNGLGETPROGRAMIVPROC)opengl_load_function("glGetProgramiv");
-  glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)opengl_load_function("glGetProgramInfoLog");
-  glDeleteShader = (PFNGLDELETESHADERPROC)opengl_load_function("glDeleteShader");
-  glDrawArrays = (PFNGLDRAWARRAYSPROC)opengl_load_function("glDrawArrays");
-  glUseProgram = (PFNGLUSEPROGRAMPROC)opengl_load_function("glUseProgram");
-  glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)opengl_load_function("glGenVertexArrays");
-  glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)opengl_load_function("glBindVertexArray");
-  glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)opengl_load_function("glGetUniformLocation");
-  glUniform1f = (PFNGLUNIFORM1FPROC)opengl_load_function("glUniform1f");
-  glUniform1i = (PFNGLUNIFORM1IPROC)opengl_load_function("glUniform1i");
-  glUniform3f = (PFNGLUNIFORM3FPROC)opengl_load_function("glUniform3f");
-  glUniform3i = (PFNGLUNIFORM3IPROC)opengl_load_function("glUniform3i");
-  glUniform4f = (PFNGLUNIFORM4FPROC)opengl_load_function("glUniform4f");
-  glUniform4fv = (PFNGLUNIFORM4FVPROC)opengl_load_function("glUniform4fv");
-  glActiveTexture = (PFNGLACTIVETEXTUREPROC)opengl_load_function("glActiveTexture");
-  glTexImage3D = (PFNGLTEXIMAGE3DPROC)opengl_load_function("glTexImage3D");
-  glGenBuffers = (PFNGLGENBUFFERSPROC)opengl_load_function("glGenBuffers");
-  glBindBuffer = (PFNGLBINDBUFFERPROC)opengl_load_function("glBindBuffer");
-  glBufferData = (PFNGLBUFFERDATAPROC)opengl_load_function("glBufferData");
-  glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)opengl_load_function("glEnableVertexAttribArray");
-  glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)opengl_load_function("glVertexAttribPointer");
-  glVertexAttribIPointer = (PFNGLVERTEXATTRIBIPOINTERPROC)opengl_load_function("glVertexAttribIPointer");
-  glVertexAttribDivisor = (PFNGLVERTEXATTRIBDIVISORPROC)opengl_load_function("glVertexAttribDivisor");
-  glDrawArraysInstanced = (PFNGLDRAWARRAYSINSTANCED)opengl_load_function("glDrawArraysInstanced");
-
+  wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)win32_opengl_load_function("wglChoosePixelFormatARB");
+  wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)win32_opengl_load_function("wglCreateContextAttribsARB");
+  wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)win32_opengl_load_function("wglSwapIntervalEXT");
 #pragma GCC diagnostic pop
+
+  fathom_opengl_load_functions(win32_opengl_load_function);
 
   if (opengl_failed_function_load_count > 0)
   {
@@ -1123,7 +1089,7 @@ FATHOM_API u32 opengl_shader_load(shader_header *shader, s8 *shader_code_vertex,
 {
   u32 new_program;
 
-  if (!opengl_shader_create(&new_program, shader_code_vertex, shader_code_fragment, win32_print))
+  if (!fathom_opengl_shader_create(&new_program, shader_code_vertex, shader_code_fragment, win32_print))
   {
     win32_print("[opengl] compile failed, keeping old shader is present\n");
     shader->had_failure = 1;
