@@ -126,7 +126,6 @@ WIN32_FATHOM_API_TYPES_STATIC_ASSERT(sizeof(i64) == 8, i64_size_must_be_8);
 
 #define TH32CS_SNAPTHREAD 0x00000004
 
-typedef void *(*PROC)(void);
 typedef i64 (*WNDPROC)(void *, u32, u64, i64);
 
 typedef struct CREATESTRUCTA
@@ -394,46 +393,6 @@ WIN32_API(i32)    GetProcessHandleCount(void* hProcess, u32* pdwHandleCount);
 WIN32_API(void *) CreateToolhelp32Snapshot(u32 dwFlags, u32 th32ProcessID);
 WIN32_API(i32)    Thread32First(void* hSnapshot, THREADENTRY32* lpte);
 WIN32_API(i32)    Thread32Next(void* hSnapshot, THREADENTRY32* lpte);
-
-/* WGL */
-WIN32_API(void *) wglCreateContext(void *unnamedParam1);
-WIN32_API(void *) wglGetCurrentContext(void);
-WIN32_API(void *) wglGetCurrentDC(void);
-WIN32_API(i32)    wglDeleteContext(void *unnamedParam1);
-WIN32_API(i32)    wglMakeCurrent(void *unnamedParam1, void *unnamedParam2);
-WIN32_API(PROC)   wglGetProcAddress(s8 *unnamedParam1);
 /* clang-format on */
-
-/* #############################################################################
- * # OpenGL Functions not automatically provided by win32 opengl32
- * # Needs to be loaded during runtime
- * #############################################################################
- */
-#define WGL_DRAW_TO_WINDOW_ARB 0x2001
-#define WGL_SUPPORT_OPENGL_ARB 0x2010
-#define WGL_DOUBLE_BUFFER_ARB 0x2011
-#define WGL_PIXEL_TYPE_ARB 0x2013
-#define WGL_TYPE_RGBA_ARB 0x202B
-#define WGL_ACCELERATION_ARB 0x2003
-#define WGL_FULL_ACCELERATION_ARB 0x2027
-#define WGL_COLOR_BITS_ARB 0x2014
-#define WGL_ALPHA_BITS_ARB 0x201B
-#define WGL_DEPTH_BITS_ARB 0x2022
-#define WGL_STENCIL_BITS_ARB 0x2023
-#define WGL_CONTEXT_MAJOR_VERSION_ARB 0x2091
-#define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
-#define WGL_CONTEXT_PROFILE_MASK_ARB 0x9126
-#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
-#define WGL_CONTEXT_FLAGS_ARB 0x2094
-#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB 0x00000002
-
-typedef i32 (*PFNWGLCHOOSEPIXELFORMATARBPROC)(void *hdc, i32 *piAttribIList, f32 *pfAttribFList, u32 nMaxFormats, i32 *piFormats, u32 *nNumFormats);
-static PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
-
-typedef void *(*PFNWGLCREATECONTEXTATTRIBSARBPROC)(void *hDC, void *hShareContext, i32 *attribList);
-static PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
-
-typedef i32 (*PFNWGLSWAPINTERVALEXTPROC)(i32 interval);
-static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 
 #endif /* WIN32_FATHOM_API_H */

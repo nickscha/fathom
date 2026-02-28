@@ -208,7 +208,7 @@ static PFNGLDRAWARRAYSINSTANCED glDrawArraysInstanced;
 typedef void *(*fathom_opengl_proc)(void);
 typedef fathom_opengl_proc (*fathom_opengl_function_loader)(s8 *function_name);
 
-FATHOM_API u8 fathom_opengl_load_functions(fathom_opengl_function_loader load)
+FATHOM_API FATHOM_INLINE u8 fathom_opengl_load_functions(fathom_opengl_function_loader load)
 {
     if (!load)
     {

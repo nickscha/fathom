@@ -10,6 +10,7 @@ LICENSE
 #include "fathom_font.h"
 #include "fathom_string_builder.h"
 #include "fathom_opengl.h"
+#include "win32_fathom_opengl.h"
 #include "win32_fathom_api.h"
 #include "win32_fathom_xinput.h"
 
@@ -992,17 +993,8 @@ FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_fathom_state *state)
 
   state->device_context = GetDC(state->window_handle);
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4068)
-#endif
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-function-type"
-  /* Core WGL functions */
-  wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)win32_opengl_load_function("wglChoosePixelFormatARB");
-  wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)win32_opengl_load_function("wglCreateContextAttribsARB");
-  wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)win32_opengl_load_function("wglSwapIntervalEXT");
-#pragma GCC diagnostic pop
-
+  /* Load wgl and common opengl function */
+  win32_fathom_opengl_load_functions(win32_opengl_load_function);
   fathom_opengl_load_functions(win32_opengl_load_function);
 
   if (opengl_failed_function_load_count > 0)
