@@ -1,5 +1,5 @@
-#ifndef FATHOM_OPENGL_API_H
-#define FATHOM_OPENGL_API_H
+#ifndef FATHOM_OPENGL_H
+#define FATHOM_OPENGL_H
 
 #include "fathom_types.h"
 
@@ -157,4 +157,77 @@ static PFNGLVERTEXATTRIBDIVISORPROC glVertexAttribDivisor;
 typedef void (*PFNGLDRAWARRAYSINSTANCED)(i32 mode, i32 first, i32 count, u32 primcount);
 static PFNGLDRAWARRAYSINSTANCED glDrawArraysInstanced;
 
-#endif /* FATHOM_OPENGL_API_H */
+/* #############################################################################
+ * # [SECTION] OpenGL Shader Compilation and Creation
+ * #############################################################################
+ */
+typedef void (*fathom_opengl_print)(s8 *string);
+
+static s8 shader_info_log[1024];
+
+FATHOM_API i32 opengl_shader_compile(s8 *shaderCode, u32 shaderType, fathom_opengl_print print)
+{
+    u32 shaderId = glCreateShader(shaderType);
+    i32 success;
+
+    glShaderSource(shaderId, 1, &shaderCode, 0);
+    glCompileShader(shaderId);
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &success);
+
+    if (!success)
+    {
+        glGetShaderInfoLog(shaderId, 1024, 0, shader_info_log);
+
+        print("[opengl] shader compilation error:\n");
+        print(shader_info_log);
+        print("\n");
+
+        return -1;
+    }
+
+    return (i32)shaderId;
+}
+
+FATHOM_API i32 opengl_shader_create(u32 *shader_program, s8 *shader_vertex_code, s8 *shader_fragment_code, fathom_opengl_print print)
+{
+    i32 vertex_shader_id;
+    i32 fragment_shader_id;
+    i32 success;
+
+    vertex_shader_id = opengl_shader_compile(shader_vertex_code, GL_VERTEX_SHADER, print);
+
+    if (vertex_shader_id == -1)
+    {
+        return 0;
+    }
+
+    fragment_shader_id = opengl_shader_compile(shader_fragment_code, GL_FRAGMENT_SHADER, print);
+
+    if (fragment_shader_id == -1)
+    {
+        return 0;
+    }
+
+    *shader_program = glCreateProgram();
+    glAttachShader(*shader_program, (u32)vertex_shader_id);
+    glAttachShader(*shader_program, (u32)fragment_shader_id);
+    glLinkProgram(*shader_program);
+    glGetProgramiv(*shader_program, GL_LINK_STATUS, &success);
+    glDeleteShader((u32)vertex_shader_id);
+    glDeleteShader((u32)fragment_shader_id);
+
+    if (!success)
+    {
+        glGetProgramInfoLog(*shader_program, 1024, 0, shader_info_log);
+
+        print("[opengl] program creation error:\n");
+        print(shader_info_log);
+        print("\n");
+
+        return 0;
+    }
+
+    return 1;
+}
+
+#endif /* FATHOM_OPENGL_H */

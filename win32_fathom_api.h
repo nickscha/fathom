@@ -420,4 +420,36 @@ WIN32_API(void)   glBlendFunc(u32 sfactor, u32 dfactor);
 WIN32_API(void)   glGetIntegerv(u32 pname, i32 *params);
 /* clang-format on */
 
+/* #############################################################################
+ * # OpenGL Functions not automatically provided by win32 opengl32
+ * # Needs to be loaded during runtime
+ * #############################################################################
+ */
+#define WGL_DRAW_TO_WINDOW_ARB 0x2001
+#define WGL_SUPPORT_OPENGL_ARB 0x2010
+#define WGL_DOUBLE_BUFFER_ARB 0x2011
+#define WGL_PIXEL_TYPE_ARB 0x2013
+#define WGL_TYPE_RGBA_ARB 0x202B
+#define WGL_ACCELERATION_ARB 0x2003
+#define WGL_FULL_ACCELERATION_ARB 0x2027
+#define WGL_COLOR_BITS_ARB 0x2014
+#define WGL_ALPHA_BITS_ARB 0x201B
+#define WGL_DEPTH_BITS_ARB 0x2022
+#define WGL_STENCIL_BITS_ARB 0x2023
+#define WGL_CONTEXT_MAJOR_VERSION_ARB 0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
+#define WGL_CONTEXT_PROFILE_MASK_ARB 0x9126
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
+#define WGL_CONTEXT_FLAGS_ARB 0x2094
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB 0x00000002
+
+typedef i32 (*PFNWGLCHOOSEPIXELFORMATARBPROC)(void *hdc, i32 *piAttribIList, f32 *pfAttribFList, u32 nMaxFormats, i32 *piFormats, u32 *nNumFormats);
+static PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
+
+typedef void *(*PFNWGLCREATECONTEXTATTRIBSARBPROC)(void *hDC, void *hShareContext, i32 *attribList);
+static PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
+
+typedef i32 (*PFNWGLSWAPINTERVALEXTPROC)(i32 interval);
+static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
+
 #endif /* WIN32_FATHOM_API_H */

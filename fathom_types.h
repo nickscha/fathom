@@ -35,6 +35,7 @@
 
 /* API */
 #define FATHOM_API static
+#define FATHOM_NULL (void *)0
 
 /* #############################################################################
  * # [SECTION] Basic Types

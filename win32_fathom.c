@@ -6,11 +6,10 @@ LICENSE
   See end of file for detailed license information.
 
 */
-
 #include "fathom_types.h"
 #include "fathom_font.h"
 #include "fathom_string_builder.h"
-#include "fathom_opengl_api.h"
+#include "fathom_opengl.h"
 #include "win32_fathom_api.h"
 #include "win32_fathom_xinput.h"
 
@@ -37,38 +36,6 @@ void *memset(void *dest, i32 c, u32 count)
  */
 __declspec(dllexport) u32 NvOptimusEnablement = 0x00000001;         /* NVIDIA Force discrete GPU */
 __declspec(dllexport) i32 AmdPowerXpressRequestHighPerformance = 1; /* AMD Force discrete GPU    */
-
-/* #############################################################################
- * # OpenGL Functions not automatically provided by win32 opengl32
- * # Needs to be loaded during runtime
- * #############################################################################
- */
-#define WGL_DRAW_TO_WINDOW_ARB 0x2001
-#define WGL_SUPPORT_OPENGL_ARB 0x2010
-#define WGL_DOUBLE_BUFFER_ARB 0x2011
-#define WGL_PIXEL_TYPE_ARB 0x2013
-#define WGL_TYPE_RGBA_ARB 0x202B
-#define WGL_ACCELERATION_ARB 0x2003
-#define WGL_FULL_ACCELERATION_ARB 0x2027
-#define WGL_COLOR_BITS_ARB 0x2014
-#define WGL_ALPHA_BITS_ARB 0x201B
-#define WGL_DEPTH_BITS_ARB 0x2022
-#define WGL_STENCIL_BITS_ARB 0x2023
-#define WGL_CONTEXT_MAJOR_VERSION_ARB 0x2091
-#define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
-#define WGL_CONTEXT_PROFILE_MASK_ARB 0x9126
-#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
-#define WGL_CONTEXT_FLAGS_ARB 0x2094
-#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB 0x00000002
-
-typedef i32 (*PFNWGLCHOOSEPIXELFORMATARBPROC)(void *hdc, i32 *piAttribIList, f32 *pfAttribFList, u32 nMaxFormats, i32 *piFormats, u32 *nNumFormats);
-static PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
-
-typedef void *(*PFNWGLCREATECONTEXTATTRIBSARBPROC)(void *hDC, void *hShareContext, i32 *attribList);
-static PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
-
-typedef i32 (*PFNWGLSWAPINTERVALEXTPROC)(i32 interval);
-static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 
 /* #############################################################################
  * # [SECTION] WIN32 specifiy functions
@@ -121,7 +88,7 @@ FATHOM_API u8 *win32_file_read(s8 *filename, u32 *file_size_out)
 
   if (hFile == INVALID_HANDLE)
   {
-    return (void *)0;
+    return FATHOM_NULL;
   }
 
   fileSize = GetFileSize(hFile, 0);
@@ -129,7 +96,7 @@ FATHOM_API u8 *win32_file_read(s8 *filename, u32 *file_size_out)
   if (fileSize == INVALID_FILE_SIZE || fileSize == 0)
   {
     CloseHandle(hFile);
-    return (void *)0;
+    return FATHOM_NULL;
   }
 
   buffer = (u8 *)VirtualAlloc(0, fileSize + 1, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -137,14 +104,14 @@ FATHOM_API u8 *win32_file_read(s8 *filename, u32 *file_size_out)
   if (!buffer)
   {
     CloseHandle(hFile);
-    return (void *)0;
+    return FATHOM_NULL;
   }
 
   if (!ReadFile(hFile, buffer, fileSize, &bytesRead, 0) || bytesRead != fileSize)
   {
     VirtualFree(buffer, 0, MEM_RELEASE);
     CloseHandle(hFile);
-    return (void *)0;
+    return FATHOM_NULL;
   }
 
   buffer[fileSize] = '\0';
@@ -566,7 +533,7 @@ FATHOM_API FATHOM_INLINE i64 win32_window_callback(void *window, u32 message, u6
       break;
     }
 
-    GetRawInputData((RAWINPUT *)lParam, RID_INPUT, (void *)0, &dwSize, sizeof(RAWINPUTHEADER));
+    GetRawInputData((RAWINPUT *)lParam, RID_INPUT, FATHOM_NULL, &dwSize, sizeof(RAWINPUTHEADER));
 
     if (dwSize > sizeof(rawBuffer) ||
         GetRawInputData((RAWINPUT *)lParam, RID_INPUT, raw, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
@@ -702,7 +669,7 @@ FATHOM_API void win32_window_enter_windowed(win32_fathom_state *state)
 
     SetWindowLongA(state->window_handle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
     SetWindowPlacement(state->window_handle, &g_wpPrev);
-    SetWindowPos(state->window_handle, (void *)0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+    SetWindowPos(state->window_handle, FATHOM_NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
     GetClientRect(state->window_handle, &rect);
 
     state->window_width_pending = (u32)(rect.right - rect.left);
@@ -717,7 +684,7 @@ FATHOM_API void win32_window_enter_windowed(win32_fathom_state *state)
     rect.bottom = (i32)state->window_height;
 
     AdjustWindowRect(&rect, (u32)GetWindowLongA(state->window_handle, GWL_STYLE), 0);
-    SetWindowPos(state->window_handle, (void *)0, 0, 0, rect.right - rect.left, rect.bottom - rect.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+    SetWindowPos(state->window_handle, FATHOM_NULL, 0, 0, rect.right - rect.left, rect.bottom - rect.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
   }
 }
 
@@ -902,8 +869,6 @@ typedef struct shader_recording
   i32 loc_iTime;
 
 } shader_recording;
-
-static s8 shader_info_log[1024];
 
 static u32 opengl_failed_function_load_count = 0;
 
@@ -1154,76 +1119,11 @@ FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_fathom_state *state)
   return 1;
 }
 
-FATHOM_API i32 opengl_shader_compile(s8 *shaderCode, u32 shaderType)
-{
-  u32 shaderId = glCreateShader(shaderType);
-  i32 success;
-
-  glShaderSource(shaderId, 1, &shaderCode, 0);
-  glCompileShader(shaderId);
-  glGetShaderiv(shaderId, GL_COMPILE_STATUS, &success);
-
-  if (!success)
-  {
-    glGetShaderInfoLog(shaderId, 1024, 0, shader_info_log);
-
-    win32_print("[opengl] shader compilation error:\n");
-    win32_print(shader_info_log);
-    win32_print("\n");
-
-    return -1;
-  }
-
-  return (i32)shaderId;
-}
-
-FATHOM_API i32 opengl_shader_create(u32 *shader_program, s8 *shader_vertex_code, s8 *shader_fragment_code)
-{
-  i32 vertex_shader_id;
-  i32 fragment_shader_id;
-  i32 success;
-
-  vertex_shader_id = opengl_shader_compile(shader_vertex_code, GL_VERTEX_SHADER);
-
-  if (vertex_shader_id == -1)
-  {
-    return 0;
-  }
-
-  fragment_shader_id = opengl_shader_compile(shader_fragment_code, GL_FRAGMENT_SHADER);
-
-  if (fragment_shader_id == -1)
-  {
-    return 0;
-  }
-
-  *shader_program = glCreateProgram();
-  glAttachShader(*shader_program, (u32)vertex_shader_id);
-  glAttachShader(*shader_program, (u32)fragment_shader_id);
-  glLinkProgram(*shader_program);
-  glGetProgramiv(*shader_program, GL_LINK_STATUS, &success);
-  glDeleteShader((u32)vertex_shader_id);
-  glDeleteShader((u32)fragment_shader_id);
-
-  if (!success)
-  {
-    glGetProgramInfoLog(*shader_program, 1024, 0, shader_info_log);
-
-    win32_print("[opengl] program creation error:\n");
-    win32_print(shader_info_log);
-    win32_print("\n");
-
-    return 0;
-  }
-
-  return 1;
-}
-
 FATHOM_API u32 opengl_shader_load(shader_header *shader, s8 *shader_code_vertex, s8 *shader_code_fragment)
 {
   u32 new_program;
 
-  if (!opengl_shader_create(&new_program, shader_code_vertex, shader_code_fragment))
+  if (!opengl_shader_create(&new_program, shader_code_vertex, shader_code_fragment, win32_print))
   {
     win32_print("[opengl] compile failed, keeping old shader is present\n");
     shader->had_failure = 1;
@@ -1737,7 +1637,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
 
     /* pos (location = 0) */
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(f32), (void *)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(f32), FATHOM_NULL);
     glVertexAttribDivisor(0, 0);
 
     glGenBuffers(1, &glyph_vbo);
@@ -1745,7 +1645,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
 
     /* iGlyph (location = 1) */
     glEnableVertexAttribArray(1);
-    glVertexAttribIPointer(1, 4, GL_UNSIGNED_SHORT, sizeof(glyph), (void *)0);
+    glVertexAttribIPointer(1, 4, GL_UNSIGNED_SHORT, sizeof(glyph), FATHOM_NULL);
     glVertexAttribDivisor(1, 1);
   }
 
