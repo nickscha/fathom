@@ -2107,7 +2107,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
 
         if (main_shader.header.had_failure)
         {
-          fathom_sb_s8(&t, shader_info_log);
+          fathom_sb_s8(&t, fathom_opengl_shader_info_log);
           CALC_GLYPH(t, pack_rgb565(255, 0, 0));
         }
         else

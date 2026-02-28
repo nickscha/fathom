@@ -282,7 +282,7 @@ FATHOM_API FATHOM_INLINE u8 fathom_opengl_load_functions(fathom_opengl_function_
  */
 typedef void (*fathom_opengl_print)(s8 *string);
 
-static s8 shader_info_log[1024];
+static s8 fathom_opengl_shader_info_log[1024];
 
 FATHOM_API i32 fathom_opengl_shader_compile(s8 *shaderCode, u32 shaderType, fathom_opengl_print print)
 {
@@ -295,10 +295,10 @@ FATHOM_API i32 fathom_opengl_shader_compile(s8 *shaderCode, u32 shaderType, fath
 
     if (!success)
     {
-        glGetShaderInfoLog(shaderId, 1024, 0, shader_info_log);
+        glGetShaderInfoLog(shaderId, 1024, 0, fathom_opengl_shader_info_log);
 
         print("[opengl] shader compilation error:\n");
-        print(shader_info_log);
+        print(fathom_opengl_shader_info_log);
         print("\n");
 
         return -1;
@@ -337,10 +337,10 @@ FATHOM_API i32 fathom_opengl_shader_create(u32 *shader_program, s8 *shader_verte
 
     if (!success)
     {
-        glGetProgramInfoLog(*shader_program, 1024, 0, shader_info_log);
+        glGetProgramInfoLog(*shader_program, 1024, 0, fathom_opengl_shader_info_log);
 
         print("[opengl] program creation error:\n");
-        print(shader_info_log);
+        print(fathom_opengl_shader_info_log);
         print("\n");
 
         return 0;
