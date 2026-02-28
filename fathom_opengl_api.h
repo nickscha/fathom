@@ -7,7 +7,6 @@
  * # [SECTION] OpenGL API
  * #############################################################################
  */
-/* OpenGL functions directly part of opengl32 lib */
 #define GL_TRUE 1
 #define GL_FALSE 0
 #define GL_UNSIGNED_SHORT 0x1403
