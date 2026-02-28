@@ -9,6 +9,7 @@ LICENSE
 #include "fathom_types.h"
 #include "fathom_font.h"
 #include "fathom_string_builder.h"
+#include "fathom_profiler.h"
 #include "fathom_opengl.h"
 #include "win32_fathom_opengl.h"
 #include "win32_fathom_api.h"
@@ -29,6 +30,22 @@ void *memset(void *dest, i32 c, u32 count)
     *bytes++ = (s8)c;
   }
   return dest;
+}
+
+FATHOM_API f64 fathom_profiler_time_ms(void)
+{
+  static i64 freq;
+
+  i64 time;
+
+  if (!freq)
+  {
+    QueryPerformanceFrequency(&freq);
+  }
+
+  QueryPerformanceCounter(&time);
+
+  return ((f64)time * 1000.0) / (f64)freq;
 }
 
 /* #############################################################################
@@ -693,7 +710,6 @@ FATHOM_API void win32_window_enter_windowed(win32_fathom_state *state)
  * # [SECTION] Font Loading and Parsing
  * #############################################################################
  */
-
 FATHOM_API void unpack_1bit_to_8bit(
     u8 *dst, /* width * height bytes */
     u8 *src, /* packed bits */
@@ -885,7 +901,7 @@ FATHOM_API PROC win32_opengl_load_function(s8 *name)
 
     if (!win32_opengl_lib)
     {
-      return (void *)0;
+      return FATHOM_NULL;
     }
   }
 
@@ -897,8 +913,8 @@ FATHOM_API PROC win32_opengl_load_function(s8 *name)
     {
       win32_print("[opengl] FATAL: cannot load wglGetProcAddress!\n");
       FreeLibrary(win32_opengl_lib);
-      win32_opengl_lib = (void *)0;
-      return (void *)0;
+      win32_opengl_lib = FATHOM_NULL;
+      return FATHOM_NULL;
     }
   }
 
@@ -935,6 +951,8 @@ FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_fathom_state *state)
   void *fake_rc;
   i32 fake_pixel_format;
   PIXELFORMATDESCRIPTOR fake_pfd = {0};
+
+  FATHOM_PROFILER_BEGIN(win32_opengl_init);
 
   window_class.style = CS_OWNDC;
   window_class.lpfnWndProc = win32_window_callback;
@@ -1092,6 +1110,8 @@ FATHOM_API FATHOM_INLINE i32 opengl_create_context(win32_fathom_state *state)
   win32_print("[opengl] version : ");
   win32_print(state->gl_version);
   win32_print("\n");
+
+  FATHOM_PROFILER_END(win32_opengl_init);
 
   return 1;
 }
@@ -1303,7 +1323,9 @@ FATHOM_API void fathom_create_grid(win32_fathom_state *state, fathom_sparse_grid
 
   grid->brick_map_data = VirtualAlloc(0, grid->brick_map_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
+  FATHOM_PROFILER_BEGIN(sparse_grid_pass_01);
   fathom_sparse_grid_pass_01_fill_brick_map(grid, sdf_function, state);
+  FATHOM_PROFILER_END(sparse_grid_pass_01);
 
   grid->atlas_data = VirtualAlloc(0, grid->atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
   grid->material_data = VirtualAlloc(0, grid->atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -1315,17 +1337,17 @@ FATHOM_API void fathom_create_grid(win32_fathom_state *state, fathom_sparse_grid
   state->grid_atlas_height = grid->atlas_height;
   state->grid_atlas_depth = grid->atlas_depth;
 
+  FATHOM_PROFILER_BEGIN(sparse_grid_pass_02);
   QueryPerformanceCounter(&state->grid_calc_time_start);
   fathom_sparse_grid_pass_02_fill_atlas(grid, sdf_function, state);
   QueryPerformanceCounter(&state->grid_calc_time_end);
+  FATHOM_PROFILER_END(sparse_grid_pass_02);
 }
 
 FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_shader, u32 main_vao)
 {
   static u8 grid_initialized = 0;
   static fathom_sparse_grid grid_lod0 = {0};
-  static fathom_sparse_grid grid_lod1 = {0};
-  static fathom_sparse_grid grid_lod2 = {0};
   static u32 brickMapTex;
   static u32 atlasTex;
   static u32 materialTex;
@@ -1342,9 +1364,9 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
     u32 grid_cell_count = 128;
     f32 grid_cell_size = 1.0f / 16.0f;
 
-    fathom_create_grid(state, &grid_lod0, fathom_vec3_zero, grid_cell_count, grid_cell_size);        /* LOD 0 */
-    fathom_create_grid(state, &grid_lod1, fathom_vec3_zero, grid_cell_count, grid_cell_size * 2.0f); /* LOD 1 */
-    fathom_create_grid(state, &grid_lod2, fathom_vec3_zero, grid_cell_count, grid_cell_size * 4.0f); /* LOD 2 */
+    FATHOM_PROFILER_BEGIN(sparse_grid_create_lod0);
+    fathom_create_grid(state, &grid_lod0, fathom_vec3_zero, grid_cell_count, grid_cell_size); /* LOD 0 */
+    FATHOM_PROFILER_END(sparse_grid_create_lod0);
 
     /* Brick Map */
     glGenTextures(1, &brickMapTex);
@@ -1888,7 +1910,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
       if (state.ui_enabled)
       {
 
-#define GLYPH_BUFFER_SIZE 512
+#define GLYPH_BUFFER_SIZE 1024
         static glyph glyph_buffer[GLYPH_BUFFER_SIZE];
         static u32 glyph_buffer_count = 0; /* Total glyph count */
         static u32 glyph_count_static = 0; /* Static glyphs only need to be buffered once */
@@ -2171,6 +2193,26 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
 
           offset_memory_y = 10;
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+        }
+
+        /* Show grid memory */
+        {
+          u16 offset_memory_x = 400;
+          u16 offset_memory_y = 200;
+          u32 i;
+
+          for (i = 0; i < fathom_profiler_entries_count; ++i)
+          {
+            fathom_profiler_entry entry = fathom_profiler_entries[i];
+
+            t.length = 0;
+            fathom_sb_s8(&t, entry.name);
+            fathom_sb_s8(&t, ": ");
+            fathom_sb_f64(&t, entry.time_ms_end - entry.time_ms_begin, 4);
+            fathom_sb_s8(&t, "\n");
+
+            glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+          }
         }
 
         glEnable(GL_BLEND);
