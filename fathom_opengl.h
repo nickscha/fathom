@@ -58,6 +58,50 @@
 #define GL_SRC_ALPHA 0x0302
 #define GL_ONE_MINUS_SRC_ALPHA 0x0303
 
+/* OpenGL 1.1 functions */
+typedef void (*PFNGLCLEARCOLORPROC)(f32 red, f32 green, f32 blue, f32 alpha);
+static PFNGLCLEARCOLORPROC glClearColor;
+
+typedef void (*PFNGLCLEARPROC)(u32 mask);
+static PFNGLCLEARPROC glClear;
+
+typedef void (*PFNGLVIEWPORTPROC)(i32 x, i32 y, i32 width, i32 height);
+static PFNGLVIEWPORTPROC glViewport;
+
+typedef void (*PFNGLENABLEPROC)(u32 cap);
+static PFNGLENABLEPROC glEnable;
+
+typedef void (*PFNGLDISABLEPROC)(u32 cap);
+static PFNGLDISABLEPROC glDisable;
+
+typedef u8 *(*PFNGLGETSTRINGPROC)(u32 name);
+static PFNGLGETSTRINGPROC glGetString;
+
+typedef void (*PFNGLGENTEXTURESPROC)(i32 n, u32 *textures);
+static PFNGLGENTEXTURESPROC glGenTextures;
+
+typedef void (*PFNGLBINDTEXTUREPROC)(u32 target, u32 texture);
+static PFNGLBINDTEXTUREPROC glBindTexture;
+
+typedef void (*PFNGLTEXIMAGE2DPROC)(u32 target, i32 level, i32 internalformat, i32 width, i32 height, i32 border, i32 format, u32 type, const void *pixels);
+static PFNGLTEXIMAGE2DPROC glTexImage2D;
+
+typedef void (*PFNGLTEXPARAMETERIPROC)(u32 target, u32 pname, i32 param);
+static PFNGLTEXPARAMETERIPROC glTexParameteri;
+
+typedef void (*PFNGLPIXELSTOREIPROC)(u32 pname, i32 param);
+static PFNGLPIXELSTOREIPROC glPixelStorei;
+
+typedef void (*PFNGLREADPIXELSPROC)(i32 x, i32 y, i32 width, i32 height, i32 format, i32 type, void *pixels);
+static PFNGLREADPIXELSPROC glReadPixels;
+
+typedef void (*PFNGLBLENDFUNCPROC)(u32 sfactor, u32 dfactor);
+static PFNGLBLENDFUNCPROC glBlendFunc;
+
+typedef void (*PFNGLGETINTEGERVPROC)(u32 pname, i32 *params);
+static PFNGLGETINTEGERVPROC glGetIntegerv;
+
+/* Opengl 1.1+ until current */
 typedef u32 (*PFNGLCREATESHADERPROC)(u32 shaderType);
 static PFNGLCREATESHADERPROC glCreateShader;
 
@@ -164,11 +208,6 @@ static PFNGLDRAWARRAYSINSTANCED glDrawArraysInstanced;
 typedef void *(*fathom_opengl_proc)(void);
 typedef fathom_opengl_proc (*fathom_opengl_function_loader)(s8 *function_name);
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4068)
-#endif
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-function-type"
 FATHOM_API u8 fathom_opengl_load_functions(fathom_opengl_function_loader load)
 {
     if (!load)
@@ -176,6 +215,29 @@ FATHOM_API u8 fathom_opengl_load_functions(fathom_opengl_function_loader load)
         return 0;
     }
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4068)
+#endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+
+    /* OpenGL 1.1 functions */
+    glClearColor = (PFNGLCLEARCOLORPROC)load("glClearColor");
+    glClear = (PFNGLCLEARPROC)load("glClear");
+    glViewport = (PFNGLVIEWPORTPROC)load("glViewport");
+    glEnable = (PFNGLENABLEPROC)load("glEnable");
+    glDisable = (PFNGLDISABLEPROC)load("glDisable");
+    glGetString = (PFNGLGETSTRINGPROC)load("glGetString");
+    glGenTextures = (PFNGLGENTEXTURESPROC)load("glGenTextures");
+    glBindTexture = (PFNGLBINDTEXTUREPROC)load("glBindTexture");
+    glTexImage2D = (PFNGLTEXIMAGE2DPROC)load("glTexImage2D");
+    glTexParameteri = (PFNGLTEXPARAMETERIPROC)load("glTexParameteri");
+    glPixelStorei = (PFNGLPIXELSTOREIPROC)load("glPixelStorei");
+    glReadPixels = (PFNGLREADPIXELSPROC)load("glReadPixels");
+    glBlendFunc = (PFNGLBLENDFUNCPROC)load("glBlendFunc");
+    glGetIntegerv = (PFNGLGETINTEGERVPROC)load("glGetIntegerv");
+
+    /* Opengl 1.1+ until current */
     glCreateShader = (PFNGLCREATESHADERPROC)load("glCreateShader");
     glCreateProgram = (PFNGLCREATEPROGRAMPROC)load("glCreateProgram");
     glDeleteProgram = (PFNGLDELETEPROGRAMPROC)load("glDeleteProgram");
@@ -209,10 +271,10 @@ FATHOM_API u8 fathom_opengl_load_functions(fathom_opengl_function_loader load)
     glVertexAttribIPointer = (PFNGLVERTEXATTRIBIPOINTERPROC)load("glVertexAttribIPointer");
     glVertexAttribDivisor = (PFNGLVERTEXATTRIBDIVISORPROC)load("glVertexAttribDivisor");
     glDrawArraysInstanced = (PFNGLDRAWARRAYSINSTANCED)load("glDrawArraysInstanced");
+#pragma GCC diagnostic pop
 
     return 1;
 }
-#pragma GCC diagnostic pop
 
 /* #############################################################################
  * # [SECTION] OpenGL Shader Compilation and Creation

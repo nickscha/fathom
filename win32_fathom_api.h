@@ -402,22 +402,6 @@ WIN32_API(void *) wglGetCurrentDC(void);
 WIN32_API(i32)    wglDeleteContext(void *unnamedParam1);
 WIN32_API(i32)    wglMakeCurrent(void *unnamedParam1, void *unnamedParam2);
 WIN32_API(PROC)   wglGetProcAddress(s8 *unnamedParam1);
-
-/* OpenGL functions provided by win32 */
-WIN32_API(void)   glClearColor(f32 red, f32 green, f32 blue, f32 alpha);
-WIN32_API(void)   glClear(u32 mask);
-WIN32_API(void)   glViewport(i32 x, i32 y, i32 width, i32 height);
-WIN32_API(void)   glEnable(u32 cap);
-WIN32_API(void)   glDisable(u32 cap);
-WIN32_API(u8 *)   glGetString(u32 name);
-WIN32_API(void)   glGenTextures(i32 n, u32 *textures);
-WIN32_API(void)   glBindTexture(u32 target, u32 texture);
-WIN32_API(void)   glTexImage2D(u32 target, i32 level, i32 internalformat, i32 width, i32 height, i32 border, i32 format, u32 type, void *pixels);
-WIN32_API(void)   glTexParameteri(u32 target, u32 pname, i32 param);
-WIN32_API(void)   glPixelStorei(u32 pname, i32 param);
-WIN32_API(void)   glReadPixels(i32 x, i32 y, i32 width, i32 height, i32 format, i32 type, void  *pixels);
-WIN32_API(void)   glBlendFunc(u32 sfactor, u32 dfactor);
-WIN32_API(void)   glGetIntegerv(u32 pname, i32 *params);
 /* clang-format on */
 
 /* #############################################################################
