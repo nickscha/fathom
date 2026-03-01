@@ -21,157 +21,122 @@ typedef struct fathom_sb
 
 } fathom_sb;
 
-FATHOM_API void fathom_sb_s8(fathom_sb *sb, s8 *s)
-{
-    u32 len = sb->length;
-    u32 cap = sb->size;
-
-    if (len >= cap)
-    {
-        return;
-    }
-
-    while (*s && (len + 1 < cap))
-    {
-        sb->buffer[len++] = *s++;
-    }
-
-    sb->buffer[len] = 0;
-    sb->length = len;
-}
-
-FATHOM_API void fathom_sb_s8_pad(fathom_sb *sb, s8 *s, u32 total_width, s8 pad_char, fathom_sb_pad side)
+FATHOM_API void fathom_sb_write_raw(fathom_sb *sb, s8 *s, u32 total_width, s8 pad_char, fathom_sb_pad side)
 {
     u32 s_len = 0;
-    s8 *temp = s;
-    u32 pad_count;
-    u32 i;
+    u32 pads;
 
-    while (temp[s_len])
+    while (s[s_len])
     {
         s_len++;
     }
 
-    pad_count = (total_width > s_len) ? (total_width - s_len) : 0;
+    pads = (total_width > s_len) ? (total_width - s_len) : 0;
 
-    if (sb->length + s_len + pad_count >= sb->size)
+    if (sb->length + s_len + pads >= sb->size)
     {
         return;
     }
 
     if (side == FATHOM_SB_PAD_LEFT)
     {
-        for (i = 0; i < pad_count; ++i)
-        {
-            sb->buffer[sb->length++] = pad_char;
-        }
-        while (*s)
-        {
-            sb->buffer[sb->length++] = *s++;
-        }
-    }
-    else
-    {
-        while (*s)
-        {
-            sb->buffer[sb->length++] = *s++;
-        }
-        for (i = 0; i < pad_count; ++i)
+        while (pads--)
         {
             sb->buffer[sb->length++] = pad_char;
         }
     }
 
-    /* Null terminate and update length */
+    while (*s)
+    {
+        sb->buffer[sb->length++] = *s++;
+    }
+
+    if (side == FATHOM_SB_PAD_RIGHT)
+    {
+        while (pads--)
+        {
+            sb->buffer[sb->length++] = pad_char;
+        }
+    }
+
     sb->buffer[sb->length] = 0;
+}
+
+FATHOM_API void fathom_sb_s8(fathom_sb *sb, s8 *s)
+{
+    fathom_sb_write_raw(sb, s, 0, 0, FATHOM_SB_PAD_RIGHT);
+}
+
+FATHOM_API void fathom_sb_s8_pad(fathom_sb *sb, s8 *s, u32 width, s8 p, fathom_sb_pad side)
+{
+    fathom_sb_write_raw(sb, s, width, p, side);
+}
+
+FATHOM_API void fathom_sb_i32_pad(fathom_sb *sb, i32 v, u32 width, s8 p, fathom_sb_pad side)
+{
+    s8 buf[12], *ptr = buf + 11;
+    u32 u = (v < 0) ? (u32)-v : (u32)v;
+
+    *ptr = 0;
+
+    do
+    {
+        *--ptr = (s8)('0' + (u % 10));
+        u /= 10;
+    } while (u);
+
+    if (v < 0)
+    {
+        *--ptr = '-';
+    }
+
+    fathom_sb_write_raw(sb, ptr, width, p, side);
 }
 
 FATHOM_API void fathom_sb_i32(fathom_sb *sb, i32 v)
 {
-    s8 tmp[12];
-    i32 i = 0;
-    u32 u;
-    u32 len = sb->length;
-    u32 cap = sb->size;
+    fathom_sb_i32_pad(sb, v, 0, 0, 0);
+}
 
-    if (len + 1 >= cap)
-    {
-        return;
-    }
+FATHOM_API void fathom_sb_f64_pad(fathom_sb *sb, f64 v, i32 dec, u32 width, s8 p, fathom_sb_pad side)
+{
+    s8 buf[64];
+
+    fathom_sb tmp;
+    tmp.size = 64;
+    tmp.length = 0;
+    tmp.buffer = buf;
 
     if (v < 0)
     {
-        sb->buffer[len++] = '-';
-        u = (u32)(-v);
-    }
-    else
-    {
-        u = (u32)v;
-    }
-
-    if (u == 0)
-    {
-        sb->buffer[len++] = '0';
-        sb->buffer[len] = 0;
-        sb->length = len;
-        return;
-    }
-
-    while (u && i < 12)
-    {
-        tmp[i++] = (s8)('0' + (u % 10));
-        u /= 10;
-    }
-
-    while (i-- && (len + 1 < cap))
-    {
-        sb->buffer[len++] = tmp[i];
-    }
-
-    sb->buffer[len] = 0;
-    sb->length = len;
-}
-
-FATHOM_API void fathom_sb_f64(fathom_sb *sb, f64 v, i32 decimals)
-{
-    i32 i;
-    f64 frac;
-    u32 len = sb->length;
-    u32 cap = sb->size;
-
-    if (len + 1 >= cap)
-    {
-        return;
-    }
-
-    if (v < 0.0)
-    {
-        sb->buffer[len++] = '-';
+        buf[tmp.length++] = '-';
         v = -v;
     }
 
-    sb->length = len;
-    fathom_sb_i32(sb, (i32)v);
-    len = sb->length;
+    fathom_sb_i32_pad(&tmp, (i32)v, 0, 0, 0);
 
-    if (len + 1 >= cap)
+    if (dec > 0)
     {
-        return;
+        f64 frac;
+        i32 i;
+
+        buf[tmp.length++] = '.';
+        frac = v - (f64)((i32)v);
+
+        for (i = 0; i < dec; ++i)
+        {
+            frac *= 10.0;
+            buf[tmp.length++] = (s8)('0' + (i32)frac);
+            frac -= (i32)frac;
+        }
     }
+    buf[tmp.length] = 0;
+    fathom_sb_write_raw(sb, buf, width, p, side);
+}
 
-    sb->buffer[len++] = '.';
-
-    frac = v - (f64)((i32)v);
-
-    for (i = 0; i < decimals && (len + 1 < cap); ++i)
-    {
-        frac *= 10.0;
-        sb->buffer[len++] = (s8)('0' + (i32)frac);
-        frac -= (i32)frac;
-    }
-
-    sb->buffer[len] = 0;
-    sb->length = len;
+FATHOM_API void fathom_sb_f64(fathom_sb *sb, f64 v, i32 dec)
+{
+    fathom_sb_f64_pad(sb, v, dec, 0, 0, 0);
 }
 
 #endif /* FATHOM_STRING_BUILDER_H */
