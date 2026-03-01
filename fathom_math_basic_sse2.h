@@ -70,4 +70,20 @@ FATHOM_API FATHOM_INLINE f32 fathom_ceilf(f32 x)
     return _mm_cvtss_f32(_mm_add_ss(truncated, adjustment));
 }
 
+FATHOM_API FATHOM_INLINE f32 fathom_fmodf(f32 x, f32 y)
+{
+    __m128 vx, vy, v_quot, v_trunc, v_res;
+    __m128i i_trunc;
+
+    vx = _mm_set_ss(x);
+    vy = _mm_set_ss(y);
+
+    v_quot = _mm_div_ss(vx, vy);
+    i_trunc = _mm_cvttps_epi32(v_quot);
+    v_trunc = _mm_cvtepi32_ps(i_trunc);
+    v_res = _mm_sub_ss(vx, _mm_mul_ss(v_trunc, vy));
+
+    return _mm_cvtss_f32(v_res);
+}
+
 #endif /* FATHOM_MATH_BASIC_SSE2_H */

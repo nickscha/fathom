@@ -81,4 +81,27 @@ FATHOM_API FATHOM_INLINE f32 fathom_ceilf(f32 x)
     return (x > (f32)i) ? (f32)(i + 1) : (f32)i;
 }
 
+FATHOM_API FATHOM_INLINE f32 fathom_fmodf(f32 x, f32 y)
+{
+    f32 quotient;
+    i32 i_quotient;
+    f32 result;
+
+    if (y == 0.0f)
+    {
+        return 0.0f;
+    }
+
+    /* 1. Calculate how many times y goes into x */
+    quotient = x / y;
+
+    /* 2. Truncate to integer */
+    i_quotient = (i32)quotient;
+
+    /* 3. Subtract the integer part of y from x */
+    result = x - ((f32)i_quotient * y);
+
+    return result;
+}
+
 #endif /* FATHOM_MATH_BASIC_SCALAR_H */
