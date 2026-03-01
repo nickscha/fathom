@@ -464,9 +464,6 @@ typedef struct win32_fathom_state
   u32 grid_atlas_height;
   u32 grid_atlas_depth;
 
-  i64 grid_calc_time_start;
-  i64 grid_calc_time_end;
-
 } win32_fathom_state;
 
 FATHOM_API FATHOM_INLINE i64 win32_window_callback(void *window, u32 message, u64 wParam, i64 lParam)
@@ -1338,9 +1335,7 @@ FATHOM_API void fathom_create_grid(win32_fathom_state *state, fathom_sparse_grid
   state->grid_atlas_depth = grid->atlas_depth;
 
   FATHOM_PROFILER_BEGIN(sparse_grid_pass_02);
-  QueryPerformanceCounter(&state->grid_calc_time_start);
   fathom_sparse_grid_pass_02_fill_atlas(grid, sdf_function, state);
-  QueryPerformanceCounter(&state->grid_calc_time_end);
   FATHOM_PROFILER_END(sparse_grid_pass_02);
 }
 
@@ -1445,6 +1440,8 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
   /******************************/
   /* Draw                       */
   /******************************/
+  FATHOM_PROFILER_BEGIN(gl_draw);
+
   glUseProgram(main_shader->header.program);
 
   /* General uniforms */
@@ -1480,6 +1477,8 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
 
   glBindVertexArray(main_vao);
   glDrawArrays(GL_TRIANGLES, 0, 3);
+
+  FATHOM_PROFILER_END(gl_draw);
 }
 
 /* #############################################################################
@@ -2167,7 +2166,6 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM BRICK MAP: \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM ATLAS    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "SDF CALLS    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
-          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "CALC TIME    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "BRICK COUNT  : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "ATLAS DIM    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MAX 3D TEXRES: ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
@@ -2178,8 +2176,6 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           fathom_sb_f64(&t, (f64)state.mem_atlas_bytes / 1024.0 / 1024.0, 4);
           fathom_sb_s8(&t, "\n");
           fathom_sb_i32(&t, (i32)state.grid_sdf_invocations);
-          fathom_sb_s8(&t, "\n");
-          fathom_sb_f64(&t, ((f64)(state.grid_calc_time_end - state.grid_calc_time_start) * 1000.0) / (f64)perf_freq, 4);
           fathom_sb_s8(&t, "\n");
           fathom_sb_i32(&t, (i32)state.grid_active_brick_count);
           fathom_sb_s8(&t, "\n");
@@ -2198,7 +2194,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
         /* Show grid memory */
         {
           u16 offset_memory_x = 400;
-          u16 offset_memory_y = 200;
+          u16 offset_memory_y = 150;
           u32 i;
 
           for (i = 0; i < fathom_profiler_entries_count; ++i)
@@ -2209,6 +2205,8 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
             fathom_sb_s8(&t, entry.name);
             fathom_sb_s8(&t, ": ");
             fathom_sb_f64(&t, entry.time_ms_end - entry.time_ms_begin, 4);
+            fathom_sb_s8(&t, "/");
+            fathom_sb_i32(&t, (i32)entry.counter);
             fathom_sb_s8(&t, "\n");
 
             glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);

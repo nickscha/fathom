@@ -16,6 +16,7 @@ typedef struct fathom_profiler_entry
     s8 *file;
     u32 line;
 
+    u32 counter;
     f64 time_ms_begin;
     f64 time_ms_end;
 
@@ -59,13 +60,24 @@ FATHOM_API FATHOM_INLINE u32 fathom_profiler_find_entry(s8 *name)
 
 FATHOM_API FATHOM_INLINE void fathom_profiler_begin(s8 *name, s8 *file, u32 line)
 {
-    fathom_profiler_entry entry;
-    entry.name = name;
-    entry.file = file;
-    entry.line = line;
-    entry.time_ms_begin = fathom_profiler_time_ms();
+    u32 entry_id = fathom_profiler_find_entry(name);
 
-    fathom_profiler_entries[fathom_profiler_entries_count++] = entry;
+    if (entry_id == FATHOM_PROFILER_ENTRY_INVALID)
+    {
+        fathom_profiler_entry entry;
+        entry.name = name;
+        entry.file = file;
+        entry.line = line;
+        entry.counter += 1;
+        entry.time_ms_begin = fathom_profiler_time_ms();
+
+        fathom_profiler_entries[fathom_profiler_entries_count++] = entry;
+    }
+    else
+    {
+        fathom_profiler_entries[entry_id].counter += 1;
+        fathom_profiler_entries[entry_id].time_ms_begin = fathom_profiler_time_ms();
+    }
 }
 
 FATHOM_API FATHOM_INLINE void fathom_profiler_end(s8 *name)
