@@ -458,7 +458,6 @@ typedef struct win32_fathom_state
 
   u32 mem_brick_map_bytes;
   u32 mem_atlas_bytes;
-  u32 grid_sdf_invocations;
   u32 grid_active_brick_count;
   u32 grid_atlas_width;
   u32 grid_atlas_height;
@@ -1288,6 +1287,8 @@ FATHOM_API fathom_grid_data sdf_function(fathom_vec3 position, void *user_data)
   fathom_mat2x2 box_rot = fathom_mat2x2_rot2d(FATHOM_DEG_TO_RAD(45.0f));
   f32 box_scale = 1.0f;
 
+  (void)user_data;
+
   fathom_vec2_mul_mat2x2(&box_pos.x, &box_pos.y, box_rot); /* rotate around z axis */
   fathom_vec2_mul_mat2x2(&box_pos.y, &box_pos.z, box_rot); /* rotate around x axis */
 
@@ -1307,8 +1308,6 @@ FATHOM_API fathom_grid_data sdf_function(fathom_vec3 position, void *user_data)
     {
       d.material = 2;
     }
-
-    ((win32_fathom_state *)user_data)->grid_sdf_invocations++;
   }
 
   return d;
@@ -2165,7 +2164,6 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
 
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM BRICK MAP: \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MEM ATLAS    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
-          glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "SDF CALLS    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "BRICK COUNT  : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "ATLAS DIM    : \n", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, "MAX 3D TEXRES: ", &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
@@ -2174,8 +2172,6 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           fathom_sb_f64(&t, (f64)state.mem_brick_map_bytes / 1024.0 / 1024.0, 4);
           fathom_sb_s8(&t, "\n");
           fathom_sb_f64(&t, (f64)state.mem_atlas_bytes / 1024.0 / 1024.0, 4);
-          fathom_sb_s8(&t, "\n");
-          fathom_sb_i32(&t, (i32)state.grid_sdf_invocations);
           fathom_sb_s8(&t, "\n");
           fathom_sb_i32(&t, (i32)state.grid_active_brick_count);
           fathom_sb_s8(&t, "\n");
@@ -2193,7 +2189,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
 
         /* Show grid memory */
         {
-          u16 offset_memory_x = 400;
+          u16 offset_memory_x = 300;
           u16 offset_memory_y = 150;
           u32 i;
 
@@ -2202,9 +2198,13 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
             fathom_profiler_entry entry = fathom_profiler_entries[i];
 
             t.length = 0;
-            fathom_sb_s8(&t, entry.name);
+            fathom_sb_s8_pad(&t, entry.name, 23, ' ', FATHOM_SB_PAD_RIGHT);
             fathom_sb_s8(&t, ": ");
-            fathom_sb_f64(&t, entry.time_ms_end - entry.time_ms_begin, 4);
+            fathom_sb_f64(&t, entry.time_ms_last, 4);
+            fathom_sb_s8(&t, "/");
+            fathom_sb_f64(&t, entry.time_ms_total / (f64) entry.counter, 4);
+            fathom_sb_s8(&t, "/");
+            fathom_sb_f64(&t, entry.time_ms_total, 4);
             fathom_sb_s8(&t, "/");
             fathom_sb_i32(&t, (i32)entry.counter);
             fathom_sb_s8(&t, "\n");

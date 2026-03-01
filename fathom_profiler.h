@@ -17,8 +17,8 @@ typedef struct fathom_profiler_entry
     u32 line;
 
     u32 counter;
-    f64 time_ms_begin;
-    f64 time_ms_end;
+    f64 time_ms_last;
+    f64 time_ms_total;
 
 } fathom_profiler_entry;
 
@@ -69,14 +69,14 @@ FATHOM_API FATHOM_INLINE void fathom_profiler_begin(s8 *name, s8 *file, u32 line
         entry.file = file;
         entry.line = line;
         entry.counter += 1;
-        entry.time_ms_begin = fathom_profiler_time_ms();
+        entry.time_ms_last = fathom_profiler_time_ms();
 
         fathom_profiler_entries[fathom_profiler_entries_count++] = entry;
     }
     else
     {
         fathom_profiler_entries[entry_id].counter += 1;
-        fathom_profiler_entries[entry_id].time_ms_begin = fathom_profiler_time_ms();
+        fathom_profiler_entries[entry_id].time_ms_last = fathom_profiler_time_ms();
     }
 }
 
@@ -88,7 +88,9 @@ FATHOM_API FATHOM_INLINE void fathom_profiler_end(s8 *name)
 
     if (entry_id != FATHOM_PROFILER_ENTRY_INVALID)
     {
-        fathom_profiler_entries[entry_id].time_ms_end = time_ms_end;
+        f64 time_ms_last = time_ms_end - fathom_profiler_entries[entry_id].time_ms_last;
+        fathom_profiler_entries[entry_id].time_ms_last = time_ms_last;
+        fathom_profiler_entries[entry_id].time_ms_total += time_ms_last;
     }
 }
 
