@@ -7,6 +7,12 @@
  * # [SECTION] String Builder
  * #############################################################################
  */
+typedef enum fathom_sb_pad
+{
+    FATHOM_SB_PAD_LEFT,
+    FATHOM_SB_PAD_RIGHT
+} fathom_sb_pad;
+
 typedef struct fathom_sb
 {
     u32 size;
@@ -32,6 +38,52 @@ FATHOM_API void fathom_sb_s8(fathom_sb *sb, s8 *s)
 
     sb->buffer[len] = 0;
     sb->length = len;
+}
+
+FATHOM_API void fathom_sb_s8_pad(fathom_sb *sb, s8 *s, u32 total_width, s8 pad_char, fathom_sb_pad side)
+{
+    u32 s_len = 0;
+    s8 *temp = s;
+    u32 pad_count;
+    u32 i;
+
+    while (temp[s_len])
+    {
+        s_len++;
+    }
+
+    pad_count = (total_width > s_len) ? (total_width - s_len) : 0;
+
+    if (sb->length + s_len + pad_count >= sb->size)
+    {
+        return;
+    }
+
+    if (side == FATHOM_SB_PAD_LEFT)
+    {
+        for (i = 0; i < pad_count; ++i)
+        {
+            sb->buffer[sb->length++] = pad_char;
+        }
+        while (*s)
+        {
+            sb->buffer[sb->length++] = *s++;
+        }
+    }
+    else
+    {
+        while (*s)
+        {
+            sb->buffer[sb->length++] = *s++;
+        }
+        for (i = 0; i < pad_count; ++i)
+        {
+            sb->buffer[sb->length++] = pad_char;
+        }
+    }
+
+    /* Null terminate and update length */
+    sb->buffer[sb->length] = 0;
 }
 
 FATHOM_API void fathom_sb_i32(fathom_sb *sb, i32 v)
