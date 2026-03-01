@@ -86,6 +86,32 @@ FATHOM_API FATHOM_INLINE f32 fathom_cosf(f32 x)
     return fathom_sinf(x + FATHOM_PI_HALF);
 }
 
+FATHOM_API FATHOM_INLINE f32 fathom_sinf_snorm(f32_snorm a)
+{
+    static f32 a0 = +1.91059300966915117e-31f;
+    static f32 a1 = +1.00086760103908896f;
+    static f32 a2 = -1.21276126894734565e-2f;
+    static f32 a3 = -1.38078780785773762e-1f;
+    static f32 a4 = -2.67353392911981221e-2f;
+    static f32 a5 = +2.08026600266304389e-2f;
+    static f32 a6 = -3.03996055049204407e-3f;
+    static f32 a7 = +1.38235642404333740e-4f;
+    return a0 + a * (a1 + a * (a2 + a * (a3 + a * (a4 + a * (a5 + a * (a6 + a * a7))))));
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_cosf_snorm(f32_snorm a)
+{
+    static f32 a0 = +1.00238601909309722f;
+    static f32 a1 = -3.81919947353040024e-2f;
+    static f32 a2 = -3.94382342128062756e-1f;
+    static f32 a3 = -1.18134036025221444e-1f;
+    static f32 a4 = +1.07123798512170878e-1f;
+    static f32 a5 = -1.86637164165180873e-2f;
+    static f32 a6 = +9.90140908664079833e-4f;
+    static f32 a7 = -5.23022132118824778e-14f;
+    return a0 + a * (a1 + a * (a2 + a * (a3 + a * (a4 + a * (a5 + a * (a6 + a * a7))))));
+}
+
 FATHOM_API FATHOM_INLINE f32 fathom_sminf(f32 a, f32 b, f32 k)
 {
     f32 h = fathom_maxf(k - fathom_absf(a - b), 0.0f) / k;
