@@ -858,7 +858,7 @@ typedef struct shader_main
   i32 loc_camera_forward;
   i32 loc_camera_right;
   i32 loc_camera_up;
-  i32 loc_camera_fov;
+  i32 loc_camera_forward_scaled;
 
 } shader_main;
 
@@ -1188,7 +1188,7 @@ FATHOM_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_f
     shader->loc_camera_forward = glGetUniformLocation(shader->header.program, "camera_forward");
     shader->loc_camera_right = glGetUniformLocation(shader->header.program, "camera_right");
     shader->loc_camera_up = glGetUniformLocation(shader->header.program, "camera_up");
-    shader->loc_camera_fov = glGetUniformLocation(shader->header.program, "camera_fov");
+    shader->loc_camera_forward_scaled = glGetUniformLocation(shader->header.program, "camera_forward_scaled");
   }
 
   VirtualFree(shader_code_fragment, 0, MEM_RELEASE);
@@ -1351,6 +1351,7 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
   static fathom_vec3 camera_forward;
   static fathom_vec3 camera_right;
   static fathom_vec3 camera_up;
+  static fathom_vec3 camera_forward_scaled;
   static f32 camera_fov = 1.5f;
 
   if (!grid_initialized)
@@ -1434,6 +1435,7 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
     camera_right = fathom_vec3_normalize(fathom_vec3_cross(camera_forward, world_up));        /* X-Axis */
     camera_up = fathom_vec3_normalize(fathom_vec3_cross(camera_right, camera_forward));       /* Y-Axis */
     camera_fov = 1.5f;
+    camera_forward_scaled = fathom_vec3_mulf(camera_forward, camera_fov);
   }
 
   /******************************/
@@ -1452,7 +1454,7 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
   glUniform3f(main_shader->loc_camera_forward, camera_forward.x, camera_forward.y, camera_forward.z);
   glUniform3f(main_shader->loc_camera_right, camera_right.x, camera_right.y, camera_right.z);
   glUniform3f(main_shader->loc_camera_up, camera_up.x, camera_up.y, camera_up.z);
-  glUniform1f(main_shader->loc_camera_fov, camera_fov);
+  glUniform3f(main_shader->loc_camera_forward_scaled, camera_forward_scaled.x, camera_forward_scaled.y, camera_forward_scaled.z);
 
   /* Grid uniforms */
   glUniform3i(main_shader->loc_atlas_brick_dim, (i32)grid_lod0.atlas_bricks_per_row, (i32)0, (i32)0);
@@ -2202,7 +2204,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
             fathom_sb_s8(&t, ": ");
             fathom_sb_f64(&t, entry.time_ms_last, 4);
             fathom_sb_s8(&t, "/");
-            fathom_sb_f64(&t, entry.time_ms_total / (f64) entry.counter, 4);
+            fathom_sb_f64(&t, entry.time_ms_total / (f64)entry.counter, 4);
             fathom_sb_s8(&t, "/");
             fathom_sb_f64(&t, entry.time_ms_total, 4);
             fathom_sb_s8(&t, "/");

@@ -61,6 +61,17 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_addf(fathom_vec3 a, f32 value)
     return result;
 }
 
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_mulf(fathom_vec3 a, f32 value)
+{
+    fathom_vec3 result;
+
+    result.x = a.x * value;
+    result.y = a.y * value;
+    result.z = a.z * value;
+
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_divf(fathom_vec3 a, f32 value)
 {
     fathom_vec3 result;

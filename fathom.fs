@@ -21,7 +21,7 @@ uniform vec3  camera_position;
 uniform vec3  camera_forward;
 uniform vec3  camera_right;
 uniform vec3  camera_up;
-uniform float camera_fov;
+uniform vec3  camera_forward_scaled;
 
 const int BRICK_SIZE = 8;
 const int PHYSICAL_BRICK_SIZE = 10;
@@ -245,7 +245,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec2 p = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
   
   vec3 ro = camera_position; // ray origin
-  vec3 rd = normalize(p.x * camera_right + p.y * camera_up + camera_fov * camera_forward); // ray direction
+  vec3 rd = normalize(p.x * camera_right + p.y * camera_up + camera_forward_scaled); // ray direction
 
   vec3 col = vec3(0.4, 0.75, 1.0) - 0.7 * rd.y; // sky, darker the higher
 

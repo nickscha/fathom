@@ -77,12 +77,29 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_addf(fathom_vec3 a, f32 value)
     return result;
 }
 
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_mulf(fathom_vec3 a, f32 value)
+{
+    fathom_vec3 result;
+
+    __m128 va;
+    __m128 vval;
+    __m128 res;
+
+    va = _mm_load_ps((f32*)&a);
+    vval = _mm_set1_ps(value);
+    res = _mm_mul_ps(va, vval);
+
+    _mm_store_ps((f32*)&result, res);
+
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_divf(fathom_vec3 a, f32 value)
 {
     fathom_vec3 result;
     __m128 va, vval, res;
 
-    va = _mm_load_ps((const f32 *)&a);
+    va = _mm_load_ps((f32 *)&a);
     vval = _mm_set1_ps(value); /* Broadcast value to all 4 slots */
     res = _mm_div_ps(va, vval);
 
