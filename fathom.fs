@@ -84,7 +84,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         float t = max(0.0, tNear) + EPS;
         float hitT = -1.0;
         uint hitStored = 0u;
-        ivec3 hitBrick;
 
         // DDA Setup for Brick Skipping
         vec3 invCell = vec3(1.0 / uCellSize);
