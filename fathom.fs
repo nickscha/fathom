@@ -112,11 +112,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 float brickExitT = min(min(tMax.x, tMax.y), tMax.z);
                 
                 // Inner Loop: Sphere Tracing inside one brick
+                vec3 pStart = (ro + rd * localT - uGridStart) * invCell;
+                vec3 rdStep = (rd * invCell);
+
                 for(int j = 0; j < 32; j++) {
-                    vec3 p = (ro + rd * localT - uGridStart) * invCell;
-                    float d = sampleAtlas(p, atlasOff, brickCoord);
+                    float d = sampleAtlas(pStart, atlasOff, brickCoord);
                     if (d < EPS) { hitT = localT; break; }
                     localT += d;
+                    pStart += rdStep * d;
                     if (localT > brickExitT) break;
                 }
                 if (hitT > 0.0) break;
