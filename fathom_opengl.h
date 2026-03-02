@@ -29,6 +29,7 @@
 #define GL_ARRAY_BUFFER 0x8892
 #define GL_BYTE 0x1400
 #define GL_UNSIGNED_BYTE 0x1401
+#define GL_TEXTURE_1D 0x0DE0
 #define GL_TEXTURE_2D 0x0DE1
 #define GL_TEXTURE_3D 0x806F
 #define GL_MAX_3D_TEXTURE_SIZE 0x8073
@@ -45,6 +46,7 @@
 #define GL_PACK_ALIGNMENT 0x0D05
 #define GL_UNPACK_ALIGNMENT 0x0CF5
 #define GL_RGB 0x1907
+#define GL_RGB8 0x8051
 #define GL_RED 0x1903
 #define GL_RED_INTEGER 0x8D94
 #define GL_R8 0x8229
@@ -54,6 +56,7 @@
 #define GL_TEXTURE0 0x84C0
 #define GL_TEXTURE1 0x84C1
 #define GL_TEXTURE2 0x84C2
+#define GL_TEXTURE3 0x84C3
 #define GL_BLEND 0x0BE2
 #define GL_SRC_ALPHA 0x0302
 #define GL_ONE_MINUS_SRC_ALPHA 0x0303
@@ -82,6 +85,9 @@ static PFNGLGENTEXTURESPROC glGenTextures;
 
 typedef void (*PFNGLBINDTEXTUREPROC)(u32 target, u32 texture);
 static PFNGLBINDTEXTUREPROC glBindTexture;
+
+typedef void (*PFNGLTEXIMAGE1DPROC)(u32 target, i32 level, i32 internalformat, i32 width, i32 border, i32 format, u32 type, const void *pixels);
+static PFNGLTEXIMAGE1DPROC glTexImage1D;
 
 typedef void (*PFNGLTEXIMAGE2DPROC)(u32 target, i32 level, i32 internalformat, i32 width, i32 height, i32 border, i32 format, u32 type, const void *pixels);
 static PFNGLTEXIMAGE2DPROC glTexImage2D;
@@ -230,6 +236,7 @@ FATHOM_API FATHOM_INLINE u8 fathom_opengl_load_functions(fathom_opengl_function_
     glGetString = (PFNGLGETSTRINGPROC)load("glGetString");
     glGenTextures = (PFNGLGENTEXTURESPROC)load("glGenTextures");
     glBindTexture = (PFNGLBINDTEXTUREPROC)load("glBindTexture");
+    glTexImage1D = (PFNGLTEXIMAGE1DPROC)load("glTexImage1D");
     glTexImage2D = (PFNGLTEXIMAGE2DPROC)load("glTexImage2D");
     glTexParameteri = (PFNGLTEXPARAMETERIPROC)load("glTexParameteri");
     glPixelStorei = (PFNGLPIXELSTOREIPROC)load("glPixelStorei");

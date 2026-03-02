@@ -5,7 +5,8 @@ out vec4 FragColor;
 uniform vec3  iResolution;
 uniform usampler3D uBrickMap;
 uniform sampler3D  uAtlas;
-uniform usampler3D uMaterial;
+uniform sampler3D uMaterial;
+uniform sampler1D uPalette;
 
 uniform ivec3 uAtlasBrickDim;
 uniform vec3  uInvAtlasSize;
@@ -43,6 +44,24 @@ float sampleAtlas(vec3 gridPos, vec3 atlasOffset, ivec3 brickCoord) {
     #else 
         return d * uTruncation;
     #endif
+}
+
+/*
+vec3 sampleMaterial(vec3 gridPos, vec3 atlasOffset, ivec3 brickCoord) {
+    vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
+    vec3 texelCoord = atlasOffset + localPos;
+    float matID = texture(uMaterial, texelCoord * uInvAtlasSize).r;
+    return texture(uPalette, matID).rgb;
+}
+*/
+
+vec3 sampleMaterial(vec3 gridPos, vec3 atlasOffset, ivec3 brickCoord) {
+    vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
+    vec3 texelCoord = atlasOffset + localPos;
+    float matIDNormalized = texture(uMaterial, texelCoord * uInvAtlasSize).r;
+    float id = matIDNormalized * 255.0;
+    float paletteCoord = (id + 0.5) / 256.0;
+    return texture(uPalette, paletteCoord).rgb;
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
@@ -124,9 +143,18 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 k.xxx * sampleAtlas(gP + k.xxx*0.1, atlasOff, brickCoord)
             );
 
+            vec3 mate = sampleMaterial(gP, atlasOff, brickCoord);
+
             // Simple lighting
             float dif = clamp(dot(nor, normalize(vec3(0.7, 0.9, 0.3))), 0.0, 1.0);
-            col = vec3(0.2, 0.3, 0.4) + dif * vec3(0.8, 0.7, 0.5);
+            
+            //col = mate * (dif + 0.15);
+            //col = vec3(0.2, 0.3, 0.4) + dif * vec3(0.8, 0.7, 0.5);
+            vec3 ambient = vec3(0.2, 0.3, 0.4);
+            vec3 sun     = vec3(0.8, 0.7, 0.5);
+            
+            //col = mate * (ambient + dif * sun);
+            col = ambient + dif * sun;
         }
     }
 

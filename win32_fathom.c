@@ -844,6 +844,7 @@ typedef struct shader_main
   i32 loc_brick_map_texture;
   i32 loc_atlas_texture;
   i32 loc_material_texture;
+  i32 loc_palette_texture;
 
   i32 loc_atlas_brick_dim;
 
@@ -1175,6 +1176,7 @@ FATHOM_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_f
     shader->loc_brick_map_texture = glGetUniformLocation(shader->header.program, "uBrickMap");
     shader->loc_atlas_texture = glGetUniformLocation(shader->header.program, "uAtlas");
     shader->loc_material_texture = glGetUniformLocation(shader->header.program, "uMaterial");
+    shader->loc_palette_texture = glGetUniformLocation(shader->header.program, "uPalette");
 
     shader->loc_atlas_brick_dim = glGetUniformLocation(shader->header.program, "uAtlasBrickDim");
     shader->loc_inverse_atlas_size = glGetUniformLocation(shader->header.program, "uInvAtlasSize");
@@ -1345,6 +1347,7 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
   static u32 brickMapTex;
   static u32 atlasTex;
   static u32 materialTex;
+  static u32 paletteTex;
 
   /* Camera */
   static fathom_vec3 camera_position;
@@ -1399,8 +1402,8 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
                  0, GL_RED, GL_BYTE, grid_lod0.atlas_data);
 #endif
 
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); /* GL_LINEAR */
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); /* GL_LINEAR */
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -1408,19 +1411,59 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);
 
     /* Material Texture */
+    (void)GL_R8UI;
+    (void)GL_RED_INTEGER;
+    (void)GL_NEAREST;
+
     glGenTextures(1, &materialTex);
     glBindTexture(GL_TEXTURE_3D, materialTex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_R8UI,
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R8,
                  (i32)grid_lod0.atlas_width,
                  (i32)grid_lod0.atlas_height,
                  (i32)grid_lod0.atlas_depth,
-                 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, grid_lod0.material_data);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                 0, GL_RED, GL_UNSIGNED_BYTE, grid_lod0.material_data);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    /* Palette Texture */
+    {
+      /* 256 materials, 3 bytes each (RGB) */
+      u8 palette_data[256 * 3];
+
+      i32 i;
+
+      /* Initialize palette with your colors */
+      for (i = 0; i < 256 * 3; ++i)
+      {
+        palette_data[i] = 0;
+      }
+
+      /* ID 0: Default/Background */
+      palette_data[0] = 255;
+      palette_data[1] = 255;
+      palette_data[2] = 255;
+
+      /* ID 1: Sphere Material */
+      palette_data[3] = 60;
+      palette_data[4] = 255;
+      palette_data[5] = 60;
+      
+      /* ID 2: Box Material */
+      palette_data[6] = 255;
+      palette_data[7] = 60;
+      palette_data[8] = 60;
+
+      glGenTextures(1, &paletteTex);
+      glBindTexture(GL_TEXTURE_1D, paletteTex);
+      glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB8, 256, 0, GL_RGB, GL_UNSIGNED_BYTE, palette_data);
+      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    }
 
     grid_initialized = 1;
   }
@@ -1475,6 +1518,10 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_3D, materialTex);
   glUniform1i(main_shader->loc_material_texture, 2);
+
+  glActiveTexture(GL_TEXTURE3);
+  glBindTexture(GL_TEXTURE_1D, paletteTex);
+  glUniform1i(main_shader->loc_palette_texture, 3);
 
   glBindVertexArray(main_vao);
   glDrawArrays(GL_TRIANGLES, 0, 3);
