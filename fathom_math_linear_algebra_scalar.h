@@ -127,6 +127,17 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_abs(fathom_vec3 a)
     return result;
 }
 
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_minf(fathom_vec3 a, f32 value)
+{
+    fathom_vec3 result;
+
+    result.x = fathom_minf(a.x, value);
+    result.y = fathom_minf(a.y, value);
+    result.z = fathom_minf(a.z, value);
+
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_maxf(fathom_vec3 a, f32 value)
 {
     fathom_vec3 result;
