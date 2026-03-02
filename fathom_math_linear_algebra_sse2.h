@@ -32,6 +32,18 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_init(f32 x, f32 y, f32 z)
     return result;
 }
 
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_initf(f32 value)
+{
+    fathom_vec3 result;
+
+    __m128 res;
+
+    res = _mm_set_ps(0.0f, value, value, value);
+    _mm_store_ps((f32 *)&result, res);
+
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_add(fathom_vec3 a, fathom_vec3 b)
 {
     fathom_vec3 result;
