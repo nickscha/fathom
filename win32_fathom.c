@@ -12,6 +12,7 @@ LICENSE
 #include "fathom_color.h"
 #include "fathom_profiler.h"
 #include "fathom_opengl.h"
+#include "fathom_sdf_scene.h"
 #include "win32_fathom_opengl.h"
 #include "win32_fathom_api.h"
 #include "win32_fathom_xinput.h"
@@ -1275,52 +1276,7 @@ FATHOM_API void opengl_shader_load_shader_recording(shader_recording *shader)
   }
 }
 
-#include "fathom_math_sdf.h"
 #include "fathom_sparse_grid.h"
-
-/* Simple Sphere SDF */
-FATHOM_API fathom_grid_data sdf_function(fathom_vec3 position, void *user_data)
-{
-  fathom_grid_data d;
-
-  f32 sphere_radius = 0.5f;
-  f32 sphere = fathom_sdf_sphere(position, sphere_radius);
-
-  fathom_vec3 box_pos = fathom_vec3_sub(position, fathom_vec3_init(-0.5f, 0.5f, -0.5f));
-  fathom_mat2x2 box_rot = fathom_mat2x2_rot2d(FATHOM_DEG_TO_RAD(45.0f));
-  f32 box_scale = 1.0f;
-
-  (void)user_data;
-
-  fathom_vec2_mul_mat2x2(&box_pos.x, &box_pos.y, box_rot); /* rotate around z axis */
-  fathom_vec2_mul_mat2x2(&box_pos.y, &box_pos.z, box_rot); /* rotate around x axis */
-
-  {
-    f32 box = fathom_sdf_box(fathom_vec3_divf(box_pos, box_scale), fathom_vec3_init(0.25f, 0.25f, 0.25f)) * box_scale;
-
-    fathom_vec3 ellipsoid_pos = fathom_vec3_sub(position, fathom_vec3_init(1.0f, 0.5f, -0.5f));
-    f32 ellipsoid = fathom_sdf_ellipsoid(ellipsoid_pos, fathom_vec3_init(0.5f, 0.25f, 0.125f));
-    f32 box_frame = fathom_sdf_box_frame(fathom_vec3_sub(position, fathom_vec3_init(0.25f, 1.0f, -1.0f)), fathom_vec3_init(0.25f, 0.25f, 0.25f), 0.025f);
-
-    f32 octahedron = fathom_sdf_octahedron(fathom_vec3_sub(position, fathom_vec3_init(0.0f, 0.25f, 0.35f)), 0.25f);
-
-    f32 ground = position.y - (-0.25f);
-
-    d.distance = fathom_sdf_op_union_smooth(ground, fathom_sdf_op_union_smooth(fathom_sdf_op_union_smooth(fathom_sdf_op_union_smooth(fathom_sdf_op_subtract(octahedron, sphere), box, 0.4f), ellipsoid, 0.2f), box_frame, 0.1f), 0.6f);
-    d.material = 0;
-
-    if (sphere < box && sphere < ground)
-    {
-      d.material = 1;
-    }
-    else if (box < sphere && box < ground)
-    {
-      d.material = 2;
-    }
-  }
-
-  return d;
-}
 
 FATHOM_API void fathom_create_grid(win32_fathom_state *state, fathom_sparse_grid *grid, fathom_vec3 grid_center, u32 grid_cell_count, f32 grid_cell_size)
 {
@@ -1329,7 +1285,7 @@ FATHOM_API void fathom_create_grid(win32_fathom_state *state, fathom_sparse_grid
   grid->brick_map_data = VirtualAlloc(0, grid->brick_map_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
   FATHOM_PROFILER_BEGIN(sparse_grid_pass_01);
-  fathom_sparse_grid_pass_01_fill_brick_map(grid, sdf_function, state);
+  fathom_sparse_grid_pass_01_fill_brick_map(grid, fathom_sdf_scene, state);
   FATHOM_PROFILER_END(sparse_grid_pass_01);
 
   grid->atlas_data = VirtualAlloc(0, grid->atlas_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -1343,7 +1299,7 @@ FATHOM_API void fathom_create_grid(win32_fathom_state *state, fathom_sparse_grid
   state->grid_atlas_depth = grid->atlas_depth;
 
   FATHOM_PROFILER_BEGIN(sparse_grid_pass_02);
-  fathom_sparse_grid_pass_02_fill_atlas(grid, sdf_function, state);
+  fathom_sparse_grid_pass_02_fill_atlas(grid, fathom_sdf_scene, state);
   FATHOM_PROFILER_END(sparse_grid_pass_02);
 }
 
@@ -1450,9 +1406,9 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
       }
 
       /* ID 0: Default/Background */
-      palette_data[0] = (u8) fathom_color_f32_to_u8_unorm(1.0f);
-      palette_data[1] = (u8) fathom_color_f32_to_u8_unorm(1.0f);
-      palette_data[2] = (u8) fathom_color_f32_to_u8_unorm(1.0f);
+      palette_data[0] = (u8)fathom_color_f32_to_u8_unorm(1.0f);
+      palette_data[1] = (u8)fathom_color_f32_to_u8_unorm(1.0f);
+      palette_data[2] = (u8)fathom_color_f32_to_u8_unorm(1.0f);
 
       /* ID 1: Sphere Material */
       palette_data[3] = 60;
