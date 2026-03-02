@@ -98,12 +98,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
         // Brick Traversal (DDA)
         for(int i = 0; i < 64; i++) {
+
             hitStored = texelFetch(uBrickMap, brickCoord, 0).r;
 
-            if (hitStored == 65535u) { // Solid
+            if (hitStored == 65535u) // Solid
+            {
                 hitT = t; break;
             } 
-            else if (hitStored > 0u) { // SDF Occupied
+            else if (hitStored > 0u) // SDF Occupied
+            {
                 vec3 atlasOff = getAtlasOffset(hitStored);
                 float localT = t;
                 float brickExitT = min(min(tMax.x, tMax.y), tMax.z);
@@ -138,25 +141,25 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             vec2 k = vec2(1.0, -1.0);
             float e = 0.1;
 
-            vec3 nor = normalize(
+            vec3 normal = normalize(
                 k.xyy * sampleAtlas(gP + k.xyy*e, atlasOff, brickCoord) +
                 k.yyx * sampleAtlas(gP + k.yyx*e, atlasOff, brickCoord) +
                 k.yxy * sampleAtlas(gP + k.yxy*e, atlasOff, brickCoord) +
                 k.xxx * sampleAtlas(gP + k.xxx*e, atlasOff, brickCoord)
             );
 
-            vec3 mate = sampleMaterial(gP, atlasOff, brickCoord);
+            vec3 material = sampleMaterial(gP, atlasOff, brickCoord);
 
             // Simple lighting
-            float dif = clamp(dot(nor, normalize(vec3(0.7, 0.9, 0.3))), 0.0, 1.0);
+            float diffuse = clamp(dot(normal, normalize(vec3(0.7, 0.9, 0.3))), 0.0, 1.0);
             
-            //col = mate * (dif + 0.15);
+            //col = material * (dif + 0.15);
             //col = vec3(0.2, 0.3, 0.4) + dif * vec3(0.8, 0.7, 0.5);
             vec3 ambient = vec3(0.2, 0.3, 0.4);
             vec3 sun     = vec3(0.8, 0.7, 0.5);
             
-            //col = mate * (ambient + dif * sun);
-            col = ambient + dif * sun;
+            //col = material * (ambient + diffuse * sun);
+            col = ambient + diffuse * sun;
         }
     }
 
