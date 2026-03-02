@@ -47,6 +47,51 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_sub(fathom_vec3 a, fathom_vec3 
     return result;
 }
 
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_add(fathom_vec3 a, fathom_vec3 b)
+{
+    fathom_vec3 result;
+
+    __m128 va, vb, res;
+
+    va = _mm_load_ps((const f32 *)&a);
+    vb = _mm_load_ps((const f32 *)&b);
+    res = _mm_add_ps(va, vb);
+
+    _mm_store_ps((f32 *)&result, res);
+
+    return result;
+}
+
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_mul(fathom_vec3 a, fathom_vec3 b)
+{
+    fathom_vec3 result;
+
+    __m128 va, vb, res;
+
+    va = _mm_load_ps((const f32 *)&a);
+    vb = _mm_load_ps((const f32 *)&b);
+    res = _mm_mul_ps(va, vb);
+
+    _mm_store_ps((f32 *)&result, res);
+
+    return result;
+}
+
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_div(fathom_vec3 a, fathom_vec3 b)
+{
+    fathom_vec3 result;
+
+    __m128 va, vb, res;
+
+    va = _mm_load_ps((const f32 *)&a);
+    vb = _mm_load_ps((const f32 *)&b);
+    res = _mm_div_ps(va, vb);
+
+    _mm_store_ps((f32 *)&result, res);
+
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_subf(fathom_vec3 a, f32 value)
 {
     fathom_vec3 result;
@@ -85,11 +130,11 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_mulf(fathom_vec3 a, f32 value)
     __m128 vval;
     __m128 res;
 
-    va = _mm_load_ps((f32*)&a);
+    va = _mm_load_ps((f32 *)&a);
     vval = _mm_set1_ps(value);
     res = _mm_mul_ps(va, vval);
 
-    _mm_store_ps((f32*)&result, res);
+    _mm_store_ps((f32 *)&result, res);
 
     return result;
 }
@@ -255,7 +300,7 @@ typedef struct FATHOM_ALIGN(16) fathom_mat2x2
 FATHOM_API FATHOM_INLINE fathom_mat2x2 fathom_mat2x2_init(f32 m00, f32 m01, f32 m10, f32 m11)
 {
     fathom_mat2x2 result;
-    
+
     __m128 m;
 
 #ifdef FATHOM_MAT_ROW_MAJOR_ORDER

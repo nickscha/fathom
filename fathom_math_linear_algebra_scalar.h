@@ -39,6 +39,39 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_sub(fathom_vec3 a, fathom_vec3 
     return result;
 }
 
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_add(fathom_vec3 a, fathom_vec3 b)
+{
+    fathom_vec3 result;
+
+    result.x = a.x + b.x;
+    result.y = a.y + b.y;
+    result.z = a.z + b.z;
+
+    return result;
+}
+
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_mul(fathom_vec3 a, fathom_vec3 b)
+{
+    fathom_vec3 result;
+
+    result.x = a.x * b.x;
+    result.y = a.y * b.y;
+    result.z = a.z * b.z;
+
+    return result;
+}
+
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_div(fathom_vec3 a, fathom_vec3 b)
+{
+    fathom_vec3 result;
+
+    result.x = a.x / b.x;
+    result.y = a.y / b.y;
+    result.z = a.z / b.z;
+
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_subf(fathom_vec3 a, f32 value)
 {
     fathom_vec3 result;
