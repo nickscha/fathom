@@ -32,21 +32,6 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_init(f32 x, f32 y, f32 z)
     return result;
 }
 
-FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_sub(fathom_vec3 a, fathom_vec3 b)
-{
-    fathom_vec3 result;
-
-    __m128 va, vb, res;
-
-    va = _mm_load_ps((const f32 *)&a);
-    vb = _mm_load_ps((const f32 *)&b);
-    res = _mm_sub_ps(va, vb);
-
-    _mm_store_ps((f32 *)&result, res);
-
-    return result;
-}
-
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_add(fathom_vec3 a, fathom_vec3 b)
 {
     fathom_vec3 result;
@@ -56,6 +41,21 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_add(fathom_vec3 a, fathom_vec3 
     va = _mm_load_ps((const f32 *)&a);
     vb = _mm_load_ps((const f32 *)&b);
     res = _mm_add_ps(va, vb);
+
+    _mm_store_ps((f32 *)&result, res);
+
+    return result;
+}
+
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_sub(fathom_vec3 a, fathom_vec3 b)
+{
+    fathom_vec3 result;
+
+    __m128 va, vb, res;
+
+    va = _mm_load_ps((const f32 *)&a);
+    vb = _mm_load_ps((const f32 *)&b);
+    res = _mm_sub_ps(va, vb);
 
     _mm_store_ps((f32 *)&result, res);
 
@@ -92,21 +92,6 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_div(fathom_vec3 a, fathom_vec3 
     return result;
 }
 
-FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_subf(fathom_vec3 a, f32 value)
-{
-    fathom_vec3 result;
-
-    __m128 va, vval, res;
-
-    va = _mm_load_ps((const f32 *)&a);
-    vval = _mm_set_ps(0.0f, value, value, value);
-    res = _mm_sub_ps(va, vval);
-
-    _mm_store_ps((f32 *)&result, res);
-
-    return result;
-}
-
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_addf(fathom_vec3 a, f32 value)
 {
     fathom_vec3 result;
@@ -116,6 +101,21 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_addf(fathom_vec3 a, f32 value)
     va = _mm_load_ps((const f32 *)&a);
     vval = _mm_set_ps(0.0f, value, value, value);
     res = _mm_add_ps(va, vval);
+
+    _mm_store_ps((f32 *)&result, res);
+
+    return result;
+}
+
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_subf(fathom_vec3 a, f32 value)
+{
+    fathom_vec3 result;
+
+    __m128 va, vval, res;
+
+    va = _mm_load_ps((const f32 *)&a);
+    vval = _mm_set_ps(0.0f, value, value, value);
+    res = _mm_sub_ps(va, vval);
 
     _mm_store_ps((f32 *)&result, res);
 

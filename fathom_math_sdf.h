@@ -26,10 +26,21 @@ FATHOM_API FATHOM_INLINE f32 fathom_sdf_box_rounded(fathom_vec3 pos, fathom_vec3
     return fathom_vec3_length(fathom_vec3_maxf(q, 0.0f)) + fathom_minf(fathom_maxf(q.x, fathom_maxf(q.y, q.z)), 0.0f) - radius;
 }
 
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_box_frame(fathom_vec3 pos, fathom_vec3 base, f32 edge_thickness)
+{
+    fathom_vec3 p = fathom_vec3_sub(fathom_vec3_abs(pos), base);
+    fathom_vec3 q = fathom_vec3_subf(fathom_vec3_abs(fathom_vec3_addf(p, edge_thickness)), edge_thickness);
+
+    return fathom_minf(fathom_minf(
+                           fathom_vec3_length(fathom_vec3_maxf(fathom_vec3_init(p.x, q.y, q.z), 0.0f)) + fathom_minf(fathom_maxf(p.x, fathom_maxf(q.y, q.z)), 0.0f),
+                           fathom_vec3_length(fathom_vec3_maxf(fathom_vec3_init(q.x, p.y, q.z), 0.0f)) + fathom_minf(fathom_maxf(q.x, fathom_maxf(p.y, q.z)), 0.0f)),
+                       fathom_vec3_length(fathom_vec3_maxf(fathom_vec3_init(q.x, q.y, p.z), 0.0f)) + fathom_minf(fathom_maxf(q.x, fathom_maxf(q.y, p.z)), 0.0f));
+}
+
 FATHOM_API FATHOM_INLINE f32 fathom_sdf_ellipsoid(fathom_vec3 pos, fathom_vec3 radius)
 {
     f32 k0 = fathom_vec3_length(fathom_vec3_div(pos, radius));
-    f32 k1 = fathom_vec3_length(fathom_vec3_div(pos, fathom_vec3_mul(radius,radius)));
+    f32 k1 = fathom_vec3_length(fathom_vec3_div(pos, fathom_vec3_mul(radius, radius)));
     return k0 * (k0 - 1.0f) / k1;
 }
 
