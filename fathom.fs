@@ -22,7 +22,7 @@ uniform vec3  camera_forward_scaled;
 
 const int   BRICK_SIZE = 8;
 const float fBRICK_SIZE = 8.0;
-const int   PHYSICAL_BRICK_SIZE = 10;
+const float fPHYSICAL_BRICK_SIZE = 10.0;
 const float EPS = 0.01;
 
 vec3 getAtlasOffset(uint stored) {
@@ -31,7 +31,7 @@ vec3 getAtlasOffset(uint stored) {
     vec2 offset;
     offset.x = float(atlasLinear % bricksPerRow);
     offset.y = float(atlasLinear / bricksPerRow);
-    return vec3(offset * float(PHYSICAL_BRICK_SIZE), 0.0) + 1.0;
+    return vec3(offset * fPHYSICAL_BRICK_SIZE, 0.0) + 1.0;
 }
 
 float sampleAtlas(vec3 gridPos, vec3 atlasOffset, ivec3 brickCoord) {
@@ -136,11 +136,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             vec3 atlasOff = getAtlasOffset(hitStored);
             
             vec2 k = vec2(1.0, -1.0);
+            float e = 0.1;
+
             vec3 nor = normalize(
-                k.xyy * sampleAtlas(gP + k.xyy*0.1, atlasOff, brickCoord) +
-                k.yyx * sampleAtlas(gP + k.yyx*0.1, atlasOff, brickCoord) +
-                k.yxy * sampleAtlas(gP + k.yxy*0.1, atlasOff, brickCoord) +
-                k.xxx * sampleAtlas(gP + k.xxx*0.1, atlasOff, brickCoord)
+                k.xyy * sampleAtlas(gP + k.xyy*e, atlasOff, brickCoord) +
+                k.yyx * sampleAtlas(gP + k.yyx*e, atlasOff, brickCoord) +
+                k.yxy * sampleAtlas(gP + k.yxy*e, atlasOff, brickCoord) +
+                k.xxx * sampleAtlas(gP + k.xxx*e, atlasOff, brickCoord)
             );
 
             vec3 mate = sampleMaterial(gP, atlasOff, brickCoord);
