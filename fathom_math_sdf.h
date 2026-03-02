@@ -26,4 +26,11 @@ FATHOM_API FATHOM_INLINE f32 fathom_sdf_box_rounded(fathom_vec3 pos, fathom_vec3
     return fathom_vec3_length(fathom_vec3_maxf(q, 0.0f)) + fathom_minf(fathom_maxf(q.x, fathom_maxf(q.y, q.z)), 0.0f) - radius;
 }
 
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_ellipsoid(fathom_vec3 pos, fathom_vec3 radius)
+{
+    f32 k0 = fathom_vec3_length(fathom_vec3_div(pos, radius));
+    f32 k1 = fathom_vec3_length(fathom_vec3_div(pos, fathom_vec3_mul(radius,radius)));
+    return k0 * (k0 - 1.0f) / k1;
+}
+
 #endif /* FATHOM_MATH_SDF_H */
