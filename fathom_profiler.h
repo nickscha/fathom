@@ -18,6 +18,8 @@ typedef struct fathom_profiler_entry
 
     u32 counter;
     f64 time_ms_last;
+    f64 time_ms_min;
+    f64 time_ms_max;
     f64 time_ms_total;
 
 } fathom_profiler_entry;
@@ -88,9 +90,26 @@ FATHOM_API FATHOM_INLINE void fathom_profiler_end(s8 *name)
 
     if (entry_id != FATHOM_PROFILER_ENTRY_INVALID)
     {
-        f64 time_ms_last = time_ms_end - fathom_profiler_entries[entry_id].time_ms_last;
-        fathom_profiler_entries[entry_id].time_ms_last = time_ms_last;
-        fathom_profiler_entries[entry_id].time_ms_total += time_ms_last;
+        fathom_profiler_entry *entry = &fathom_profiler_entries[entry_id];
+
+        f64 time_ms_last = time_ms_end - entry->time_ms_last;
+
+        if (entry->counter == 1)
+        {
+            entry->time_ms_min = time_ms_last;
+            entry->time_ms_max = time_ms_last;
+        }
+        else if (time_ms_last < entry->time_ms_min)
+        {
+            entry->time_ms_min = time_ms_last;
+        }
+        else if (time_ms_last > entry->time_ms_max)
+        {
+            entry->time_ms_max = time_ms_last;
+        }
+
+        entry->time_ms_last = time_ms_last;
+        entry->time_ms_total += time_ms_last;
     }
 }
 
