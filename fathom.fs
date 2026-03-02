@@ -29,8 +29,8 @@ vec3 getAtlasOffset(uint stored) {
     uint atlasLinear = stored - 1u;
     uint bricksPerRow = uint(uAtlasBrickDim.x);
     vec2 offset;
-    offset.x = float(atlasLinear % bricksPerRow);
     offset.y = float(atlasLinear / bricksPerRow);
+    offset.x = float(atlasLinear - (offset.y * bricksPerRow));
     return vec3(offset * fPHYSICAL_BRICK_SIZE, 0.0) + 1.0;
 }
 
