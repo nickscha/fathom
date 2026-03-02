@@ -64,6 +64,15 @@ vec3 sampleMaterial(vec3 gridPos, vec3 atlasOffset, ivec3 brickCoord) {
     return texture(uPalette, paletteCoord).rgb;
 }
 
+vec3 debugColor(ivec3 p) {
+    uvec3 v = uvec3(p);
+    v = v * 1664525u + 1013904223u;
+    v.x += v.y * v.z; v.y += v.z * v.x; v.z += v.x * v.y;
+    v ^= v >> 16u;
+    v.x += v.y * v.z; v.y += v.z * v.x; v.z += v.x * v.y;
+    return vec3(v & 255u) / 255.0;
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 uv = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
     vec3 ro = camera_position; // ray origin
@@ -151,17 +160,21 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             );
 
             vec3 material = sampleMaterial(gP, atlasOff, brickCoord);
-
-            // Simple lighting
             float diffuse = clamp(dot(normal, normalize(vec3(0.7, 0.9, 0.3))), 0.0, 1.0);
-            
+            vec3 ambient  = vec3(0.2, 0.3, 0.4);
+            vec3 sun      = vec3(0.8, 0.7, 0.5);
+
             //col = material * (dif + 0.15);
-            //col = vec3(0.2, 0.3, 0.4) + dif * vec3(0.8, 0.7, 0.5);
-            vec3 ambient = vec3(0.2, 0.3, 0.4);
-            vec3 sun     = vec3(0.8, 0.7, 0.5);
-            
+            //col = vec3(0.2, 0.3, 0.4) + dif * vec3(0.8, 0.7, 0.5);           
             //col = material * (ambient + diffuse * sun);
             col = ambient + diffuse * sun;
+            
+            /*
+            ivec3 voxelCoord = ivec3(floor((pos - uGridStart) * invCell));
+            vec3 brick_color = debugColor(brickCoord);
+            vec3 voxel_color = debugColor(voxelCoord);
+            col = brick_color * (0.7 + 0.3 * voxel_color);
+            */
         }
     }
 
