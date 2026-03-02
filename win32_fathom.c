@@ -1302,9 +1302,11 @@ FATHOM_API fathom_grid_data sdf_function(fathom_vec3 position, void *user_data)
     f32 ellipsoid = fathom_sdf_ellipsoid(ellipsoid_pos, fathom_vec3_init(0.5f, 0.25f, 0.125f));
     f32 box_frame = fathom_sdf_box_frame(fathom_vec3_sub(position, fathom_vec3_init(0.25f, 1.0f, -1.0f)), fathom_vec3_init(0.25f, 0.25f, 0.25f), 0.025f);
 
+    f32 octahedron = fathom_sdf_octahedron(fathom_vec3_sub(position, fathom_vec3_init(0.0f, 0.25f, 0.35f)), 0.25f);
+
     f32 ground = position.y - (-0.25f);
 
-    d.distance = fathom_sminf(ground, fathom_sminf(fathom_sminf(fathom_sminf(sphere, box, 0.4f), ellipsoid, 0.2f), box_frame, 0.1f), 0.6f);
+    d.distance = fathom_sminf(ground, fathom_sminf(fathom_sminf(fathom_sminf(fathom_maxf(-octahedron, sphere), box, 0.4f), ellipsoid, 0.2f), box_frame, 0.1f), 0.6f);
     d.material = 0;
 
     if (sphere < box && sphere < ground)
