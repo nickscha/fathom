@@ -12,10 +12,10 @@ FATHOM_API FATHOM_INLINE f32 fathom_sdf_sphere(fathom_vec3 pos, f32 radius)
     return fathom_vec3_length(pos) - radius;
 }
 
-FATHOM_API FATHOM_INLINE f32 fathom_sdf_octahedron(fathom_vec3 pos, f32 size)
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_octahedron(fathom_vec3 pos, f32 scale)
 {
     pos = fathom_vec3_abs(pos);
-    return (pos.x + pos.y + pos.z - size) * 0.57735027f;
+    return (pos.x + pos.y + pos.z - scale) * 0.57735027f;
 }
 
 FATHOM_API FATHOM_INLINE f32 fathom_sdf_box(fathom_vec3 pos, fathom_vec3 base)
@@ -48,6 +48,30 @@ FATHOM_API FATHOM_INLINE f32 fathom_sdf_ellipsoid(fathom_vec3 pos, fathom_vec3 r
     f32 k0 = fathom_vec3_length(fathom_vec3_div(pos, radius));
     f32 k1 = fathom_vec3_length(fathom_vec3_div(pos, fathom_vec3_mul(radius, radius)));
     return k0 * (k0 - 1.0f) / k1;
+}
+
+/* #############################################################################
+ * # [SECTION] Signed Distance Operations Exact
+ * #############################################################################
+ */
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_union(f32 a, f32 b)
+{
+    return fathom_minf(a, b);
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_subtract(f32 a, f32 b)
+{
+    return fathom_maxf(-a, b);
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_intersect(f32 a, f32 b)
+{
+    return fathom_maxf(a, b);
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_xor(f32 a, f32 b)
+{
+    return fathom_maxf(fathom_minf(a, b), -fathom_maxf(a, b));
 }
 
 #endif /* FATHOM_MATH_SDF_H */
