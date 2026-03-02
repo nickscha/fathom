@@ -1297,9 +1297,12 @@ FATHOM_API fathom_grid_data sdf_function(fathom_vec3 position, void *user_data)
   {
     f32 box = fathom_sdf_box(fathom_vec3_divf(box_pos, box_scale), fathom_vec3_init(0.25f, 0.25f, 0.25f)) * box_scale;
 
+    fathom_vec3 ellipsoid_pos = fathom_vec3_sub(position, fathom_vec3_init(1.0f, 0.5f, -0.5f));
+    f32 ellipsoid = fathom_sdf_ellipsoid(ellipsoid_pos, fathom_vec3_init(0.5f, 0.25f, 0.125f));
+
     f32 ground = position.y - (-0.25f);
 
-    d.distance = fathom_sminf(ground, fathom_sminf(sphere, box, 0.4f), 0.6f);
+    d.distance = fathom_sminf(ground, fathom_sminf(fathom_sminf(sphere, box, 0.4f), ellipsoid, 0.2f), 0.6f);
     d.material = 0;
 
     if (sphere < box && sphere < ground)
@@ -1451,7 +1454,7 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
       palette_data[3] = 60;
       palette_data[4] = 255;
       palette_data[5] = 60;
-      
+
       /* ID 2: Box Material */
       palette_data[6] = 255;
       palette_data[7] = 60;
