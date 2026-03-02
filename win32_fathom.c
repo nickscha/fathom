@@ -9,6 +9,7 @@ LICENSE
 #include "fathom_types.h"
 #include "fathom_font.h"
 #include "fathom_string_builder.h"
+#include "fathom_color.h"
 #include "fathom_profiler.h"
 #include "fathom_opengl.h"
 #include "win32_fathom_opengl.h"
@@ -1447,9 +1448,9 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
       }
 
       /* ID 0: Default/Background */
-      palette_data[0] = 255;
-      palette_data[1] = 255;
-      palette_data[2] = 255;
+      palette_data[0] = (u8) fathom_color_f32_to_u8_unorm(1.0f);
+      palette_data[1] = (u8) fathom_color_f32_to_u8_unorm(1.0f);
+      palette_data[2] = (u8) fathom_color_f32_to_u8_unorm(1.0f);
 
       /* ID 1: Sphere Material */
       palette_data[3] = 60;
