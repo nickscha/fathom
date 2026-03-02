@@ -1306,7 +1306,7 @@ FATHOM_API fathom_grid_data sdf_function(fathom_vec3 position, void *user_data)
 
     f32 ground = position.y - (-0.25f);
 
-    d.distance = fathom_sminf(ground, fathom_sminf(fathom_sminf(fathom_sminf(fathom_sdf_op_subtract(octahedron, sphere), box, 0.4f), ellipsoid, 0.2f), box_frame, 0.1f), 0.6f);
+    d.distance = fathom_sdf_op_union_smooth(ground, fathom_sdf_op_union_smooth(fathom_sdf_op_union_smooth(fathom_sdf_op_union_smooth(fathom_sdf_op_subtract(octahedron, sphere), box, 0.4f), ellipsoid, 0.2f), box_frame, 0.1f), 0.6f);
     d.material = 0;
 
     if (sphere < box && sphere < ground)

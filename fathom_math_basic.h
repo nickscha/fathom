@@ -112,10 +112,4 @@ FATHOM_API FATHOM_INLINE f32 fathom_cosf_snorm(f32_snorm a)
     return a0 + a * (a1 + a * (a2 + a * (a3 + a * (a4 + a * (a5 + a * (a6 + a * a7))))));
 }
 
-FATHOM_API FATHOM_INLINE f32 fathom_sminf(f32 a, f32 b, f32 k)
-{
-    f32 h = fathom_maxf(k - fathom_absf(a - b), 0.0f) / k;
-    return fathom_minf(a, b) - h * h * h * k * (1.0f / 6.0f);
-}
-
 #endif /* FATHOM_MATH_BASIC_H */

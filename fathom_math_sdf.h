@@ -74,4 +74,24 @@ FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_xor(f32 a, f32 b)
     return fathom_maxf(fathom_minf(a, b), -fathom_maxf(a, b));
 }
 
+/* #############################################################################
+ * # [SECTION] Signed Distance Operations Smooth
+ * #############################################################################
+ */
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_union_smooth(f32 a, f32 b, f32 k)
+{
+    f32 h = fathom_maxf(k - fathom_absf(a - b), 0.0f) / k;
+    return fathom_minf(a, b) - h * h * h * k * (1.0f / 6.0f);
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_subtract_smooth(f32 a, f32 b, f32 k)
+{
+    return -fathom_sdf_op_union_smooth(a, -b, k);
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_intersect_smooth(f32 a, f32 b, f32 k)
+{
+    return -fathom_sdf_op_union_smooth(-a, -b, k);
+}
+
 #endif /* FATHOM_MATH_SDF_H */
