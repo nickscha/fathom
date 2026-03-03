@@ -112,9 +112,4 @@ FATHOM_API FATHOM_INLINE f32 fathom_cosf_snorm(f32_snorm a)
     return a0 + a * (a1 + a * (a2 + a * (a3 + a * (a4 + a * (a5 + a * (a6 + a * a7))))));
 }
 
-FATHOM_API FATHOM_INLINE f32 fathom_lerpf(f32 a, f32 b, f32 t)
-{
-    return a + (b - a) * t;
-}
-
 #endif /* FATHOM_MATH_BASIC_H */

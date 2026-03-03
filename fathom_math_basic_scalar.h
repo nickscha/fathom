@@ -81,6 +81,11 @@ FATHOM_API FATHOM_INLINE f32 fathom_roundf(f32 v)
     return (v >= 0.0f) ? (f32)(i32)(v + 0.5f) : (f32)(i32)(v - 0.5f);
 }
 
+FATHOM_API FATHOM_INLINE f32 fathom_lerpf(f32 a, f32 b, f32 t)
+{
+    return a + (b - a) * t;
+}
+
 FATHOM_API FATHOM_INLINE f32 fathom_ceilf(f32 x)
 {
     i32 i = (i32)x;

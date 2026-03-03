@@ -71,6 +71,19 @@ FATHOM_API FATHOM_INLINE f32 fathom_roundf(f32 v)
     return _mm_cvtss_f32(v_out);
 }
 
+FATHOM_API FATHOM_INLINE f32 fathom_lerpf(f32 a, f32 b, f32 t)
+{
+    __m128 va, vb, vt, res;
+
+    va = _mm_set_ss(a);
+    vb = _mm_set_ss(b);
+    vt = _mm_set_ss(t);
+
+    res = _mm_add_ss(va, _mm_mul_ss(_mm_sub_ss(vb, va), vt));
+
+    return _mm_cvtss_f32(res);
+}
+
 FATHOM_API FATHOM_INLINE f32 fathom_ceilf(f32 x)
 {
     __m128 v = _mm_set_ss(x);
