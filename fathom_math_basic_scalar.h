@@ -75,6 +75,12 @@ FATHOM_API FATHOM_INLINE f32 fathom_clampf(f32 x, f32 a, f32 b)
     return (x1 > b) ? b : x1;
 }
 
+FATHOM_API FATHOM_INLINE f32 fathom_roundf(f32 v)
+{
+    /* round-to-nearest */
+    return (v >= 0.0f) ? (f32)(i32)(v + 0.5f) : (f32)(i32)(v - 0.5f);
+}
+
 FATHOM_API FATHOM_INLINE f32 fathom_ceilf(f32 x)
 {
     i32 i = (i32)x;
