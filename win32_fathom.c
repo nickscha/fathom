@@ -1397,40 +1397,12 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     /* Palette Texture */
-    {
-      /* 256 materials, 3 bytes each (RGB) */
-      u8 palette_data[256 * 3];
-
-      i32 i;
-
-      /* Initialize palette with your colors */
-      for (i = 0; i < 256 * 3; ++i)
-      {
-        palette_data[i] = 0;
-      }
-
-      /* ID 0: Default/Background */
-      palette_data[0] = (u8)fathom_color_f32_to_u8_unorm(1.0f);
-      palette_data[1] = (u8)fathom_color_f32_to_u8_unorm(1.0f);
-      palette_data[2] = (u8)fathom_color_f32_to_u8_unorm(1.0f);
-
-      /* ID 1: Sphere Material */
-      palette_data[3] = 60;
-      palette_data[4] = 255;
-      palette_data[5] = 60;
-
-      /* ID 2: Box Material */
-      palette_data[6] = 255;
-      palette_data[7] = 60;
-      palette_data[8] = 60;
-
-      glGenTextures(1, &paletteTex);
-      glBindTexture(GL_TEXTURE_1D, paletteTex);
-      glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB8, 256, 0, GL_RGB, GL_UNSIGNED_BYTE, palette_data);
-      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    }
+    glGenTextures(1, &paletteTex);
+    glBindTexture(GL_TEXTURE_1D, paletteTex);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB8, 256, 0, GL_RGB, GL_UNSIGNED_BYTE, fathom_sdf_scene_materials);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 
     grid_initialized = 1;
   }

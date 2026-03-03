@@ -2,6 +2,7 @@
 #define FATHOM_SDF_SCENE_H
 
 #include "fathom_types.h"
+#include "fathom_color.h"
 #include "fathom_math_sdf.h"
 #include "fathom_sparse_grid.h"
 
@@ -20,12 +21,20 @@ typedef enum fathom_sdf_primitive_id
 
 } fathom_sdf_primitive_id;
 
+typedef struct fathom_sdf_transform
+{
+    fathom_vec3 position;
+    fathom_vec3 rotation;
+    f32 scale;
+
+} fathom_sdf_transform;
+
 typedef struct fathom_sdf_primitive
 {
     u8 primitive_id; /* fathom_sdf_primitive */
     u8 material_id;
 
-    fathom_vec3 position;
+    fathom_sdf_transform transform;
 
     union
     {
@@ -63,6 +72,9 @@ typedef struct fathom_sdf_primitive
 static fathom_sdf_primitive primitives[FATHOM_SDF_PRIMITIVE_COUNT];
 static fathom_sdf_aabb sdf_scene_aabb;
 
+#define FATHOM_SDF_MATERIAL_COUNT 256
+static u8 fathom_sdf_scene_materials[FATHOM_SDF_MATERIAL_COUNT * 3];
+
 FATHOM_API void fathom_sdf_scene_build(void)
 {
     fathom_sdf_primitive sphere = {0};
@@ -72,20 +84,22 @@ FATHOM_API void fathom_sdf_scene_build(void)
 
     sphere.primitive_id = FATHOM_SDF_PRIMITIVE_SPHERE;
     sphere.material_id = 1;
-    sphere.position = fathom_vec3_zero;
+    sphere.transform.position = fathom_vec3_zero;
     sphere.attributes.sphere.radius = 0.5f;
 
     box.primitive_id = FATHOM_SDF_PRIMITIVE_BOX;
     box.material_id = 2;
-    box.position = fathom_vec3_init(-0.5f, 0.5f, -0.5f);
+    box.transform.position = fathom_vec3_init(-0.5f, 0.5f, -0.5f);
     box.attributes.box.base = fathom_vec3_initf(0.25f);
 
     ellipsoid.primitive_id = FATHOM_SDF_PRIMITIVE_ELLIPSOID;
-    ellipsoid.position = fathom_vec3_init(1.0f, 0.5f, -0.5f);
+    ellipsoid.material_id = 4;
+    ellipsoid.transform.position = fathom_vec3_init(1.0f, 0.5f, -0.5f);
     ellipsoid.attributes.ellipsoid.radius = fathom_vec3_init(0.5f, 0.25f, 0.125f);
 
     octahedron.primitive_id = FATHOM_SDF_PRIMITIVE_OCTAHEDRON;
-    octahedron.position = fathom_vec3_init(0.0f, 0.5f, -1.0f);
+    octahedron.material_id = 3;
+    octahedron.transform.position = fathom_vec3_init(0.0f, 0.5f, -1.0f);
     octahedron.attributes.octahedron.scale = 0.25f;
 
     primitives[0] = sphere;
@@ -96,6 +110,32 @@ FATHOM_API void fathom_sdf_scene_build(void)
     /* Set simple bounding box */
     sdf_scene_aabb.min = fathom_vec3_init(-2.0f, -1.0f, -2.0f);
     sdf_scene_aabb.max = fathom_vec3_init(2.0f, 2.0f, 2.0f);
+
+    /* Set Materials */
+    /* ID 0: Default/Background */
+    fathom_sdf_scene_materials[0] = (u8)fathom_color_f32_to_u8_unorm(1.0f);
+    fathom_sdf_scene_materials[1] = (u8)fathom_color_f32_to_u8_unorm(1.0f);
+    fathom_sdf_scene_materials[2] = (u8)fathom_color_f32_to_u8_unorm(1.0f);
+
+    /* ID 1: Sphere Material */
+    fathom_sdf_scene_materials[3] = 60;
+    fathom_sdf_scene_materials[4] = 255;
+    fathom_sdf_scene_materials[5] = 60;
+
+    /* ID 2: Box Material */
+    fathom_sdf_scene_materials[6] = 255;
+    fathom_sdf_scene_materials[7] = 60;
+    fathom_sdf_scene_materials[8] = 60;
+
+    /* ID 3: Octahedron Material */
+    fathom_sdf_scene_materials[9] = 7;
+    fathom_sdf_scene_materials[10] = 27;
+    fathom_sdf_scene_materials[11] = 38;
+
+    /* ID 4: Ellipsoid Material */
+    fathom_sdf_scene_materials[12] = 46;
+    fathom_sdf_scene_materials[13] = 191;
+    fathom_sdf_scene_materials[14] = 199;
 }
 
 FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_data)
@@ -118,7 +158,7 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
         for (i = 0; i < FATHOM_SDF_PRIMITIVE_COUNT; ++i)
         {
             fathom_sdf_primitive primitive = primitives[i];
-            fathom_vec3 primitive_pos = fathom_vec3_sub(position, primitive.position);
+            fathom_vec3 primitive_pos = fathom_vec3_sub(position, primitive.transform.position);
             f32 primitive_distance = 0.0f;
 
             switch (primitive.primitive_id)
