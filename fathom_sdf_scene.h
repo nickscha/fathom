@@ -11,9 +11,8 @@
  */
 FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_data)
 {
-
     static u8 sdf_scene_initialized;
-    static fathom_sdf_aabb scene_aabb;
+    static fathom_sdf_aabb sdf_scene_aabb;
 
     f32 ground = position.y - (-0.25f);
 
@@ -23,13 +22,13 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
 
     if (!sdf_scene_initialized)
     {
-        scene_aabb.min = fathom_vec3_init(-2.0f, -1.0f, -2.0f);
-        scene_aabb.max = fathom_vec3_init(2.0f, 2.0f, 2.0f);
+        sdf_scene_aabb.min = fathom_vec3_init(-2.0f, -1.0f, -2.0f);
+        sdf_scene_aabb.max = fathom_vec3_init(2.0f, 2.0f, 2.0f);
 
         sdf_scene_initialized = 1;
     }
 
-    if (fathom_sdf_aabb_distance(position, &scene_aabb) <= d.distance)
+    if (fathom_sdf_aabb_distance(position, &sdf_scene_aabb) <= d.distance)
     {
 
         f32 sphere_radius = 0.5f;
