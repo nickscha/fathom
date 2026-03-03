@@ -21,6 +21,16 @@ typedef enum fathom_sdf_primitive_id
 
 } fathom_sdf_primitive_id;
 
+typedef enum fathom_sdf_operation_id
+{
+    FATHOM_SDF_OPERATION_UNION_SMOOTH = 0,
+    FATHOM_SDF_OPERATION_UNION,
+    FATHOM_SDF_OPERATION_SUBTRACT,
+    FATHOM_SDF_OPERATION_INTERSECT,
+    FATHOM_SDF_OPERATION_COUNT
+
+} fathom_sdf_operation_id;
+
 typedef struct fathom_sdf_transform
 {
     fathom_vec3 position;
@@ -33,7 +43,7 @@ typedef struct fathom_sdf_primitive
 {
     u8 primitive_id; /* fathom_sdf_primitive */
     u8 material_id;
-
+    u8 operation_id;
     fathom_sdf_transform transform;
 
     union
@@ -99,6 +109,7 @@ FATHOM_API void fathom_sdf_scene_build(void)
 
     octahedron.primitive_id = FATHOM_SDF_PRIMITIVE_OCTAHEDRON;
     octahedron.material_id = 3;
+    octahedron.operation_id = FATHOM_SDF_OPERATION_UNION;
     octahedron.transform.position = fathom_vec3_init(0.0f, 0.5f, -1.0f);
     octahedron.attributes.octahedron.scale = 0.25f;
 
@@ -189,7 +200,25 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
 
             /* smooth union distance */
             {
-                f32 new_total = fathom_sdf_op_union_smooth(primitive_distance_total, primitive_distance, 0.4f);
+                f32 new_total = 0.0f;
+
+                switch (primitive.operation_id)
+                {
+                case FATHOM_SDF_OPERATION_UNION_SMOOTH:
+                    new_total = fathom_sdf_op_union_smooth(primitive_distance_total, primitive_distance, 0.4f);
+                    break;
+                case FATHOM_SDF_OPERATION_UNION:
+                    new_total = fathom_sdf_op_union(primitive_distance_total, primitive_distance);
+                    break;
+                case FATHOM_SDF_OPERATION_SUBTRACT:
+                    new_total = fathom_sdf_op_subtract(primitive_distance_total, primitive_distance);
+                    break;
+                case FATHOM_SDF_OPERATION_INTERSECT:
+                    new_total = fathom_sdf_op_intersect(primitive_distance_total, primitive_distance);
+                    break;
+                default:
+                    break;
+                }
 
                 /* material: choose the primitive that is closer (before smooth offset) */
                 if (primitive_distance < primitive_distance_total)
