@@ -166,8 +166,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
             //col = material * (dif + 0.15);
             //col = vec3(0.2, 0.3, 0.4) + dif * vec3(0.8, 0.7, 0.5);           
-            //col = material * (ambient + diffuse * sun);
-            col = ambient + diffuse * sun;
+            col = material * (ambient + diffuse * sun);
+            //col = ambient + diffuse * sun;
             
             /*
             ivec3 voxelCoord = ivec3(floor((pos - uGridStart) * invCell));

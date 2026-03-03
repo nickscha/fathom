@@ -1325,6 +1325,10 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
     u32 grid_cell_count = 128;
     f32 grid_cell_size = 1.0f / 16.0f;
 
+    FATHOM_PROFILER_BEGIN(sdf_scene_build);
+    fathom_sdf_scene_build();
+    FATHOM_PROFILER_END(sdf_scene_build);
+
     FATHOM_PROFILER_BEGIN(sparse_grid_create_lod0);
     fathom_create_grid(state, &grid_lod0, fathom_vec3_zero, grid_cell_count, grid_cell_size); /* LOD 0 */
     FATHOM_PROFILER_END(sparse_grid_create_lod0);
