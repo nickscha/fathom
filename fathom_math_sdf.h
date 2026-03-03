@@ -7,34 +7,36 @@
  * # [SECTION] Signed Distance Functions
  * #############################################################################
  */
-FATHOM_API FATHOM_INLINE f32 fathom_sdf_sphere(fathom_vec3 pos, f32 radius)
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_sphere(fathom_vec3 position, f32 radius)
 {
-    return fathom_vec3_length(pos) - radius;
+    return fathom_vec3_length(position) - radius;
 }
 
-FATHOM_API FATHOM_INLINE f32 fathom_sdf_octahedron(fathom_vec3 pos, f32 scale)
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_octahedron(fathom_vec3 position, f32 scale)
 {
-    pos = fathom_vec3_abs(pos);
-    return (pos.x + pos.y + pos.z - scale) * 0.57735027f;
+    position = fathom_vec3_abs(position);
+    return (position.x + position.y + position.z - scale) * 0.57735027f;
 }
 
-FATHOM_API FATHOM_INLINE f32 fathom_sdf_box(fathom_vec3 pos, fathom_vec3 base)
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_box(fathom_vec3 position, fathom_vec3 base)
 {
-    fathom_vec3 q = fathom_vec3_sub(fathom_vec3_abs(pos), base);
+    fathom_vec3 q = fathom_vec3_sub(fathom_vec3_abs(position), base);
 
     return fathom_vec3_length(fathom_vec3_maxf(q, 0.0f)) + fathom_minf(fathom_maxf(q.x, fathom_maxf(q.y, q.z)), 0.0f);
 }
 
-FATHOM_API FATHOM_INLINE f32 fathom_sdf_box_rounded(fathom_vec3 pos, fathom_vec3 base, f32 radius)
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_box_rounded(fathom_vec3 position, fathom_vec3 base, f32 radius)
 {
-    fathom_vec3 q = fathom_vec3_addf(fathom_vec3_sub(fathom_vec3_abs(pos), base), radius);
+    fathom_vec3 q = fathom_vec3_addf(fathom_vec3_sub(fathom_vec3_abs(position), base), radius);
+    f32 lq = fathom_vec3_length(fathom_vec3_maxf(q, 0.0f));
+    f32 mq = fathom_minf(fathom_maxf(q.x, fathom_maxf(q.y, q.z)), 0.0f);
 
-    return fathom_vec3_length(fathom_vec3_maxf(q, 0.0f)) + fathom_minf(fathom_maxf(q.x, fathom_maxf(q.y, q.z)), 0.0f) - radius;
+    return lq + mq - radius;
 }
 
-FATHOM_API FATHOM_INLINE f32 fathom_sdf_box_frame(fathom_vec3 pos, fathom_vec3 base, f32 edge_thickness)
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_box_frame(fathom_vec3 position, fathom_vec3 base, f32 edge_thickness)
 {
-    fathom_vec3 p = fathom_vec3_sub(fathom_vec3_abs(pos), base);
+    fathom_vec3 p = fathom_vec3_sub(fathom_vec3_abs(position), base);
     fathom_vec3 q = fathom_vec3_subf(fathom_vec3_abs(fathom_vec3_addf(p, edge_thickness)), edge_thickness);
 
     f32 l1 = fathom_vec3_length(fathom_vec3_maxf(fathom_vec3_init(p.x, q.y, q.z), 0.0f));
@@ -48,10 +50,11 @@ FATHOM_API FATHOM_INLINE f32 fathom_sdf_box_frame(fathom_vec3 pos, fathom_vec3 b
     return fathom_minf(fathom_minf(l1 + m1, l2 + m2), l3 + m3);
 }
 
-FATHOM_API FATHOM_INLINE f32 fathom_sdf_ellipsoid(fathom_vec3 pos, fathom_vec3 radius)
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_ellipsoid(fathom_vec3 position, fathom_vec3 radius)
 {
-    f32 k0 = fathom_vec3_length(fathom_vec3_div(pos, radius));
-    f32 k1 = fathom_vec3_length(fathom_vec3_div(pos, fathom_vec3_mul(radius, radius)));
+    f32 k0 = fathom_vec3_length(fathom_vec3_div(position, radius));
+    f32 k1 = fathom_vec3_length(fathom_vec3_div(position, fathom_vec3_mul(radius, radius)));
+
     return k0 * (k0 - 1.0f) / k1;
 }
 
@@ -100,58 +103,72 @@ FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_intersect_smooth(f32 a, f32 b, f32 k)
 }
 
 /* #############################################################################
+ * # [SECTION] Signed Distance Operations Rounding
+ * #############################################################################
+ */
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_round(f32 distance, f32 radius)
+{
+    return distance - radius;
+}
+
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_onion(f32 distance, f32 thickness)
+{
+    return fathom_absf(distance) - thickness;
+}
+
+/* #############################################################################
  * # [SECTION] Signed Distance Operations Symmetry
  * #############################################################################
  */
-FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_symmetric_x(fathom_vec3 p)
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_symmetric_x(fathom_vec3 position)
 {
-    p.x = fathom_absf(p.x);
-    return p;
+    position.x = fathom_absf(position.x);
+    return position;
 }
 
-FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_symmetric_xz(fathom_vec3 p)
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_symmetric_xz(fathom_vec3 position)
 {
-    p.x = fathom_absf(p.x);
-    p.z = fathom_absf(p.z);
-    return p;
+    position.x = fathom_absf(position.x);
+    position.z = fathom_absf(position.z);
+    return position;
 }
 
 /* #############################################################################
  * # [SECTION] Signed Distance Operations Repetition
  * #############################################################################
  */
-FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_repeat(fathom_vec3 p, fathom_vec3 s)
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_repeat(fathom_vec3 position, fathom_vec3 spacing)
 {
     fathom_vec3 q;
     fathom_vec3 ratio;
 
     /* ratio = p / s */
-    ratio.x = p.x / s.x;
-    ratio.y = p.y / s.y;
-    ratio.z = p.z / s.z;
+    ratio.x = position.x / spacing.x;
+    ratio.y = position.y / spacing.y;
+    ratio.z = position.z / spacing.z;
 
     /* q = p - s * round(ratio) */
-    q.x = p.x - s.x * (f32)((i32)(ratio.x + ((ratio.x >= 0.0f) ? 0.5f : -0.5f)));
-    q.y = p.y - s.y * (f32)((i32)(ratio.y + ((ratio.y >= 0.0f) ? 0.5f : -0.5f)));
-    q.z = p.z - s.z * (f32)((i32)(ratio.z + ((ratio.z >= 0.0f) ? 0.5f : -0.5f)));
+    q.x = position.x - spacing.x * (f32)((i32)(ratio.x + ((ratio.x >= 0.0f) ? 0.5f : -0.5f)));
+    q.y = position.y - spacing.y * (f32)((i32)(ratio.y + ((ratio.y >= 0.0f) ? 0.5f : -0.5f)));
+    q.z = position.z - spacing.z * (f32)((i32)(ratio.z + ((ratio.z >= 0.0f) ? 0.5f : -0.5f)));
 
     return q;
 }
 
-FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_repeat_limited(fathom_vec3 p, f32 s, fathom_vec3 l)
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_repeat_limited(fathom_vec3 position, f32 spacing, fathom_vec3 limits)
 {
     fathom_vec3 q;
     f32 rx, ry, rz;
 
     /* ratio = p / s */
-    rx = p.x / s;
-    ry = p.y / s;
-    rz = p.z / s;
+    rx = position.x / spacing;
+    ry = position.y / spacing;
+    rz = position.z / spacing;
 
     /* q = p - s * clamp(round(p / s), -l, l) */
-    q.x = p.x - s * fathom_clampf(fathom_roundf(rx), -l.x, l.x);
-    q.y = p.y - s * fathom_clampf(fathom_roundf(ry), -l.y, l.y);
-    q.z = p.z - s * fathom_clampf(fathom_roundf(rz), -l.z, l.z);
+    q.x = position.x - spacing * fathom_clampf(fathom_roundf(rx), -limits.x, limits.x);
+    q.y = position.y - spacing * fathom_clampf(fathom_roundf(ry), -limits.y, limits.y);
+    q.z = position.z - spacing * fathom_clampf(fathom_roundf(rz), -limits.z, limits.z);
 
     return q;
 }
@@ -167,37 +184,37 @@ typedef struct fathom_sdf_aabb
 
 } fathom_sdf_aabb;
 
-FATHOM_API FATHOM_INLINE f32 fathom_sdf_aabb_distance(fathom_vec3 p, fathom_sdf_aabb *box)
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_aabb_distance(fathom_vec3 position, fathom_sdf_aabb *box)
 {
     f32 dx = 0.0f;
     f32 dy = 0.0f;
     f32 dz = 0.0f;
 
-    if (p.x < box->min.x)
+    if (position.x < box->min.x)
     {
-        dx = box->min.x - p.x;
+        dx = box->min.x - position.x;
     }
-    else if (p.x > box->max.x)
+    else if (position.x > box->max.x)
     {
-        dx = p.x - box->max.x;
-    }
-
-    if (p.y < box->min.y)
-    {
-        dy = box->min.y - p.y;
-    }
-    else if (p.y > box->max.y)
-    {
-        dy = p.y - box->max.y;
+        dx = position.x - box->max.x;
     }
 
-    if (p.z < box->min.z)
+    if (position.y < box->min.y)
     {
-        dz = box->min.z - p.z;
+        dy = box->min.y - position.y;
     }
-    else if (p.z > box->max.z)
+    else if (position.y > box->max.y)
     {
-        dz = p.z - box->max.z;
+        dy = position.y - box->max.y;
+    }
+
+    if (position.z < box->min.z)
+    {
+        dz = box->min.z - position.z;
+    }
+    else if (position.z > box->max.z)
+    {
+        dz = position.z - box->max.z;
     }
 
     return dx * dx + dy * dy + dz * dz;

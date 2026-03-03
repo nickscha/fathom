@@ -24,6 +24,8 @@ typedef enum fathom_sdf_primitive_id
 typedef enum fathom_sdf_operation_id
 {
     FATHOM_SDF_OPERATION_UNION_SMOOTH = 0,
+    FATHOM_SDF_OPERATION_SUBTRACT_SMOOTH,
+    FATHOM_SDF_OPERATION_INTERSECT_SMOOTH,
     FATHOM_SDF_OPERATION_UNION,
     FATHOM_SDF_OPERATION_SUBTRACT,
     FATHOM_SDF_OPERATION_INTERSECT,
@@ -219,6 +221,12 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
                 {
                 case FATHOM_SDF_OPERATION_UNION_SMOOTH:
                     new_total = fathom_sdf_op_union_smooth(primitive_distance_total, primitive_distance, 0.4f);
+                    break;
+                case FATHOM_SDF_OPERATION_SUBTRACT_SMOOTH:
+                    new_total = fathom_sdf_op_subtract_smooth(primitive_distance_total, primitive_distance, 0.4f);
+                    break;
+                case FATHOM_SDF_OPERATION_INTERSECT_SMOOTH:
+                    new_total = fathom_sdf_op_intersect_smooth(primitive_distance_total, primitive_distance, 0.4f);
                     break;
                 case FATHOM_SDF_OPERATION_UNION:
                     new_total = fathom_sdf_op_union(primitive_distance_total, primitive_distance);
