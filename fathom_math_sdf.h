@@ -151,4 +151,66 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_repeat_limited(fathom_vec3 p,
     return q;
 }
 
+/* #############################################################################
+ * # [SECTION] Signed Distance Axis Aligned Bounding Boxes (AABB)
+ * #############################################################################
+ */
+typedef struct fathom_sdf_aabb
+{
+    fathom_vec3 min;
+    fathom_vec3 max;
+
+} fathom_sdf_aabb;
+
+FATHOM_API FATHOM_INLINE f32 fathom_sdf_aabb_distance(fathom_vec3 p, fathom_sdf_aabb *box)
+{
+    f32 dx = 0.0f;
+    f32 dy = 0.0f;
+    f32 dz = 0.0f;
+
+    if (p.x < box->min.x)
+    {
+        dx = box->min.x - p.x;
+    }
+    else if (p.x > box->max.x)
+    {
+        dx = p.x - box->max.x;
+    }
+
+    if (p.y < box->min.y)
+    {
+        dy = box->min.y - p.y;
+    }
+    else if (p.y > box->max.y)
+    {
+        dy = p.y - box->max.y;
+    }
+
+    if (p.z < box->min.z)
+    {
+        dz = box->min.z - p.z;
+    }
+    else if (p.z > box->max.z)
+    {
+        dz = p.z - box->max.z;
+    }
+
+    return dx * dx + dy * dy + dz * dz;
+}
+
+FATHOM_API FATHOM_INLINE fathom_sdf_aabb fathom_sdf_aabb_sphere(fathom_vec3 center, f32 radius)
+{
+    fathom_sdf_aabb b;
+
+    b.min.x = center.x - radius;
+    b.min.y = center.y - radius;
+    b.min.z = center.z - radius;
+
+    b.max.x = center.x + radius;
+    b.max.y = center.y + radius;
+    b.max.z = center.z + radius;
+
+    return b;
+}
+
 #endif /* FATHOM_MATH_SDF_H */
