@@ -105,12 +105,11 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
             {
                 fathom_vec3 center = fathom_vec3_init(px + center_off, py + center_off, pz + center_off);
                 fathom_grid_data data = distance_function(center, user_data);
-                f32 distance = data.distance;
 
-                if (fathom_absf(distance) > grid->cull_threshold)
+                if (fathom_absf(data.distance) > grid->cull_threshold)
                 {
                     /* Culled: Either air (0) or solid (0xFFFF) */
-                    u16 state = (distance > 0.0f) ? FATHOM_BRICK_MAP_INDEX_AIR : FATHOM_BRICK_MAP_INDEX_SOLID;
+                    u16 state = (data.distance > 0.0f) ? FATHOM_BRICK_MAP_INDEX_AIR : FATHOM_BRICK_MAP_INDEX_SOLID;
                     grid->brick_map_data[brick_map_index] = state;
                 }
                 else
@@ -132,16 +131,18 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
         u32 bricks_per_col = (active_brick_count + bricks_per_row - 1) / bricks_per_row;
 
         grid->atlas_bricks_per_row = bricks_per_row;
+
         grid->atlas_dimensions = fathom_vec3_init(
             (f32)(bricks_per_row * FATHOM_PHYSICAL_BRICK_SIZE),
             (f32)(bricks_per_col * FATHOM_PHYSICAL_BRICK_SIZE),
             (f32)FATHOM_PHYSICAL_BRICK_SIZE);
 
-        grid->atlas_bytes = (u32)(grid->atlas_dimensions.x * grid->atlas_dimensions.y * grid->atlas_dimensions.z) * sizeof(u8);
         grid->atlas_dimensions_inverse = fathom_vec3_init(
             1.0f / (f32)grid->atlas_dimensions.x,
             1.0f / (f32)grid->atlas_dimensions.y,
             1.0f / (f32)grid->atlas_dimensions.z);
+
+        grid->atlas_bytes = (u32)(grid->atlas_dimensions.x * grid->atlas_dimensions.y * grid->atlas_dimensions.z) * sizeof(u8);
     }
 
     return 1;
@@ -224,36 +225,15 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                         {
                             f32 px = brick_min.x + apron_offset + ((f32)lx * grid->cell_size);
                             fathom_grid_data data = distance_function(fathom_vec3_init(px, py, pz), user_data);
-                            f32 dist = data.distance;
 
 #ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
                             /* Quantize: map [-trunc, +trunc] to [0, 255] */
-                            f32 val = (dist * quant_scale) + 127.5f;
-
-                            if (val < 0.0f)
-                            {
-                                val = 0.0f;
-                            }
-                            if (val > 255.0f)
-                            {
-                                val = 255.0f;
-                            }
-
-                            dst_row[lx] = (u8)val;
+                            f32 val = (data.distance * quant_scale) + 127.5f;
+                            dst_row[lx] = fathom_types_f32_to_u8(val);
 #else
                             /* Quantize: map [-trunc, +trunc] to [-127, 127] */
-                            f32 val = dist * quant_scale;
-
-                            if (val < -127.0f)
-                            {
-                                val = -127.0f;
-                            }
-                            if (val > 127.0f)
-                            {
-                                val = 127.0f;
-                            }
-
-                            dst_row[lx] = (s8)val;
+                            f32 val = data.distance * quant_scale;
+                            dst_row[lx] = fathom_types_f32_to_s8(val);
 #endif
 
                             dst_material_row[lx] = data.material;
