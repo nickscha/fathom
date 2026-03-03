@@ -27,6 +27,7 @@ typedef enum fathom_sdf_operation_id
     FATHOM_SDF_OPERATION_UNION,
     FATHOM_SDF_OPERATION_SUBTRACT,
     FATHOM_SDF_OPERATION_INTERSECT,
+    FATHOM_SDF_OPERATION_XOR,
     FATHOM_SDF_OPERATION_COUNT
 
 } fathom_sdf_operation_id;
@@ -78,7 +79,7 @@ typedef struct fathom_sdf_primitive
 
 } fathom_sdf_primitive;
 
-#define FATHOM_SDF_PRIMITIVE_COUNT 4
+#define FATHOM_SDF_PRIMITIVE_COUNT 5
 static fathom_sdf_primitive primitives[FATHOM_SDF_PRIMITIVE_COUNT];
 static fathom_sdf_aabb sdf_scene_aabb;
 
@@ -91,6 +92,7 @@ FATHOM_API void fathom_sdf_scene_build(void)
     fathom_sdf_primitive box = {0};
     fathom_sdf_primitive ellipsoid = {0};
     fathom_sdf_primitive octahedron = {0};
+    fathom_sdf_primitive box_frame = {0};
 
     sphere.primitive_id = FATHOM_SDF_PRIMITIVE_SPHERE;
     sphere.material_id = 1;
@@ -113,10 +115,16 @@ FATHOM_API void fathom_sdf_scene_build(void)
     octahedron.transform.position = fathom_vec3_init(0.0f, 0.5f, -1.0f);
     octahedron.attributes.octahedron.scale = 0.25f;
 
+    box_frame.primitive_id = FATHOM_SDF_PRIMITIVE_BOX_FRAME;
+    box_frame.transform.position = fathom_vec3_init(-1.25f, 0.75f, -0.5f);
+    box_frame.attributes.box_frame.base = fathom_vec3_init(0.25f, 0.25f, 0.25f);
+    box_frame.attributes.box_frame.edge_thickness = 0.025f;
+
     primitives[0] = sphere;
     primitives[1] = box;
     primitives[2] = ellipsoid;
     primitives[3] = octahedron;
+    primitives[4] = box_frame;
 
     /* Set simple bounding box */
     sdf_scene_aabb.min = fathom_vec3_init(-2.0f, -1.0f, -2.0f);
@@ -184,6 +192,11 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
                 primitive_distance = fathom_sdf_box(primitive_pos, primitive.attributes.box.base);
             }
             break;
+            case FATHOM_SDF_PRIMITIVE_BOX_FRAME:
+            {
+                primitive_distance = fathom_sdf_box_frame(primitive_pos, primitive.attributes.box_frame.base, primitive.attributes.box_frame.edge_thickness);
+            }
+            break;
             case FATHOM_SDF_PRIMITIVE_ELLIPSOID:
             {
                 primitive_distance = fathom_sdf_ellipsoid(primitive_pos, primitive.attributes.ellipsoid.radius);
@@ -215,6 +228,9 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
                     break;
                 case FATHOM_SDF_OPERATION_INTERSECT:
                     new_total = fathom_sdf_op_intersect(primitive_distance_total, primitive_distance);
+                    break;
+                case FATHOM_SDF_OPERATION_XOR:
+                    new_total = fathom_sdf_op_xor(primitive_distance_total, primitive_distance);
                     break;
                 default:
                     break;
