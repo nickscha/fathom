@@ -147,10 +147,32 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
                 break;
             }
 
-            primitive_distance_total = fathom_sdf_op_union_smooth(primitive_distance_total, primitive_distance, 0.4f);
+            /* smooth union distance */
+            {
+                f32 new_total = fathom_sdf_op_union_smooth(primitive_distance_total, primitive_distance, 0.4f);
+
+                /* material: choose the primitive that is closer (before smooth offset) */
+                if (primitive_distance < primitive_distance_total)
+                {
+                    primitive_material_total = primitive.material_id;
+                }
+
+                primitive_distance_total = new_total;
+            }
         }
 
-        primitive_distance_total = fathom_sdf_op_union_smooth(ground, primitive_distance_total, 0.4f);
+        /* Union with ground */
+        {
+            f32 new_total = fathom_sdf_op_union_smooth(ground, primitive_distance_total, 0.6f);
+
+            /* ground material dominates if it’s closer */
+            if (ground < primitive_distance_total)
+            {
+                primitive_material_total = 0; /* ground material id */
+            }
+
+            primitive_distance_total = new_total;
+        }
 
         d.distance = primitive_distance_total;
         d.material = primitive_material_total;
