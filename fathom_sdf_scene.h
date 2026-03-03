@@ -118,7 +118,7 @@ FATHOM_API void fathom_sdf_scene_build(void)
     octahedron.attributes.octahedron.scale = 0.25f;
 
     box_frame.primitive_id = FATHOM_SDF_PRIMITIVE_BOX_FRAME;
-    box_frame.transform.position = fathom_vec3_init(-1.25f, 0.75f, -0.5f);
+    box_frame.transform.position = fathom_vec3_init(-1.0f, 0.75f, -0.5f);
     box_frame.attributes.box_frame.base = fathom_vec3_init(0.25f, 0.25f, 0.25f);
     box_frame.attributes.box_frame.edge_thickness = 0.025f;
 
@@ -180,7 +180,7 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
         {
             fathom_sdf_primitive primitive = primitives[i];
             fathom_vec3 primitive_pos = fathom_vec3_sub(position, primitive.transform.position);
-            f32 primitive_distance = 0.0f;
+            f32 primitive_distance = ground;
 
             switch (primitive.primitive_id)
             {
@@ -213,61 +213,47 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
                 break;
             }
 
+            /* material: choose the primitive that is closer (before smooth offset) */
+            if (primitive_distance < primitive_distance_total)
+            {
+                primitive_material_total = primitive.material_id;
+            }
+
             /* smooth union distance */
+            switch (primitive.operation_id)
             {
-                f32 new_total = 0.0f;
-
-                switch (primitive.operation_id)
-                {
-                case FATHOM_SDF_OPERATION_UNION_SMOOTH:
-                    new_total = fathom_sdf_op_union_smooth(primitive_distance_total, primitive_distance, 0.4f);
-                    break;
-                case FATHOM_SDF_OPERATION_SUBTRACT_SMOOTH:
-                    new_total = fathom_sdf_op_subtract_smooth(primitive_distance_total, primitive_distance, 0.4f);
-                    break;
-                case FATHOM_SDF_OPERATION_INTERSECT_SMOOTH:
-                    new_total = fathom_sdf_op_intersect_smooth(primitive_distance_total, primitive_distance, 0.4f);
-                    break;
-                case FATHOM_SDF_OPERATION_UNION:
-                    new_total = fathom_sdf_op_union(primitive_distance_total, primitive_distance);
-                    break;
-                case FATHOM_SDF_OPERATION_SUBTRACT:
-                    new_total = fathom_sdf_op_subtract(primitive_distance_total, primitive_distance);
-                    break;
-                case FATHOM_SDF_OPERATION_INTERSECT:
-                    new_total = fathom_sdf_op_intersect(primitive_distance_total, primitive_distance);
-                    break;
-                case FATHOM_SDF_OPERATION_XOR:
-                    new_total = fathom_sdf_op_xor(primitive_distance_total, primitive_distance);
-                    break;
-                default:
-                    break;
-                }
-
-                /* material: choose the primitive that is closer (before smooth offset) */
-                if (primitive_distance < primitive_distance_total)
-                {
-                    primitive_material_total = primitive.material_id;
-                }
-
-                primitive_distance_total = new_total;
+            case FATHOM_SDF_OPERATION_UNION_SMOOTH:
+                primitive_distance_total = fathom_sdf_op_union_smooth(primitive_distance_total, primitive_distance, 0.4f);
+                break;
+            case FATHOM_SDF_OPERATION_SUBTRACT_SMOOTH:
+                primitive_distance_total = fathom_sdf_op_subtract_smooth(primitive_distance_total, primitive_distance, 0.4f);
+                break;
+            case FATHOM_SDF_OPERATION_INTERSECT_SMOOTH:
+                primitive_distance_total = fathom_sdf_op_intersect_smooth(primitive_distance_total, primitive_distance, 0.4f);
+                break;
+            case FATHOM_SDF_OPERATION_UNION:
+                primitive_distance_total = fathom_sdf_op_union(primitive_distance_total, primitive_distance);
+                break;
+            case FATHOM_SDF_OPERATION_SUBTRACT:
+                primitive_distance_total = fathom_sdf_op_subtract(primitive_distance_total, primitive_distance);
+                break;
+            case FATHOM_SDF_OPERATION_INTERSECT:
+                primitive_distance_total = fathom_sdf_op_intersect(primitive_distance_total, primitive_distance);
+                break;
+            case FATHOM_SDF_OPERATION_XOR:
+                primitive_distance_total = fathom_sdf_op_xor(primitive_distance_total, primitive_distance);
+                break;
+            default:
+                break;
             }
         }
 
-        /* Union with ground */
+        if (ground < primitive_distance_total)
         {
-            f32 new_total = fathom_sdf_op_union_smooth(ground, primitive_distance_total, 0.6f);
-
-            /* ground material dominates if it’s closer */
-            if (ground < primitive_distance_total)
-            {
-                primitive_material_total = 0; /* ground material id */
-            }
-
-            primitive_distance_total = new_total;
+            primitive_material_total = 0; /* ground material id */
         }
 
-        d.distance = primitive_distance_total;
+        d.distance = fathom_sdf_op_union_smooth(ground, primitive_distance_total, 0.6f);
         d.material = primitive_material_total;
     }
 
