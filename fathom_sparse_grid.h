@@ -34,10 +34,8 @@ typedef struct fathom_sparse_grid
 
     /* Second Pass: Fill Atlas */
     u32 atlas_bricks_per_row;
-    u32 atlas_width;
-    u32 atlas_height;
-    u32 atlas_depth;
-    fathom_vec3 atlas_inverse_dimensions;
+    fathom_vec3 atlas_dimensions;
+    fathom_vec3 atlas_dimensions_inverse;
     u32 atlas_bytes;
 #ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
     u8 *atlas_data;
@@ -134,14 +132,16 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
         u32 bricks_per_col = (active_brick_count + bricks_per_row - 1) / bricks_per_row;
 
         grid->atlas_bricks_per_row = bricks_per_row;
-        grid->atlas_width = bricks_per_row * FATHOM_PHYSICAL_BRICK_SIZE;
-        grid->atlas_height = bricks_per_col * FATHOM_PHYSICAL_BRICK_SIZE;
-        grid->atlas_depth = FATHOM_PHYSICAL_BRICK_SIZE;
-        grid->atlas_bytes = grid->atlas_width * grid->atlas_height * grid->atlas_depth * sizeof(u8);
-        grid->atlas_inverse_dimensions = fathom_vec3_init(
-            1.0f / (f32)grid->atlas_width,
-            1.0f / (f32)grid->atlas_height,
-            1.0f / (f32)grid->atlas_depth);
+        grid->atlas_dimensions = fathom_vec3_init(
+            (f32)(bricks_per_row * FATHOM_PHYSICAL_BRICK_SIZE),
+            (f32)(bricks_per_col * FATHOM_PHYSICAL_BRICK_SIZE),
+            (f32)FATHOM_PHYSICAL_BRICK_SIZE);
+
+        grid->atlas_bytes = (u32)(grid->atlas_dimensions.x * grid->atlas_dimensions.y * grid->atlas_dimensions.z) * sizeof(u8);
+        grid->atlas_dimensions_inverse = fathom_vec3_init(
+            1.0f / (f32)grid->atlas_dimensions.x,
+            1.0f / (f32)grid->atlas_dimensions.y,
+            1.0f / (f32)grid->atlas_dimensions.z);
     }
 
     return 1;

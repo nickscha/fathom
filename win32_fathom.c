@@ -461,9 +461,7 @@ typedef struct win32_fathom_state
   u32 mem_brick_map_bytes;
   u32 mem_atlas_bytes;
   u32 grid_active_brick_count;
-  u32 grid_atlas_width;
-  u32 grid_atlas_height;
-  u32 grid_atlas_depth;
+  fathom_vec3 grid_atlas_dimensions;
 
 } win32_fathom_state;
 
@@ -1294,9 +1292,7 @@ FATHOM_API void fathom_create_grid(win32_fathom_state *state, fathom_sparse_grid
   state->mem_brick_map_bytes = grid->brick_map_bytes;
   state->mem_atlas_bytes = grid->atlas_bytes;
   state->grid_active_brick_count = grid->brick_map_active_bricks_count;
-  state->grid_atlas_width = grid->atlas_width;
-  state->grid_atlas_height = grid->atlas_height;
-  state->grid_atlas_depth = grid->atlas_depth;
+  state->grid_atlas_dimensions = grid->atlas_dimensions;
 
   FATHOM_PROFILER_BEGIN(sparse_grid_pass_02);
   fathom_sparse_grid_pass_02_fill_atlas(grid, fathom_sdf_scene, state);
@@ -1357,15 +1353,15 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
 
 #ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R8,
-                 (i32)grid_lod0.atlas_width,
-                 (i32)grid_lod0.atlas_height,
-                 (i32)grid_lod0.atlas_depth,
+                 (i32)grid_lod0.atlas_dimensions.x,
+                 (i32)grid_lod0.atlas_dimensions.y,
+                 (i32)grid_lod0.atlas_dimensions.z,
                  0, GL_RED, GL_UNSIGNED_BYTE, grid_lod0.atlas_data);
 #else
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R8_SNORM,
-                 (i32)grid_lod0.atlas_width,
-                 (i32)grid_lod0.atlas_height,
-                 (i32)grid_lod0.atlas_depth,
+                 (i32)grid_lod0.atlas_dimensions.x,
+                 (i32)grid_lod0.atlas_dimensions.y,
+                 (i32)grid_lod0.atlas_dimensions.z,
                  0, GL_RED, GL_BYTE, grid_lod0.atlas_data);
 #endif
 
@@ -1386,9 +1382,9 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
     glBindTexture(GL_TEXTURE_3D, materialTex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R8,
-                 (i32)grid_lod0.atlas_width,
-                 (i32)grid_lod0.atlas_height,
-                 (i32)grid_lod0.atlas_depth,
+                 (i32)grid_lod0.atlas_dimensions.x,
+                 (i32)grid_lod0.atlas_dimensions.y,
+                 (i32)grid_lod0.atlas_dimensions.z,
                  0, GL_RED, GL_UNSIGNED_BYTE, grid_lod0.material_data);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1440,7 +1436,7 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
 
   /* Grid uniforms */
   glUniform3i(main_shader->loc_atlas_brick_dim, (i32)grid_lod0.atlas_bricks_per_row, (i32)0, (i32)0);
-  glUniform3f(main_shader->loc_inverse_atlas_size, grid_lod0.atlas_inverse_dimensions.x, grid_lod0.atlas_inverse_dimensions.y, grid_lod0.atlas_inverse_dimensions.z);
+  glUniform3f(main_shader->loc_inverse_atlas_size, grid_lod0.atlas_dimensions_inverse.x, grid_lod0.atlas_dimensions_inverse.y, grid_lod0.atlas_dimensions_inverse.z);
   glUniform3f(main_shader->loc_grid_start, grid_lod0.start.x, grid_lod0.start.y, grid_lod0.start.z);
   glUniform1f(main_shader->loc_cell_size, grid_lod0.cell_size);
   glUniform1f(main_shader->loc_truncation, grid_lod0.truncation_distance);
@@ -2163,11 +2159,11 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           fathom_sb_s8(&t, "\n");
           fathom_sb_i32(&t, (i32)state.grid_active_brick_count);
           fathom_sb_s8(&t, "\n");
-          fathom_sb_i32(&t, (i32)state.grid_atlas_width);
+          fathom_sb_i32(&t, (i32)state.grid_atlas_dimensions.x);
           fathom_sb_s8(&t, "/");
-          fathom_sb_i32(&t, (i32)state.grid_atlas_height);
+          fathom_sb_i32(&t, (i32)state.grid_atlas_dimensions.y);
           fathom_sb_s8(&t, "/");
-          fathom_sb_i32(&t, (i32)state.grid_atlas_depth);
+          fathom_sb_i32(&t, (i32)state.grid_atlas_dimensions.z);
           fathom_sb_s8(&t, "\n");
           fathom_sb_i32(&t, (i32)state.gl_max_3d_texture_size);
 
