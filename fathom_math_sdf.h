@@ -94,4 +94,61 @@ FATHOM_API FATHOM_INLINE f32 fathom_sdf_op_intersect_smooth(f32 a, f32 b, f32 k)
     return -fathom_sdf_op_union_smooth(-a, -b, k);
 }
 
+/* #############################################################################
+ * # [SECTION] Signed Distance Operations Symmetry
+ * #############################################################################
+ */
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_symmetric_x(fathom_vec3 p)
+{
+    p.x = fathom_absf(p.x);
+    return p;
+}
+
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_symmetric_xz(fathom_vec3 p)
+{
+    p.x = fathom_absf(p.x);
+    p.z = fathom_absf(p.z);
+    return p;
+}
+
+/* #############################################################################
+ * # [SECTION] Signed Distance Operations Repetition
+ * #############################################################################
+ */
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_repeat(fathom_vec3 p, fathom_vec3 s)
+{
+    fathom_vec3 q;
+    fathom_vec3 ratio;
+
+    /* ratio = p / s */
+    ratio.x = p.x / s.x;
+    ratio.y = p.y / s.y;
+    ratio.z = p.z / s.z;
+
+    /* q = p - s * round(ratio) */
+    q.x = p.x - s.x * (f32)((i32)(ratio.x + ((ratio.x >= 0.0f) ? 0.5f : -0.5f)));
+    q.y = p.y - s.y * (f32)((i32)(ratio.y + ((ratio.y >= 0.0f) ? 0.5f : -0.5f)));
+    q.z = p.z - s.z * (f32)((i32)(ratio.z + ((ratio.z >= 0.0f) ? 0.5f : -0.5f)));
+
+    return q;
+}
+
+FATHOM_API FATHOM_INLINE fathom_vec3 fathom_sdf_op_repeat_limited(fathom_vec3 p, f32 s, fathom_vec3 l)
+{
+    fathom_vec3 q;
+    f32 rx, ry, rz;
+
+    /* ratio = p / s */
+    rx = p.x / s;
+    ry = p.y / s;
+    rz = p.z / s;
+
+    /* q = p - s * clamp(round(p / s), -l, l) */
+    q.x = p.x - s * fathom_clampf(fathom_roundf(rx), -l.x, l.x);
+    q.y = p.y - s * fathom_clampf(fathom_roundf(ry), -l.y, l.y);
+    q.z = p.z - s * fathom_clampf(fathom_roundf(rz), -l.z, l.z);
+
+    return q;
+}
+
 #endif /* FATHOM_MATH_SDF_H */
