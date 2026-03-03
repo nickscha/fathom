@@ -63,32 +63,4 @@ FATHOM_TYPES_STATIC_ASSERT(sizeof(f32_snorm) == 4, f32_snorm_size_must_be_4);
 FATHOM_TYPES_STATIC_ASSERT(sizeof(f64) == 8, f64_size_must_be_8);
 #undef FATHOM_TYPES_STATIC_ASSERT
 
-FATHOM_API FATHOM_INLINE u8 fathom_types_f32_to_u8(f32 value)
-{
-    if (value < 0.0f)
-    {
-        value = 0.0f;
-    }
-    if (value > 255.0f)
-    {
-        value = 255.0f;
-    }
-
-    return (u8)value;
-}
-
-FATHOM_API FATHOM_INLINE s8 fathom_types_f32_to_s8(f32 value)
-{
-    if (value < -127.0f)
-    {
-        value = -127.0f;
-    }
-    if (value > 127.0f)
-    {
-        value = 127.0f;
-    }
-
-    return (s8)value;
-}
-
 #endif /* FATHOM_TYPES_H */

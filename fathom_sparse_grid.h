@@ -4,6 +4,38 @@
 #include "fathom_math_linear_algebra.h"
 
 /* #############################################################################
+ * # [SECTION] Sparse Grid Helper Functions
+ * #############################################################################
+ */
+FATHOM_API FATHOM_INLINE u8 fathom_types_f32_to_u8(f32 value)
+{
+    if (value < 0.0f)
+    {
+        value = 0.0f;
+    }
+    if (value > 255.0f)
+    {
+        value = 255.0f;
+    }
+
+    return (u8)value;
+}
+
+FATHOM_API FATHOM_INLINE s8 fathom_types_f32_to_s8(f32 value)
+{
+    if (value < -127.0f)
+    {
+        value = -127.0f;
+    }
+    if (value > 127.0f)
+    {
+        value = 127.0f;
+    }
+
+    return (s8)value;
+}
+
+/* #############################################################################
  * # [SECTION] Sparse Grid Setup
  * #############################################################################
  */
