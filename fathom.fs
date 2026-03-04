@@ -92,11 +92,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         ivec3 brickCoord = ivec3(floor(brickP));
         
         vec3 rdSign = sign(rd);
+        vec3 rdGrid = rd * uInvCellSize;
         vec3 tDelta = abs((fBRICK_SIZE * uCellSize) * invRd);
         vec3 tMax = ((vec3(brickCoord) + max(rdSign, 0.0)) * fBRICK_SIZE - gridP) * uCellSize * invRd + t;
 
         // Brick Traversal (DDA)
-        for(int i = 0; i < 64; i++) {
+        for(int i = 0; i < 48; i++) {
 
             hitStored = texelFetch(uBrickMap, brickCoord, 0).r;
 
@@ -112,13 +113,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 
                 // Inner Loop: Sphere Tracing inside one brick
                 vec3 pStart = (ro + rd * localT - uGridStart) * uInvCellSize;
-                vec3 rdStep = (rd * uInvCellSize);
-                
+                 
                 for(int j = 0; j < 32; j++) {
                     float d = sampleAtlas(pStart, hitAtlasOff, brickCoord);
                     if (d < EPS) { hitT = localT; break; }
                     localT += d;
-                    pStart += rdStep * d;
+                    pStart += rdGrid * d;
                     if (localT > brickExitT) break;
                 }
                 if (hitT > 0.0) break;
