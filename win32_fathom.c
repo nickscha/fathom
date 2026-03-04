@@ -1357,20 +1357,11 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
     glGenTextures(1, &atlasTex);
     glBindTexture(GL_TEXTURE_3D, atlasTex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_R8,
-                 (i32)grid_lod0.atlas_dimensions.x,
-                 (i32)grid_lod0.atlas_dimensions.y,
-                 (i32)grid_lod0.atlas_dimensions.z,
-                 0, GL_RED, GL_UNSIGNED_BYTE, grid_lod0.atlas_data);
-#else
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R8_SNORM,
                  (i32)grid_lod0.atlas_dimensions.x,
                  (i32)grid_lod0.atlas_dimensions.y,
                  (i32)grid_lod0.atlas_dimensions.z,
                  0, GL_RED, GL_BYTE, grid_lod0.atlas_data);
-#endif
 
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

@@ -69,11 +69,7 @@ typedef struct fathom_sparse_grid
     fathom_vec3 atlas_dimensions;
     fathom_vec3 atlas_dimensions_inverse;
     u32 atlas_bytes;
-#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
-    u8 *atlas_data;
-#else
     s8 *atlas_data;
-#endif
 
     u8 *material_data;
 
@@ -184,12 +180,7 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
 {
     u32 bricks_per_row = grid->atlas_bricks_per_row;
     u32 atlas_used_count = 0;
-
-#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
-    f32 quant_scale = 127.5f / grid->truncation_distance;
-#else
     f32 quant_scale = 127.0f / grid->truncation_distance;
-#endif
 
     f32 apron_offset = -((f32)FATHOM_BRICK_APRON * grid->cell_size);
     u32 atlas_width = bricks_per_row * FATHOM_PHYSICAL_BRICK_SIZE;
@@ -245,12 +236,7 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                         u32 dst_y = (atlas_by * FATHOM_PHYSICAL_BRICK_SIZE) + ly;
                         u32 dst_z = lz;
 
-#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
-                        u8 *dst_row = &grid->atlas_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
-#else
                         s8 *dst_row = &grid->atlas_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
-#endif
-
                         u8 *dst_material_row = &grid->material_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
 
                         for (lx = 0; lx < FATHOM_PHYSICAL_BRICK_SIZE; ++lx)
@@ -258,15 +244,9 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                             f32 px = brick_min.x + apron_offset + ((f32)lx * grid->cell_size);
                             fathom_grid_data data = distance_function(fathom_vec3_init(px, py, pz), user_data);
 
-#ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
-                            /* Quantize: map [-trunc, +trunc] to [0, 255] */
-                            f32 val = (data.distance * quant_scale) + 127.5f;
-                            dst_row[lx] = fathom_types_f32_to_u8(val);
-#else
                             /* Quantize: map [-trunc, +trunc] to [-127, 127] */
                             f32 val = data.distance * quant_scale;
                             dst_row[lx] = fathom_types_f32_to_s8(val);
-#endif
 
                             dst_material_row[lx] = data.material;
                         }

@@ -40,12 +40,7 @@ vec3 getAtlasOffset(uint stored) {
 float sampleAtlas(vec3 gridPos, vec3 atlasOffset, ivec3 brickCoord) {
     vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
     float d = texture(uAtlas, atlasOffset + localPos * uInvAtlasSize).r;
-    
-    #ifdef FATHOM_SPARSE_GRID_QUANTIZE_U8
-        return (d * 2.0 - 1.0) * uTruncation;
-    #else 
-        return d * uTruncation;
-    #endif
+    return d * uTruncation;
 }
 
 vec3 sampleMaterial(vec3 gridPos, vec3 atlasOffset, ivec3 brickCoord) {
