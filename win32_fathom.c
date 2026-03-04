@@ -854,6 +854,7 @@ typedef struct shader_main
   i32 loc_cell_size;
   i32 loc_cell_diagonal;
   i32 loc_truncation;
+  i32 loc_cell_size_inverse;
 
   /* Camera */
   i32 loc_camera_position;
@@ -1184,6 +1185,7 @@ FATHOM_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_f
     shader->loc_inverse_atlas_size = glGetUniformLocation(shader->header.program, "uInvAtlasSize");
     shader->loc_grid_start = glGetUniformLocation(shader->header.program, "uGridStart");
     shader->loc_cell_size = glGetUniformLocation(shader->header.program, "uCellSize");
+    shader->loc_cell_size_inverse = glGetUniformLocation(shader->header.program, "uInvCellSize");
     shader->loc_cell_diagonal = glGetUniformLocation(shader->header.program, "uCellDiagonal");
     shader->loc_truncation = glGetUniformLocation(shader->header.program, "uTruncation");
 
@@ -1309,6 +1311,7 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
   static u32 atlasTex;
   static u32 materialTex;
   static u32 paletteTex;
+  static f32 cell_size_inverse = 0.0f;
 
   /* Camera */
   static fathom_vec3 camera_position;
@@ -1330,6 +1333,8 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
     FATHOM_PROFILER_BEGIN(sparse_grid_create_lod0);
     fathom_create_grid(state, &grid_lod0, fathom_vec3_zero, grid_cell_count, grid_cell_size); /* LOD 0 */
     FATHOM_PROFILER_END(sparse_grid_create_lod0);
+
+    cell_size_inverse = 1.0f / grid_lod0.cell_size;
 
     /* Brick Map */
     glGenTextures(1, &brickMapTex);
@@ -1437,11 +1442,12 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
   glUniform3f(main_shader->loc_camera_forward_scaled, camera_forward_scaled.x, camera_forward_scaled.y, camera_forward_scaled.z);
 
   /* Grid uniforms */
-  glUniform3f(main_shader->loc_brick_map_dim, (f32)grid_lod0.brick_map_dimensions * FATHOM_BRICK_SIZE, (f32)grid_lod0.brick_map_dimensions* FATHOM_BRICK_SIZE, (f32)grid_lod0.brick_map_dimensions* FATHOM_BRICK_SIZE);
+  glUniform3f(main_shader->loc_brick_map_dim, (f32)grid_lod0.brick_map_dimensions * FATHOM_BRICK_SIZE, (f32)grid_lod0.brick_map_dimensions * FATHOM_BRICK_SIZE, (f32)grid_lod0.brick_map_dimensions * FATHOM_BRICK_SIZE);
   glUniform3i(main_shader->loc_atlas_brick_dim, (i32)grid_lod0.atlas_bricks_per_row, (i32)0, (i32)0);
   glUniform3f(main_shader->loc_inverse_atlas_size, grid_lod0.atlas_dimensions_inverse.x, grid_lod0.atlas_dimensions_inverse.y, grid_lod0.atlas_dimensions_inverse.z);
   glUniform3f(main_shader->loc_grid_start, grid_lod0.start.x, grid_lod0.start.y, grid_lod0.start.z);
   glUniform1f(main_shader->loc_cell_size, grid_lod0.cell_size);
+  glUniform3f(main_shader->loc_cell_size_inverse, cell_size_inverse, cell_size_inverse, cell_size_inverse);
   glUniform1f(main_shader->loc_truncation, grid_lod0.truncation_distance);
 
   /* Bind textures to texture units */

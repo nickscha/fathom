@@ -14,6 +14,7 @@ uniform vec3  uInvAtlasSize;
 uniform vec3  uGridStart;
 uniform float uCellSize;
 uniform float uTruncation;
+uniform vec3  uInvCellSize;
 
 uniform vec3  camera_position;
 uniform vec3  camera_forward;
@@ -88,8 +89,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         vec3 hitAtlasOff;
 
         // DDA Setup for Brick Skipping
-        vec3 invCell = vec3(1.0 / uCellSize);
-        vec3 gridP = (ro + rd * t - uGridStart) * invCell;
+        vec3 gridP = (ro + rd * t - uGridStart) * uInvCellSize;
         vec3 brickP = gridP / fBRICK_SIZE;
         ivec3 brickCoord = ivec3(floor(brickP));
         
@@ -113,8 +113,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 float brickExitT = min(min(tMax.x, tMax.y), tMax.z);
                 
                 // Inner Loop: Sphere Tracing inside one brick
-                vec3 pStart = (ro + rd * localT - uGridStart) * invCell;
-                vec3 rdStep = (rd * invCell);
+                vec3 pStart = (ro + rd * localT - uGridStart) * uInvCellSize;
+                vec3 rdStep = (rd * uInvCellSize);
                 
                 for(int j = 0; j < 32; j++) {
                     float d = sampleAtlas(pStart, hitAtlasOff, brickCoord);
@@ -139,7 +139,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
         if (hitT > 0.0) {
             vec3 pos = ro + rd * hitT;
-            vec3 gP = (pos - uGridStart) * invCell;
+            vec3 gP = (pos - uGridStart) * uInvCellSize;
             
             vec2 k = vec2(1.0, -1.0);
             float e = 0.1;
@@ -162,7 +162,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             col = ambient + diffuse * sun;
             
             /* 
-            ivec3 voxelCoord = ivec3(floor((pos - uGridStart) * invCell));
+            ivec3 voxelCoord = ivec3(floor((pos - uGridStart) * uInvCellSize));
             vec3 brick_color = debugColor(brickCoord);
             vec3 voxel_color = debugColor(voxelCoord);
             col = brick_color * (0.6 + 0.3 * voxel_color);
