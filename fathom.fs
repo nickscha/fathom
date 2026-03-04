@@ -50,8 +50,7 @@ float sampleAtlas(vec3 gridPos, vec3 atlasOffset, ivec3 brickCoord) {
 
 vec3 sampleMaterial(vec3 gridPos, vec3 atlasOffset, ivec3 brickCoord) {
     vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
-    vec3 texelCoord = atlasOffset + localPos;
-    float matIDNormalized = texture(uMaterial, texelCoord * uInvAtlasSize).r;
+    float matIDNormalized = texture(uMaterial, atlasOffset + localPos * uInvAtlasSize).r;
     float paletteCoord = (matIDNormalized * 255.0 + 0.5) * INV_256;
     return texture(uPalette, paletteCoord).rgb;
 }
