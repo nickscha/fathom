@@ -84,6 +84,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         float t = max(0.0, tNear) + EPS;
         float hitT = -1.0;
         uint hitStored = 0u;
+        vec3 hitAtlasOff;
 
         // DDA Setup for Brick Skipping
         vec3 invCell = vec3(1.0 / uCellSize);
@@ -106,7 +107,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             } 
             else if (hitStored > 0u) // SDF Occupied
             {
-                vec3 atlasOff = getAtlasOffset(hitStored);
+                hitAtlasOff = getAtlasOffset(hitStored);
                 float localT = t;
                 float brickExitT = min(min(tMax.x, tMax.y), tMax.z);
                 
@@ -115,7 +116,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 vec3 rdStep = (rd * invCell);
 
                 for(int j = 0; j < 32; j++) {
-                    float d = sampleAtlas(pStart, atlasOff, brickCoord);
+                    float d = sampleAtlas(pStart, hitAtlasOff, brickCoord);
                     if (d < EPS) { hitT = localT; break; }
                     localT += d;
                     pStart += rdStep * d;
@@ -138,19 +139,18 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         if (hitT > 0.0) {
             vec3 pos = ro + rd * hitT;
             vec3 gP = (pos - uGridStart) * invCell;
-            vec3 atlasOff = getAtlasOffset(hitStored);
             
             vec2 k = vec2(1.0, -1.0);
             float e = 0.1;
 
             vec3 normal = normalize(
-                k.xyy * sampleAtlas(gP + k.xyy*e, atlasOff, brickCoord) +
-                k.yyx * sampleAtlas(gP + k.yyx*e, atlasOff, brickCoord) +
-                k.yxy * sampleAtlas(gP + k.yxy*e, atlasOff, brickCoord) +
-                k.xxx * sampleAtlas(gP + k.xxx*e, atlasOff, brickCoord)
+                k.xyy * sampleAtlas(gP + k.xyy*e, hitAtlasOff, brickCoord) +
+                k.yyx * sampleAtlas(gP + k.yyx*e, hitAtlasOff, brickCoord) +
+                k.yxy * sampleAtlas(gP + k.yxy*e, hitAtlasOff, brickCoord) +
+                k.xxx * sampleAtlas(gP + k.xxx*e, hitAtlasOff, brickCoord)
             );
 
-            vec3 material = sampleMaterial(gP, atlasOff, brickCoord);
+            vec3 material = sampleMaterial(gP, hitAtlasOff, brickCoord);
             float diffuse = clamp(dot(normal, normalize(vec3(0.7, 0.9, 0.3))), 0.0, 1.0);
             vec3 ambient  = vec3(0.2, 0.3, 0.4);
             vec3 sun      = vec3(0.8, 0.7, 0.5);
