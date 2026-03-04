@@ -2181,6 +2181,9 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           {
             fathom_profiler_entry entry = fathom_profiler_entries[i];
 
+            u16 x;
+            u16 y;
+
             t.length = 0;
             fathom_sb_s8_pad(&t, entry.name, 23, ' ', FATHOM_SB_PAD_RIGHT);
             fathom_sb_s8(&t, ": ");
@@ -2193,7 +2196,11 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
             fathom_sb_i32(&t, (i32)entry.counter);
             fathom_sb_s8(&t, "\n");
 
-            glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
+            x = offset_memory_x - 1;
+            y = offset_memory_y - 1;
+
+            glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &offset_memory_x, &offset_memory_y, pack_rgb565(40, 40, 40), GLYPH_STATE_NONE, font_scale);
+            glyph_add(glyph_buffer, GLYPH_BUFFER_SIZE, &glyph_buffer_count, t.buffer, &x, &y, pack_rgb565(255, 255, 255), GLYPH_STATE_NONE, font_scale);
           }
         }
 

@@ -157,7 +157,7 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
 
     grid->brick_map_active_bricks_count = active_brick_count;
 
-    /* Calculate atlas dimensions and bytes required (e.g. how big does the atlas 3d texture needs to be to fit all relevant bricks)*/
+    /* Calculate atlas dimensions and bytes required (e.g. how big does the atlas 3d texture needs to be to fit all relevant bricks) */
     {
         u32 bricks_per_row = (u32)fathom_ceilf(fathom_sqrtf((f32)active_brick_count));
         u32 bricks_per_col = (active_brick_count + bricks_per_row - 1) / bricks_per_row;
