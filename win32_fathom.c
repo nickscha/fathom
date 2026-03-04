@@ -846,6 +846,7 @@ typedef struct shader_main
   i32 loc_material_texture;
   i32 loc_palette_texture;
 
+  i32 loc_brick_map_dim;
   i32 loc_atlas_brick_dim;
 
   i32 loc_inverse_atlas_size;
@@ -1178,6 +1179,7 @@ FATHOM_API void opengl_shader_load_shader_main(shader_main *shader, s8 *shader_f
     shader->loc_material_texture = glGetUniformLocation(shader->header.program, "uMaterial");
     shader->loc_palette_texture = glGetUniformLocation(shader->header.program, "uPalette");
 
+    shader->loc_brick_map_dim = glGetUniformLocation(shader->header.program, "uBrickMapDim");
     shader->loc_atlas_brick_dim = glGetUniformLocation(shader->header.program, "uAtlasBrickDim");
     shader->loc_inverse_atlas_size = glGetUniformLocation(shader->header.program, "uInvAtlasSize");
     shader->loc_grid_start = glGetUniformLocation(shader->header.program, "uGridStart");
@@ -1435,6 +1437,7 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
   glUniform3f(main_shader->loc_camera_forward_scaled, camera_forward_scaled.x, camera_forward_scaled.y, camera_forward_scaled.z);
 
   /* Grid uniforms */
+  glUniform3f(main_shader->loc_brick_map_dim, (f32)grid_lod0.brick_map_dimensions * FATHOM_BRICK_SIZE, (f32)grid_lod0.brick_map_dimensions* FATHOM_BRICK_SIZE, (f32)grid_lod0.brick_map_dimensions* FATHOM_BRICK_SIZE);
   glUniform3i(main_shader->loc_atlas_brick_dim, (i32)grid_lod0.atlas_bricks_per_row, (i32)0, (i32)0);
   glUniform3f(main_shader->loc_inverse_atlas_size, grid_lod0.atlas_dimensions_inverse.x, grid_lod0.atlas_dimensions_inverse.y, grid_lod0.atlas_dimensions_inverse.z);
   glUniform3f(main_shader->loc_grid_start, grid_lod0.start.x, grid_lod0.start.y, grid_lod0.start.z);

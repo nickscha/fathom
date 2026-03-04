@@ -8,6 +8,7 @@ uniform sampler3D  uAtlas;
 uniform sampler3D uMaterial;
 uniform sampler1D uPalette;
 
+uniform vec3  uBrickMapDim;
 uniform ivec3 uAtlasBrickDim;
 uniform vec3  uInvAtlasSize;
 uniform vec3  uGridStart;
@@ -24,6 +25,7 @@ const int   BRICK_SIZE = 8;
 const float fBRICK_SIZE = 8.0;
 const float fPHYSICAL_BRICK_SIZE = 10.0;
 const float EPS = 0.01;
+const float INV_256 = 1.0 / 256.0;
 
 vec3 getAtlasOffset(uint stored) {
     uint atlasLinear = stored - 1u;
@@ -50,8 +52,7 @@ vec3 sampleMaterial(vec3 gridPos, vec3 atlasOffset, ivec3 brickCoord) {
     vec3 localPos = gridPos - vec3(brickCoord * BRICK_SIZE);
     vec3 texelCoord = atlasOffset + localPos;
     float matIDNormalized = texture(uMaterial, texelCoord * uInvAtlasSize).r;
-    float id = matIDNormalized * 255.0;
-    float paletteCoord = (id + 0.5) / 256.0;
+    float paletteCoord = (matIDNormalized * 255.0 + 0.5) * INV_256;
     return texture(uPalette, paletteCoord).rgb;
 }
 
@@ -70,7 +71,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec3 rd = normalize(uv.x * camera_right + uv.y * camera_up + camera_forward_scaled); // ray direction
 
     vec3 gridMin = uGridStart;
-    vec3 gridMax = uGridStart + vec3(textureSize(uBrickMap, 0) * BRICK_SIZE) * uCellSize;
+    vec3 gridMax = uGridStart + uBrickMapDim * uCellSize;
     
     vec3 invRd = 1.0 / rd;
     vec3 t0 = (gridMin - ro) * invRd;
@@ -114,7 +115,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 // Inner Loop: Sphere Tracing inside one brick
                 vec3 pStart = (ro + rd * localT - uGridStart) * invCell;
                 vec3 rdStep = (rd * invCell);
-
+                
                 for(int j = 0; j < 32; j++) {
                     float d = sampleAtlas(pStart, hitAtlasOff, brickCoord);
                     if (d < EPS) { hitT = localT; break; }
