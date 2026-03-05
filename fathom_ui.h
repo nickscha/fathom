@@ -31,6 +31,8 @@ typedef struct fathom_ui_context
 
     u8 hot_id;    /* Hovered */
     u8 active_id; /* Clicked */
+    u8 mouse_pressed;
+    u8 mouse_released;
 
     /* Layout Stack */
     fathom_rect stack[FATHOM_UI_MAX_STACK];
@@ -62,18 +64,19 @@ typedef struct fathom_ui_result
 
 FATHOM_API FATHOM_INLINE u8 fathom_ui_internal_check_rect(u16 x, u16 y, u16 rx, u16 ry, u16 rw, u16 rh)
 {
-    return (x >= rx && x <= rx + rw && y >= ry && y <= ry + rh);
+    return (x - rx <= rw) && (y - ry <= rh);
 }
 
-FATHOM_API fathom_ui_result fathom_ui_internal_process(fathom_ui_context *ctx, u8 id, u16 x, u16 y, u16 w, u16 h)
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_context *ctx, u8 id, u16 x, u16 y, u16 w, u16 h)
 {
     fathom_ui_result res;
     u8 is_over;
+    u8 active_id = ctx->active_id;
 
     /* Logic: If x/y are 0 and we are in a stack, use relative positioning */
-    if (x == 0 && y == 0 && ctx->stack_ptr > 0)
+    if (!x && !y && ctx->stack_ptr)
     {
-        fathom_rect *p = &ctx->stack[ctx->stack_ptr - 1];
+        fathom_rect *p = ctx->stack + ctx->stack_ptr - 1;
         res.x = p->x + ctx->padding;
         res.y = p->y + ctx->cursor_y + ctx->padding;
         res.w = (w == 0) ? (p->w - (ctx->padding * 2)) : w; /* 0 width = fill parent */
@@ -90,8 +93,12 @@ FATHOM_API fathom_ui_result fathom_ui_internal_process(fathom_ui_context *ctx, u
         res.h = h;
     }
 
-    /* Standard Interaction Logic */
-    res.state = FATHOM_UI_IDLE;
+    if (active_id && active_id != id)
+    {
+        res.state = FATHOM_UI_IDLE;
+        return res;
+    }
+
     is_over = fathom_ui_internal_check_rect(ctx->mouse_x, ctx->mouse_y, res.x, res.y, res.w, res.h);
 
     if (is_over)
@@ -99,7 +106,7 @@ FATHOM_API fathom_ui_result fathom_ui_internal_process(fathom_ui_context *ctx, u
         ctx->hot_id = id;
         res.state |= FATHOM_UI_HOVER;
 
-        if (ctx->active_id == 0 && ctx->mouse_left_is_down && !ctx->mouse_left_was_down)
+        if (ctx->active_id == 0 && ctx->mouse_pressed)
         {
             ctx->active_id = id;
             res.state |= FATHOM_UI_PRESSED;
@@ -110,7 +117,7 @@ FATHOM_API fathom_ui_result fathom_ui_internal_process(fathom_ui_context *ctx, u
     {
         res.state |= FATHOM_UI_HELD;
 
-        if (!ctx->mouse_left_is_down && ctx->mouse_left_was_down)
+        if (ctx->mouse_released)
         {
             ctx->active_id = 0;
 
@@ -127,6 +134,8 @@ FATHOM_API FATHOM_INLINE void fathom_ui_begin(fathom_ui_context *ctx)
 {
     ctx->mouse_x_prev = ctx->mouse_x;
     ctx->mouse_y_prev = ctx->mouse_y;
+    ctx->mouse_pressed = ctx->mouse_left_is_down && !ctx->mouse_left_was_down;
+    ctx->mouse_released = !ctx->mouse_left_is_down && ctx->mouse_left_was_down;
     ctx->hot_id = 0;
 }
 
@@ -220,7 +229,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider(fathom_ui_context *ct
         {
             *val = 0.0f;
         }
-        if (*val > 1.0f)
+        else if (*val > 1.0f)
         {
             *val = 1.0f;
         }
