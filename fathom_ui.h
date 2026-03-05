@@ -64,27 +64,28 @@ typedef struct fathom_ui_result
     u8 state;
 } fathom_ui_result;
 
-FATHOM_API FATHOM_INLINE u8 fathom_ui_internal_check_rect(u32 x, u32 y, u32 rx, u32 ry, u32 rw, u32 rh)
-{
-    return (x - rx <= rw) && (y - ry <= rh);
-}
-
 FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h)
 {
     fathom_ui_result res = {0};
 
+    u16 mouse_x = ctx->mouse_x;
+    u16 mouse_y = ctx->mouse_y;
+    u16 active_id = ctx->active_id;
+    u16 pad = ctx->padding;
+
     u8 is_over;
-    u8 active_id = ctx->active_id;
 
     if (!x && !y && ctx->stack_ptr)
     {
         fathom_rect *p = ctx->stack + ctx->stack_ptr - 1;
-        res.x = p->x + ctx->padding;
-        res.y = p->y + ctx->cursor_y + ctx->padding;
-        res.w = (w == 0) ? (p->w - (ctx->padding * 2)) : w;
+        u16 pad2 = pad << 1;
+
+        res.x = p->x + pad;
+        res.y = p->y + ctx->cursor_y + pad;
+        res.w = w ? w : (p->w - pad2);
         res.h = h;
 
-        ctx->cursor_y += h + ctx->padding;
+        ctx->cursor_y += h + pad;
     }
     else
     {
@@ -96,22 +97,22 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
 
     if (active_id && active_id != id)
     {
-        res.state = FATHOM_UI_IDLE;
         return res;
     }
 
-    is_over = fathom_ui_internal_check_rect(ctx->mouse_x, ctx->mouse_y, res.x, res.y, res.w, res.h);
+    is_over = mouse_x >= res.x && mouse_y >= res.y && mouse_x <= res.x + res.w && mouse_y <= res.y + res.h;
 
     if (is_over)
     {
-        ctx->hot_id = id;
         res.state |= FATHOM_UI_HOVER;
 
-        if (ctx->active_id == 0 && ctx->mouse_pressed)
+        if (!active_id && ctx->mouse_pressed)
         {
             ctx->active_id = id;
             res.state |= FATHOM_UI_PRESSED;
         }
+
+        ctx->hot_id = id;
     }
 
     if (ctx->active_id == id)
@@ -128,6 +129,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
             }
         }
     }
+
     return res;
 }
 
@@ -152,7 +154,8 @@ FATHOM_API FATHOM_INLINE void fathom_ui_panel_begin(fathom_ui_context *ctx, u32 
 {
     if (ctx->stack_ptr < FATHOM_UI_MAX_STACK)
     {
-        fathom_rect *r = &ctx->stack[ctx->stack_ptr++];
+        fathom_rect *r = ctx->stack + ctx->stack_ptr++;
+
         r->x = x;
         r->y = y;
         r->w = w;
@@ -166,10 +169,12 @@ FATHOM_API FATHOM_INLINE void fathom_ui_panel_end(fathom_ui_context *ctx)
 {
     if (ctx->stack_ptr > 0)
     {
-        u16 panel_h = ctx->stack[ctx->stack_ptr - 1].h;
+        fathom_rect *p = ctx->stack + ctx->stack_ptr - 1;
+        u32 panel_h = p->h;
+
         ctx->stack_ptr--;
 
-        if (ctx->stack_ptr > 0)
+        if (ctx->stack_ptr)
         {
             ctx->cursor_y += panel_h + ctx->padding;
         }
@@ -222,18 +227,9 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider(fathom_ui_context *ct
 
     if (res.state & FATHOM_UI_HELD)
     {
-        f32 mouse_pos = (f32)(ctx->mouse_x - res.x);
-
-        *val = mouse_pos / (f32)res.w;
-
-        if (*val < 0.0f)
-        {
-            *val = 0.0f;
-        }
-        else if (*val > 1.0f)
-        {
-            *val = 1.0f;
-        }
+        *val = (f32)(ctx->mouse_x - res.x) / (f32)res.w;
+        *val = (*val < 0.0f) ? 0.0f : *val;
+        *val = (*val > 1.0f) ? 1.0f : *val;
     }
 
     return res;
