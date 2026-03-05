@@ -62,6 +62,7 @@ typedef struct fathom_ui_result
     u32 h;
 
     u8 state;
+
 } fathom_ui_result;
 
 FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h)
@@ -233,15 +234,53 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_radio(fathom_ui_context *ctx
     return res;
 }
 
-FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h, f32 *val)
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider_range(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h, f32 *val, f32 min, f32 max)
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, x, y, w, h);
 
     if ((res.state & FATHOM_UI_PRESSED) || (res.state & FATHOM_UI_HELD))
     {
-        *val = (f32)(ctx->mouse_x - res.x) / (f32)res.w;
-        *val = (*val < 0.0f) ? 0.0f : *val;
-        *val = (*val > 1.0f) ? 1.0f : *val;
+        f32 t = (f32)(ctx->mouse_x - res.x) / (f32)res.w;
+        t = (t < 0.0f) ? 0.0f : t;
+        t = (t > 1.0f) ? 1.0f : t;
+
+        *val = min + t * (max - min);
+    }
+
+    return res;
+}
+
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h, f32 *val)
+{
+    return fathom_ui_slider_range(ctx, id, x, y, w, h, val, 0.0f, 1.0f);
+}
+
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider_int(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h, i32 *val, i32 min, i32 max, u32 step)
+{
+    fathom_ui_result res = fathom_ui_internal_process(ctx, id, x, y, w, h);
+
+    if ((res.state & FATHOM_UI_PRESSED) || (res.state & FATHOM_UI_HELD))
+    {
+        i32 range = max - min;
+        i32 value;
+
+        f32 t = (f32)(ctx->mouse_x - res.x) / (f32)res.w;
+        t = (t < 0.0f) ? 0.0f : t;
+        t = (t > 1.0f) ? 1.0f : t;
+
+        value = min + (i32)(t * (f32)range);
+
+        /* snap to step */
+        if (step > 1)
+        {
+            i32 remainder = (value - min) % step;
+            value -= remainder;
+        }
+
+        value = (value < min) ? min : value;
+        value = (value > max) ? max : value;
+
+        *val = value;
     }
 
     return res;
