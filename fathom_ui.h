@@ -11,10 +11,10 @@
 
 typedef struct fathom_rect
 {
-    u16 x;
-    u16 y;
-    u16 w;
-    u16 h;
+    u32 x;
+    u32 y;
+    u32 w;
+    u32 h;
 
 } fathom_rect;
 
@@ -24,21 +24,23 @@ typedef struct fathom_ui_context
     u16 mouse_y;
     u16 mouse_x_prev;
     u16 mouse_y_prev;
+
+    u16 cursor_y;
+    u16 padding;
+
+    u16 hot_id;
+    u16 active_id;
+
     u8 mouse_left_is_down;
     u8 mouse_left_was_down;
     u8 mouse_right_is_down;
     u8 mouse_right_was_down;
 
-    u8 hot_id;    /* Hovered */
-    u8 active_id; /* Clicked */
     u8 mouse_pressed;
     u8 mouse_released;
 
-    /* Layout Stack */
-    fathom_rect stack[FATHOM_UI_MAX_STACK];
     i32 stack_ptr;
-    u16 cursor_y;
-    u16 padding;
+    fathom_rect stack[FATHOM_UI_MAX_STACK];
 
 } fathom_ui_context;
 
@@ -54,35 +56,34 @@ typedef enum fathom_ui_state
 
 typedef struct fathom_ui_result
 {
-    u16 x;
-    u16 y;
-    u16 w;
-    u16 h;
+    u32 x;
+    u32 y;
+    u32 w;
+    u32 h;
 
     u8 state;
 } fathom_ui_result;
 
-FATHOM_API FATHOM_INLINE u8 fathom_ui_internal_check_rect(u16 x, u16 y, u16 rx, u16 ry, u16 rw, u16 rh)
+FATHOM_API FATHOM_INLINE u8 fathom_ui_internal_check_rect(u32 x, u32 y, u32 rx, u32 ry, u32 rw, u32 rh)
 {
     return (x - rx <= rw) && (y - ry <= rh);
 }
 
-FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_context *ctx, u8 id, u16 x, u16 y, u16 w, u16 h)
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h)
 {
-    fathom_ui_result res;
+    fathom_ui_result res = {0};
+
     u8 is_over;
     u8 active_id = ctx->active_id;
 
-    /* Logic: If x/y are 0 and we are in a stack, use relative positioning */
     if (!x && !y && ctx->stack_ptr)
     {
         fathom_rect *p = ctx->stack + ctx->stack_ptr - 1;
         res.x = p->x + ctx->padding;
         res.y = p->y + ctx->cursor_y + ctx->padding;
-        res.w = (w == 0) ? (p->w - (ctx->padding * 2)) : w; /* 0 width = fill parent */
+        res.w = (w == 0) ? (p->w - (ctx->padding * 2)) : w;
         res.h = h;
 
-        /* Advance cursor for next widget */
         ctx->cursor_y += h + ctx->padding;
     }
     else
@@ -147,7 +148,7 @@ FATHOM_API FATHOM_INLINE void fathom_ui_end(fathom_ui_context *ctx)
     */
 }
 
-FATHOM_API FATHOM_INLINE void fathom_ui_panel_begin(fathom_ui_context *ctx, u8 x, u16 y, u16 w, u16 h)
+FATHOM_API FATHOM_INLINE void fathom_ui_panel_begin(fathom_ui_context *ctx, u32 x, u32 y, u32 w, u32 h)
 {
     if (ctx->stack_ptr < FATHOM_UI_MAX_STACK)
     {
@@ -175,12 +176,12 @@ FATHOM_API FATHOM_INLINE void fathom_ui_panel_end(fathom_ui_context *ctx)
     }
 }
 
-FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_button(fathom_ui_context *ctx, u8 id, u16 x, u16 y, u16 w, u16 h)
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_button(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h)
 {
     return fathom_ui_internal_process(ctx, id, x, y, w, h);
 }
 
-FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_checkbox(fathom_ui_context *ctx, u8 id, u16 x, u16 y, u16 w, u16 h, u8 *is_checked)
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_checkbox(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h, u8 *is_checked)
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, x, y, w, h);
 
@@ -192,7 +193,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_checkbox(fathom_ui_context *
     return res;
 }
 
-FATHOM_API FATHOM_INLINE void fathom_ui_drag_header(fathom_ui_context *ctx, u8 id, u16 *win_x, u16 *win_y, u16 win_w)
+FATHOM_API FATHOM_INLINE void fathom_ui_drag_header(fathom_ui_context *ctx, u16 id, u32 *win_x, u32 *win_y, u32 win_w)
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, *win_x, *win_y, win_w, 20);
 
@@ -203,7 +204,7 @@ FATHOM_API FATHOM_INLINE void fathom_ui_drag_header(fathom_ui_context *ctx, u8 i
     }
 }
 
-FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_radio(fathom_ui_context *ctx, u8 id, u16 x, u16 y, u16 size, i32 *current_val, i32 radio_val)
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_radio(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 size, i32 *current_val, i32 radio_val)
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, x, y, size, size);
 
@@ -215,7 +216,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_radio(fathom_ui_context *ctx
     return res;
 }
 
-FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider(fathom_ui_context *ctx, u8 id, u16 x, u16 y, u16 w, u16 h, f32 *val)
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h, f32 *val)
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, x, y, w, h);
 
