@@ -95,6 +95,21 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
         res.h = h;
     }
 
+    if (ctx->stack_ptr)
+    {
+        fathom_rect *p = ctx->stack + ctx->stack_ptr - 1;
+
+        if (res.y + res.h < p->y)
+        {
+            return res;
+        }
+
+        if (res.y > p->y + p->h)
+        {
+            return res;
+        }
+    }
+
     if (active_id && active_id != id)
     {
         return res;
@@ -225,7 +240,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider(fathom_ui_context *ct
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, x, y, w, h);
 
-    if (res.state & FATHOM_UI_HELD)
+    if ((res.state & FATHOM_UI_PRESSED) || (res.state & FATHOM_UI_HELD))
     {
         *val = (f32)(ctx->mouse_x - res.x) / (f32)res.w;
         *val = (*val < 0.0f) ? 0.0f : *val;
