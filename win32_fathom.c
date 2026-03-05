@@ -9,6 +9,7 @@ LICENSE
 #include "fathom_types.h"
 #include "fathom_font.h"
 #include "fathom_string_builder.h"
+#include "fathom_ui.h"
 #include "fathom_color.h"
 #include "fathom_profiler.h"
 #include "fathom_opengl.h"
