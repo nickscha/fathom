@@ -99,15 +99,12 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
     {
         fathom_rect *p = ctx->stack + ctx->stack_ptr - 1;
 
-        if (res.y + res.h < p->y)
-        {
-            return res;
-        }
-
-        if (res.y > p->y + p->h)
-        {
-            return res;
-        }
+        /* clang-format off */
+        if (res.y + res.h < p->y) return res;
+        if (res.y > p->y  + p->h) return res;
+        if (res.x + res.w < p->x) return res;
+        if (res.x > p->x  + p->w) return res;
+        /* clang-format on */
     }
 
     if (active_id && active_id != id)
@@ -115,7 +112,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
         return res;
     }
 
-    is_over = mouse_x >= res.x && mouse_y >= res.y && mouse_x <= res.x + res.w && mouse_y <= res.y + res.h;
+    is_over = mouse_x >= res.x && mouse_y >= res.y && (mouse_x - res.x) <= res.w && (mouse_y - res.y) <= res.h;
 
     if (is_over)
     {
