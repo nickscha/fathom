@@ -4,10 +4,12 @@
 #include "fathom_types.h"
 
 /* #############################################################################
- * # [SECTION] UI
+ * # [SECTION] Immediate UI
  * #############################################################################
  */
-#define FATHOM_UI_MAX_STACK 8
+#ifndef FATHOM_UI_MAX_STACK
+#define FATHOM_UI_MAX_STACK 8 /* Maximum nested panel elements */
+#endif
 
 typedef struct fathom_rect
 {
@@ -147,6 +149,10 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
     return res;
 }
 
+/* #############################################################################
+ * # [SECTION] Immediate UI Elements
+ * #############################################################################
+ */
 FATHOM_API FATHOM_INLINE void fathom_ui_begin(fathom_ui_context *ctx)
 {
     ctx->mouse_x_prev = ctx->mouse_x;
@@ -283,6 +289,40 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider_int(fathom_ui_context
     }
 
     return res;
+}
+
+/* #############################################################################
+ * # [SECTION] Immediate UI Instances for Rendering
+ * #############################################################################
+ */
+typedef struct fathom_ui_render_instance
+{
+    f32 x, y, w, h;
+    f32 r, g, b, a;
+
+} fathom_ui_render_instance;
+
+#ifndef FATHOM_UI_MAX_RENDER_INSTANCES
+#define FATHOM_UI_MAX_RENDER_INSTANCES 128
+#endif
+
+static fathom_ui_render_instance render_instances[FATHOM_UI_MAX_RENDER_INSTANCES];
+static u32 render_instances_count = 0;
+
+FATHOM_API FATHOM_INLINE void fathom_ui_render_instance_push(fathom_ui_result res, f32 r, f32 g, f32 b, f32 a)
+{
+    if (render_instances_count < FATHOM_UI_MAX_RENDER_INSTANCES)
+    {
+        fathom_ui_render_instance *inst = &render_instances[render_instances_count++];
+        inst->x = (f32)res.x;
+        inst->y = (f32)res.y;
+        inst->w = (f32)res.w;
+        inst->h = (f32)res.h;
+        inst->r = r;
+        inst->g = g;
+        inst->b = b;
+        inst->a = a;
+    }
 }
 
 #endif /* FATHOM_UI_H */
