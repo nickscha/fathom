@@ -260,7 +260,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider_range(fathom_ui_conte
 
     if ((res.state & FATHOM_UI_PRESSED) || (res.state & FATHOM_UI_HELD))
     {
-        f32 t = (f32)(ctx->mouse_x - res.x) / (f32)res.w;
+        f32 t = (f32)((i32)ctx->mouse_x - (i32)res.x) / (f32)res.w;
         t = (t < 0.0f) ? 0.0f : t;
         t = (t > 1.0f) ? 1.0f : t;
 
@@ -284,7 +284,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider_int(fathom_ui_context
         i32 range = max - min;
         i32 value;
 
-        f32 t = (f32)(ctx->mouse_x - res.x) / (f32)res.w;
+        f32 t = (f32)((i32)ctx->mouse_x - (i32)res.x) / (f32)res.w;
         t = (t < 0.0f) ? 0.0f : t;
         t = (t > 1.0f) ? 1.0f : t;
 
