@@ -60,6 +60,7 @@
 #define GL_BLEND 0x0BE2
 #define GL_SRC_ALPHA 0x0302
 #define GL_ONE_MINUS_SRC_ALPHA 0x0303
+#define GL_DEPTH_TEST 0x0B71
 
 /* OpenGL 1.1 functions */
 typedef void (*PFNGLCLEARCOLORPROC)(f32 red, f32 green, f32 blue, f32 alpha);
@@ -177,6 +178,9 @@ static PFNGLUNIFORM4FPROC glUniform4f;
 typedef void (*PFNGLUNIFORM4FVPROC)(i32 location, i32 count, f32 *value);
 static PFNGLUNIFORM4FVPROC glUniform4fv;
 
+typedef void (*PFNGLUNIFORMMATRIX4FVPROC)(i32 location, i32 count, u8 transpose, f32 *value);
+static PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
+
 typedef void (*PFNGLACTIVETEXTUREPROC)(u32 texture);
 static PFNGLACTIVETEXTUREPROC glActiveTexture;
 
@@ -191,6 +195,9 @@ static PFNGLBINDBUFFERPROC glBindBuffer;
 
 typedef void (*PFNGLBUFFERDATAPROC)(u32 target, i32 size, void *data, u32 usage);
 static PFNGLBUFFERDATAPROC glBufferData;
+
+typedef void (*PFNGLBUFFERSUBDATAPROC)(u32 target, i32 *offset, i32 size, void *data);
+static PFNGLBUFFERSUBDATAPROC glBufferSubData;
 
 typedef void (*PFNGLENABLEVERTEXATTRIBARRAYPROC)(u32 index);
 static PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
@@ -268,11 +275,13 @@ FATHOM_API FATHOM_INLINE u8 fathom_opengl_load_functions(fathom_opengl_function_
     glUniform3i = (PFNGLUNIFORM3IPROC)load("glUniform3i");
     glUniform4f = (PFNGLUNIFORM4FPROC)load("glUniform4f");
     glUniform4fv = (PFNGLUNIFORM4FVPROC)load("glUniform4fv");
+    glUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)load("glUniformMatrix4fv");
     glActiveTexture = (PFNGLACTIVETEXTUREPROC)load("glActiveTexture");
     glTexImage3D = (PFNGLTEXIMAGE3DPROC)load("glTexImage3D");
     glGenBuffers = (PFNGLGENBUFFERSPROC)load("glGenBuffers");
     glBindBuffer = (PFNGLBINDBUFFERPROC)load("glBindBuffer");
     glBufferData = (PFNGLBUFFERDATAPROC)load("glBufferData");
+    glBufferSubData = (PFNGLBUFFERSUBDATAPROC)load("glBufferSubData");
     glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)load("glEnableVertexAttribArray");
     glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)load("glVertexAttribPointer");
     glVertexAttribIPointer = (PFNGLVERTEXATTRIBIPOINTERPROC)load("glVertexAttribIPointer");

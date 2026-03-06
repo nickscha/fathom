@@ -66,7 +66,7 @@ FATHOM_API FATHOM_INLINE void fathom_profiler_begin(s8 *name, s8 *file, u32 line
 
     if (entry_id == FATHOM_PROFILER_ENTRY_INVALID)
     {
-        fathom_profiler_entry entry;
+        fathom_profiler_entry entry = {0};
         entry.name = name;
         entry.file = file;
         entry.line = line;

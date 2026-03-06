@@ -866,6 +866,14 @@ typedef struct shader_main
 
 } shader_main;
 
+typedef struct shader_ui
+{
+  shader_header header;
+
+  i32 loc_projection;
+
+} shader_ui;
+
 typedef struct shader_font
 {
   shader_header header;
@@ -1465,6 +1473,152 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
   FATHOM_PROFILER_END(gl_draw);
 }
 
+FATHOM_API void fathom_render_ui(win32_fathom_state *state)
+{
+  static u8 fatom_render_ui_initialized = 0;
+  static fathom_ui_context ui_context = {0};
+  static shader_ui ui_shader;
+  static f32 vertices[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f}; /* Unit quad (2 triangles) */
+  static u32 quadVAO, quadVBO, instanceVBO;
+  static fathom_mat4x4 orthographic;
+
+  (void)state;
+
+  if (!fatom_render_ui_initialized)
+  {
+    /* OpenGL Shader Setup */
+    static s8 *code_vertex =
+        "#version 330 core\n"
+        "layout (location = 0) in vec2 aPos;   // Unit quad: (0,0) to (1,1)\n"
+        "layout (location = 1) in vec4 aRect;  // Instance: x, y, w, h\n"
+        "layout (location = 2) in vec4 aColor; // Instance: r, g, b, a\n"
+        "\n"
+        "out vec4 fragColor;\n"
+        "uniform mat4 projection;\n"
+        "\n"
+        "void main() {\n"
+        "  fragColor = aColor;\n"
+        "  vec2 worldPos = aPos * aRect.zw + aRect.xy;\n"
+        "  gl_Position = projection * vec4(worldPos, 0.0, 1.0);\n"
+        "}";
+
+    static s8 *code_fragment =
+        "#version 330 core\n"
+        "in vec4 fragColor;\n"
+        "out vec4 outColor;\n"
+        "void main() {\n"
+        "  outColor = fragColor;\n"
+        "}";
+
+    if (opengl_shader_load(&ui_shader.header, code_vertex, code_fragment))
+    {
+      ui_shader.loc_projection = glGetUniformLocation(ui_shader.header.program, "projection");
+    }
+
+    /* OpenGL Data Setup */
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glGenBuffers(1, &instanceVBO);
+
+    glBindVertexArray(quadVAO);
+
+    /* Static Quad */
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(f32), FATHOM_NULL);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, FATHOM_UI_MAX_RENDER_INSTANCES * sizeof(fathom_ui_render_instance), FATHOM_NULL, GL_DYNAMIC_DRAW);
+
+    /* Location 1: Rect (vec4) */
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(fathom_ui_render_instance), FATHOM_NULL);
+    glEnableVertexAttribArray(1);
+    glVertexAttribDivisor(1, 1);
+
+    /* Location 2: Color (vec4) */
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(fathom_ui_render_instance), (void *)(4 * sizeof(f32)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribDivisor(2, 1);
+
+    fatom_render_ui_initialized = 1;
+  }
+
+  /* Setup UI */
+  {
+    static u32 wx = 10;
+    static u32 wy = 10;
+
+    ui_context.mouse_x = (u16)state->mouse_x;
+    ui_context.mouse_y = (u16)((i32)state->window_height - state->mouse_y);
+    ui_context.mouse_left_is_down = state->mouse_left_is_down;
+    ui_context.mouse_right_is_down = state->mouse_right_is_down;
+    ui_context.padding = 10;
+
+    fathom_ui_begin(&ui_context);
+
+    /* Drag Header */
+    {
+      fathom_ui_result header_rect;
+      fathom_ui_drag_header(&ui_context, 1, &wx, &wy, 200);
+      header_rect = fathom_ui_result_init(wx, wy, 200, 20, FATHOM_UI_IDLE);
+      fathom_ui_render_instance_push(header_rect, 0.4f, 0.4f, 0.4f, 1.0f);
+    }
+
+    /* Panel */
+    {
+      fathom_ui_result panel_bg;
+      fathom_ui_panel_begin(&ui_context, wx, wy + 20, 200, 300);
+      panel_bg = fathom_ui_result_init(wx, wy + 20, 200, 300, FATHOM_UI_IDLE);
+      fathom_ui_render_instance_push(panel_bg, 0.1f, 0.1f, 0.1f, 0.9f);
+    }
+
+    /* Button */
+    {
+      fathom_ui_result button = fathom_ui_button(&ui_context, 2, 0, 0, 0, 30);
+
+      if (button.state & FATHOM_UI_RELEASED)
+      {
+        fathom_ui_render_instance_push(button, 1.0f, 1.0f, 1.0f, 1.0f);
+      }
+      else if (button.state & FATHOM_UI_HELD)
+      {
+        fathom_ui_render_instance_push(button, 0.0f, 0.0f, 1.0f, 1.0f);
+      }
+      else if (button.state & FATHOM_UI_HOVER)
+      {
+        fathom_ui_render_instance_push(button, 1.0f, 0.0f, 0.0f, 1.0f);
+      }
+      else
+      {
+        fathom_ui_render_instance_push(button, 0.0f, 1.0f, 0.0f, 1.0f);
+      }
+    }
+
+    fathom_ui_panel_end(&ui_context);
+    fathom_ui_end(&ui_context);
+  }
+
+  /* Setup projection */
+  orthographic = fathom_mat4x4_orthographic(0.0f, (f32)state->window_width, (f32)state->window_height, 0.0f, -1.0f, 1.0f);
+
+  /* OpenGL Draw */
+  /* glDisable(GL_DEPTH_TEST); */
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  glUseProgram(ui_shader.header.program);
+  glUniformMatrix4fv(ui_shader.loc_projection, 1, GL_FALSE, orthographic.e);
+
+  glBindVertexArray(quadVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, (i32)(fathom_ui_render_instances_count * sizeof(fathom_ui_render_instance)), fathom_ui_render_instances);
+  glDrawArraysInstanced(GL_TRIANGLES, 0, 6, fathom_ui_render_instances_count);
+  glDisable(GL_BLEND);
+
+  fathom_ui_render_instances_count = 0;
+}
+
 /* #############################################################################
  * # [SECTION] Main Entry Point
  * #############################################################################
@@ -1881,6 +2035,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
       /* Main Application Logic     */
       /******************************/
       fathom_render_grid(&state, &main_shader, main_vao);
+      fathom_render_ui(&state);
 
       /******************************/
       /* UI Rendering (F1 pressed)  */
@@ -2221,6 +2376,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
         glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, glyph_buffer_count);
 
         glDisable(GL_BLEND);
+        glBindVertexArray(0);
       }
 
       /******************************/

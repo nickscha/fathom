@@ -68,6 +68,19 @@ typedef struct fathom_ui_result
 
 } fathom_ui_result;
 
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_result_init(u32 x, u32 y, u32 w, u32 h, u8 state)
+{
+    fathom_ui_result result;
+
+    result.x = x;
+    result.y = y;
+    result.w = w;
+    result.h = h;
+    result.state = state;
+
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 w, u32 h)
 {
     fathom_ui_result res = {0};
@@ -155,8 +168,6 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
  */
 FATHOM_API FATHOM_INLINE void fathom_ui_begin(fathom_ui_context *ctx)
 {
-    ctx->mouse_x_prev = ctx->mouse_x;
-    ctx->mouse_y_prev = ctx->mouse_y;
     ctx->mouse_pressed = ctx->mouse_left_is_down && !ctx->mouse_left_was_down;
     ctx->mouse_released = !ctx->mouse_left_is_down && ctx->mouse_left_was_down;
     ctx->hot_id = 0;
@@ -164,6 +175,8 @@ FATHOM_API FATHOM_INLINE void fathom_ui_begin(fathom_ui_context *ctx)
 
 FATHOM_API FATHOM_INLINE void fathom_ui_end(fathom_ui_context *ctx)
 {
+    ctx->mouse_x_prev = ctx->mouse_x;
+    ctx->mouse_y_prev = ctx->mouse_y;
     ctx->mouse_left_was_down = ctx->mouse_left_is_down;
     ctx->mouse_right_was_down = ctx->mouse_right_is_down;
 }
@@ -216,7 +229,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_checkbox(fathom_ui_context *
     return res;
 }
 
-FATHOM_API FATHOM_INLINE void fathom_ui_drag_header(fathom_ui_context *ctx, u16 id, u32 *win_x, u32 *win_y, u32 win_w)
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_drag_header(fathom_ui_context *ctx, u16 id, u32 *win_x, u32 *win_y, u32 win_w)
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, *win_x, *win_y, win_w, 20);
 
@@ -225,6 +238,8 @@ FATHOM_API FATHOM_INLINE void fathom_ui_drag_header(fathom_ui_context *ctx, u16 
         *win_x += (ctx->mouse_x - ctx->mouse_x_prev);
         *win_y += (ctx->mouse_y - ctx->mouse_y_prev);
     }
+
+    return res;
 }
 
 FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_radio(fathom_ui_context *ctx, u16 id, u32 x, u32 y, u32 size, i32 *current_val, i32 radio_val)
@@ -303,17 +318,17 @@ typedef struct fathom_ui_render_instance
 } fathom_ui_render_instance;
 
 #ifndef FATHOM_UI_MAX_RENDER_INSTANCES
-#define FATHOM_UI_MAX_RENDER_INSTANCES 128
+#define FATHOM_UI_MAX_RENDER_INSTANCES 64
 #endif
 
-static fathom_ui_render_instance render_instances[FATHOM_UI_MAX_RENDER_INSTANCES];
-static u32 render_instances_count = 0;
+static fathom_ui_render_instance fathom_ui_render_instances[FATHOM_UI_MAX_RENDER_INSTANCES];
+static u32 fathom_ui_render_instances_count = 0;
 
 FATHOM_API FATHOM_INLINE void fathom_ui_render_instance_push(fathom_ui_result res, f32 r, f32 g, f32 b, f32 a)
 {
-    if (render_instances_count < FATHOM_UI_MAX_RENDER_INSTANCES)
+    if (fathom_ui_render_instances_count < FATHOM_UI_MAX_RENDER_INSTANCES)
     {
-        fathom_ui_render_instance *inst = &render_instances[render_instances_count++];
+        fathom_ui_render_instance *inst = &fathom_ui_render_instances[fathom_ui_render_instances_count++];
         inst->x = (f32)res.x;
         inst->y = (f32)res.y;
         inst->w = (f32)res.w;
