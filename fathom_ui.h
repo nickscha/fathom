@@ -32,9 +32,10 @@ typedef struct fathom_ui_context
     u16 active_id;
 
     u8 mouse_left_is_down;
-    u8 mouse_left_was_down;
     u8 mouse_right_is_down;
-    u8 mouse_right_was_down;
+
+    u8 mouse_left_was_down;  /* internal */
+    u8 mouse_right_was_down; /* internal */
 
     u8 mouse_pressed;
     u8 mouse_released;
@@ -78,12 +79,12 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
 
     if (!x && !y && ctx->stack_ptr)
     {
-        fathom_rect *p = ctx->stack + ctx->stack_ptr - 1;
+        fathom_rect *panel = ctx->stack + ctx->stack_ptr - 1;
         u16 pad2 = pad << 1;
 
-        res.x = p->x + pad;
-        res.y = p->y + ctx->cursor_y + pad;
-        res.w = w ? w : (p->w - pad2);
+        res.x = panel->x + pad;
+        res.y = panel->y + ctx->cursor_y + pad;
+        res.w = w ? w : (panel->w - pad2);
         res.h = h;
 
         ctx->cursor_y += h + pad;
@@ -98,13 +99,13 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
 
     if (ctx->stack_ptr)
     {
-        fathom_rect *p = ctx->stack + ctx->stack_ptr - 1;
+        fathom_rect *panel = ctx->stack + ctx->stack_ptr - 1;
 
         /* clang-format off */
-        if (res.y + res.h < p->y) return res;
-        if (res.y > p->y  + p->h) return res;
-        if (res.x + res.w < p->x) return res;
-        if (res.x > p->x  + p->w) return res;
+        if (res.y + res.h    < panel->y) return res;
+        if (res.y > panel->y + panel->h) return res;
+        if (res.x + res.w    < panel->x) return res;
+        if (res.x > panel->x + panel->w) return res;
         /* clang-format on */
     }
 
@@ -157,12 +158,8 @@ FATHOM_API FATHOM_INLINE void fathom_ui_begin(fathom_ui_context *ctx)
 
 FATHOM_API FATHOM_INLINE void fathom_ui_end(fathom_ui_context *ctx)
 {
-    (void)ctx;
-
-    /*
     ctx->mouse_left_was_down = ctx->mouse_left_is_down;
     ctx->mouse_right_was_down = ctx->mouse_right_is_down;
-    */
 }
 
 FATHOM_API FATHOM_INLINE void fathom_ui_panel_begin(fathom_ui_context *ctx, u32 x, u32 y, u32 w, u32 h)
