@@ -30,7 +30,6 @@ typedef struct fathom_ui_context
     u32 cursor_y;
     u16 padding;
 
-    u16 hot_id;
     u16 active_id;
 
     u8 mouse_left_is_down;
@@ -145,8 +144,6 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
             ctx->active_id = id;
             res.state |= FATHOM_UI_PRESSED;
         }
-
-        ctx->hot_id = id;
     }
 
     if (ctx->active_id == id)
@@ -175,7 +172,6 @@ FATHOM_API FATHOM_INLINE void fathom_ui_begin(fathom_ui_context *ctx)
 {
     ctx->mouse_pressed = ctx->mouse_left_is_down && !ctx->mouse_left_was_down;
     ctx->mouse_released = !ctx->mouse_left_is_down && ctx->mouse_left_was_down;
-    ctx->hot_id = 0;
 }
 
 FATHOM_API FATHOM_INLINE void fathom_ui_end(fathom_ui_context *ctx)
