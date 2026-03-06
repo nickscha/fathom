@@ -229,9 +229,9 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_checkbox(fathom_ui_context *
     return res;
 }
 
-FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_drag_header(fathom_ui_context *ctx, u16 id, u32 *win_x, u32 *win_y, u32 win_w)
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_drag_header(fathom_ui_context *ctx, u16 id, u32 *win_x, u32 *win_y, u32 win_w, u32 win_h)
 {
-    fathom_ui_result res = fathom_ui_internal_process(ctx, id, *win_x, *win_y, win_w, 20);
+    fathom_ui_result res = fathom_ui_internal_process(ctx, id, *win_x, *win_y, win_w, win_h);
 
     if (res.state & FATHOM_UI_HELD)
     {

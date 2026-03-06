@@ -1476,9 +1476,7 @@ FATHOM_API void fathom_render_grid(win32_fathom_state *state, shader_main *main_
 FATHOM_API void fathom_render_ui(win32_fathom_state *state)
 {
   static u8 fatom_render_ui_initialized = 0;
-  static fathom_ui_context ui_context = {0};
   static shader_ui ui_shader;
-  static f32 vertices[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f}; /* Unit quad (2 triangles) */
   static u32 quadVAO, quadVBO, instanceVBO;
   static fathom_mat4x4 orthographic;
 
@@ -1486,6 +1484,8 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
 
   if (!fatom_render_ui_initialized)
   {
+    static f32 vertices[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f}; /* Unit quad (2 triangles) */
+
     /* OpenGL Shader Setup */
     static s8 *code_vertex =
         "#version 330 core\n"
@@ -1546,12 +1546,15 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
 
   /* Setup UI */
   {
+    static fathom_ui_context ui_context = {0};
     static u32 wx = 10;
     static u32 wy = 10;
+    static u32 dhw = 200;
+    static u32 dhh = 20;
     static f32 slider_val = 0.5f;
 
-    ui_context.mouse_x = (u16)state->mouse_x;
-    ui_context.mouse_y = (u16)((i32)state->window_height - state->mouse_y);
+    ui_context.mouse_x = (u16)(state->mouse_x < 0 ? 0 : state->mouse_x);
+    ui_context.mouse_y = (u16)((i32)state->window_height - (state->mouse_y < 0 ? 0 : state->mouse_y));
     ui_context.mouse_left_is_down = state->mouse_left_is_down;
     ui_context.mouse_right_is_down = state->mouse_right_is_down;
     ui_context.padding = 10;
@@ -1559,18 +1562,18 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
     fathom_ui_begin(&ui_context);
 
     /* Drag Header */
-    fathom_ui_drag_header(&ui_context, 1, &wx, &wy, 200);
+    fathom_ui_drag_header(&ui_context, 1, &wx, &wy, dhw, dhh);
     {
       fathom_ui_result header_rect;
-      header_rect = fathom_ui_result_init(wx, wy, 200, 20, FATHOM_UI_IDLE);
+      header_rect = fathom_ui_result_init(wx, wy, dhw, dhh, FATHOM_UI_IDLE);
       fathom_ui_render_instance_push(header_rect, 0.4f, 0.4f, 0.4f, 1.0f);
     }
 
     /* Panel */
-    fathom_ui_panel_begin(&ui_context, wx, wy + 20, 200, 300);
+    fathom_ui_panel_begin(&ui_context, wx, wy + dhh, 200, 300);
     {
       fathom_ui_result panel_bg;
-      panel_bg = fathom_ui_result_init(wx, wy + 20, 200, 300, FATHOM_UI_IDLE);
+      panel_bg = fathom_ui_result_init(wx, wy + dhh, 200, 300, FATHOM_UI_IDLE);
       fathom_ui_render_instance_push(panel_bg, 0.1f, 0.1f, 0.1f, 0.9f);
     }
 
