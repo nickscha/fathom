@@ -235,8 +235,11 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_drag_header(fathom_ui_contex
 
     if (res.state & FATHOM_UI_HELD)
     {
-        *win_x += (ctx->mouse_x - ctx->mouse_x_prev);
-        *win_y += (ctx->mouse_y - ctx->mouse_y_prev);
+        i32 x = (i32)(*win_x) + (ctx->mouse_x - ctx->mouse_x_prev);
+        i32 y = (i32)(*win_y) + (ctx->mouse_y - ctx->mouse_y_prev);
+
+        *win_x = (u32)(x < 0 ? 0 : x);
+        *win_y = (u32)(y < 0 ? 0 : y);
     }
 
     return res;
