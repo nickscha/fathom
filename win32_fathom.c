@@ -1548,6 +1548,7 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
   {
     static u32 wx = 10;
     static u32 wy = 10;
+    static f32 slider_val = 0.5f;
 
     ui_context.mouse_x = (u16)state->mouse_x;
     ui_context.mouse_y = (u16)((i32)state->window_height - state->mouse_y);
@@ -1558,17 +1559,17 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
     fathom_ui_begin(&ui_context);
 
     /* Drag Header */
+    fathom_ui_drag_header(&ui_context, 1, &wx, &wy, 200);
     {
       fathom_ui_result header_rect;
-      fathom_ui_drag_header(&ui_context, 1, &wx, &wy, 200);
       header_rect = fathom_ui_result_init(wx, wy, 200, 20, FATHOM_UI_IDLE);
       fathom_ui_render_instance_push(header_rect, 0.4f, 0.4f, 0.4f, 1.0f);
     }
 
     /* Panel */
+    fathom_ui_panel_begin(&ui_context, wx, wy + 20, 200, 300);
     {
       fathom_ui_result panel_bg;
-      fathom_ui_panel_begin(&ui_context, wx, wy + 20, 200, 300);
       panel_bg = fathom_ui_result_init(wx, wy + 20, 200, 300, FATHOM_UI_IDLE);
       fathom_ui_render_instance_push(panel_bg, 0.1f, 0.1f, 0.1f, 0.9f);
     }
@@ -1593,6 +1594,24 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
       {
         fathom_ui_render_instance_push(button, 0.0f, 1.0f, 0.0f, 1.0f);
       }
+    }
+
+    {
+      fathom_ui_result slider = fathom_ui_slider(&ui_context, 3, 0, 0, 0, 20, &slider_val);
+      fathom_ui_result knob_rect;
+      u32 knob_width;
+      u32 knob_x;
+      f32 knob_color;
+
+      fathom_ui_render_instance_push(slider, 0.2f, 0.2f, 0.2f, 1.0f);
+
+      knob_width = 10;
+      knob_x = slider.x + (u32)(slider_val * (f32)(slider.w - knob_width));
+
+      knob_rect = fathom_ui_result_init(knob_x, slider.y, knob_width, slider.h, 0);
+
+      knob_color = (slider.state & FATHOM_UI_HELD) ? 0.8f : 0.6f;
+      fathom_ui_render_instance_push(knob_rect, knob_color, knob_color, knob_color, 1.0f);
     }
 
     fathom_ui_panel_end(&ui_context);
