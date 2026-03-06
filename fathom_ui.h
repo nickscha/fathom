@@ -42,6 +42,8 @@ typedef struct fathom_ui_context
     u8 mouse_pressed;
     u8 mouse_released;
 
+    f32 scale;
+
     i32 stack_ptr;
     fathom_rect stack[FATHOM_UI_MAX_STACK];
 
@@ -85,10 +87,12 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
 {
     fathom_ui_result res = {0};
 
+    f32 scale = ctx->scale > 0.0f ? ctx->scale : 1.0f;
+
     u16 mouse_x = ctx->mouse_x;
     u16 mouse_y = ctx->mouse_y;
     u16 active_id = ctx->active_id;
-    u16 pad = ctx->padding;
+    u16 pad = (u16)((f32)ctx->padding * scale);
 
     u8 is_over;
 
@@ -99,17 +103,18 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
 
         res.x = panel->x + pad;
         res.y = panel->y + ctx->cursor_y + pad;
-        res.w = w ? w : (panel->w - pad2);
-        res.h = h;
 
-        ctx->cursor_y += h + pad;
+        res.w = w ? (u32)((f32)w * scale) : (panel->w - pad2);
+        res.h = (u32)((f32)h * scale);
+
+        ctx->cursor_y += res.h + pad;
     }
     else
     {
-        res.x = x;
-        res.y = y;
-        res.w = w;
-        res.h = h;
+        res.x = (u32)((f32)x * scale);
+        res.y = (u32)((f32)y * scale);
+        res.w = (u32)((f32)w * scale);
+        res.h = (u32)((f32)h * scale);
     }
 
     if (ctx->stack_ptr)
@@ -181,19 +186,30 @@ FATHOM_API FATHOM_INLINE void fathom_ui_end(fathom_ui_context *ctx)
     ctx->mouse_right_was_down = ctx->mouse_right_is_down;
 }
 
-FATHOM_API FATHOM_INLINE void fathom_ui_panel_begin(fathom_ui_context *ctx, u32 x, u32 y, u32 w, u32 h)
+FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_panel_begin(fathom_ui_context *ctx, u32 x, u32 y, u32 w, u32 h)
 {
+    fathom_ui_result res = {0};
+
     if (ctx->stack_ptr < FATHOM_UI_MAX_STACK)
     {
         fathom_rect *r = ctx->stack + ctx->stack_ptr++;
+        f32 s = ctx->scale > 0.0f ? ctx->scale : 1.0f;
 
-        r->x = x;
-        r->y = y;
-        r->w = w;
-        r->h = h;
+        r->x = (u32)((f32)x * s);
+        r->y = (u32)((f32)y * s);
+        r->w = (u32)((f32)w * s);
+        r->h = (u32)((f32)h * s);
 
         ctx->cursor_y = 0;
+
+        res.x = r->x;
+        res.y = r->y;
+        res.w = r->w;
+        res.h = r->h;
+        res.state = FATHOM_UI_IDLE;
     }
+
+    return res;
 }
 
 FATHOM_API FATHOM_INLINE void fathom_ui_panel_end(fathom_ui_context *ctx)
@@ -235,11 +251,19 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_drag_header(fathom_ui_contex
 
     if (res.state & FATHOM_UI_HELD)
     {
-        i32 x = (i32)(*win_x) + (ctx->mouse_x - ctx->mouse_x_prev);
-        i32 y = (i32)(*win_y) + (ctx->mouse_y - ctx->mouse_y_prev);
+        f32 s = ctx->scale > 0.0f ? ctx->scale : 1.0f;
 
-        *win_x = (u32)(x < 0 ? 0 : x);
-        *win_y = (u32)(y < 0 ? 0 : y);
+        i32 screen_dx = (i32)ctx->mouse_x - (i32)ctx->mouse_x_prev;
+        i32 screen_dy = (i32)ctx->mouse_y - (i32)ctx->mouse_y_prev;
+
+        i32 nx = (i32)(*win_x) + (i32)((f32)screen_dx / s);
+        i32 ny = (i32)(*win_y) + (i32)((f32)screen_dy / s);
+
+        *win_x = (u32)(nx < 0 ? 0 : nx);
+        *win_y = (u32)(ny < 0 ? 0 : ny);
+
+        res.x += (u32)screen_dx;
+        res.y += (u32)screen_dy;
     }
 
     return res;

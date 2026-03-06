@@ -1558,23 +1558,20 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
     ui_context.mouse_left_is_down = state->mouse_left_is_down;
     ui_context.mouse_right_is_down = state->mouse_right_is_down;
     ui_context.padding = 10;
+    ui_context.scale = 0.8f;
 
     fathom_ui_begin(&ui_context);
 
     /* Drag Header */
-    fathom_ui_drag_header(&ui_context, 1, &wx, &wy, dhw, dhh);
     {
-      fathom_ui_result header_rect;
-      header_rect = fathom_ui_result_init(wx, wy, dhw, dhh, FATHOM_UI_IDLE);
-      fathom_ui_render_instance_push(header_rect, 0.4f, 0.4f, 0.4f, 1.0f);
+      fathom_ui_result header_res = fathom_ui_drag_header(&ui_context, 1, &wx, &wy, dhw, dhh);
+      fathom_ui_render_instance_push(header_res, 0.2f, 0.2f, 0.2f, 1.0f);
     }
 
     /* Panel */
-    fathom_ui_panel_begin(&ui_context, wx, wy + dhh, 200, 300);
     {
-      fathom_ui_result panel_bg;
-      panel_bg = fathom_ui_result_init(wx, wy + dhh, 200, 300, FATHOM_UI_IDLE);
-      fathom_ui_render_instance_push(panel_bg, 0.1f, 0.1f, 0.1f, 0.9f);
+      fathom_ui_result panel_res = fathom_ui_panel_begin(&ui_context, wx, wy + dhh, 200, 300);
+      fathom_ui_render_instance_push(panel_res, 0.1f, 0.1f, 0.1f, 0.6f);
     }
 
     /* Button */
