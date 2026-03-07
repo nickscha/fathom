@@ -1552,13 +1552,33 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
     static u32 dhw = 200;
     static u32 dhh = 20;
     static f32 slider_val = 0.5f;
+    static f32 ui_scale = 0.8f;
 
     ui_context.mouse_x = (u16)(state->mouse_x < 0 ? 0 : state->mouse_x);
     ui_context.mouse_y = (u16)((i32)state->window_height - (state->mouse_y < 0 ? 0 : state->mouse_y));
     ui_context.mouse_left_is_down = state->mouse_left_is_down;
     ui_context.mouse_right_is_down = state->mouse_right_is_down;
     ui_context.padding = 10;
-    ui_context.scale = 0.8f;
+
+    /* Control zoom */
+    if ((state->keys_is_down[0xBB] && !state->keys_was_down[0xBB]) ||
+        (state->keys_is_down[0x6B] && !state->keys_was_down[0x6B]))
+    {
+      ui_scale += 0.1f;
+    }
+
+    if ((state->keys_is_down[0xBD] && !state->keys_was_down[0xBD]) ||
+        (state->keys_is_down[0x6D] && !state->keys_was_down[0x6D]))
+    {
+      ui_scale -= 0.1f;
+    }
+
+    if (ui_scale <= 0.1f)
+    {
+      ui_scale = 0.1f;
+    }
+
+    ui_context.scale = ui_scale;
 
     fathom_ui_begin(&ui_context);
 
