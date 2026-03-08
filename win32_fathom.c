@@ -1640,19 +1640,21 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
 
   /* Setup projection */
   orthographic = fathom_mat4x4_orthographic(0.0f, (f32)state->window_width, (f32)state->window_height, 0.0f, -1.0f, 1.0f);
-
   /* OpenGL Draw */
   /* glDisable(GL_DEPTH_TEST); */
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   glUseProgram(ui_shader.header.program);
   glUniformMatrix4fv(ui_shader.loc_projection, 1, GL_FALSE, orthographic.e);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   glBindVertexArray(quadVAO);
   glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
   glBufferSubData(GL_ARRAY_BUFFER, 0, (i32)(fathom_ui_render_instances_count * sizeof(fathom_ui_render_instance)), fathom_ui_render_instances);
   glDrawArraysInstanced(GL_TRIANGLES, 0, 6, fathom_ui_render_instances_count);
+  glBindVertexArray(0);
+
   glDisable(GL_BLEND);
 
   fathom_ui_render_instances_count = 0;
@@ -2399,8 +2401,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
           }
         }
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        (void)GL_DYNAMIC_DRAW;
 
         glUseProgram(font_shader.header.program);
         glUniform3f(font_shader.loc_iResolution, (f32)state.window_width, (f32)state.window_height, 1.0f);
@@ -2408,14 +2409,17 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
         glUniform4f(font_shader.loc_iTextureInfo, FATHOM_FONT_WIDTH, FATHOM_FONT_HEIGHT, FATHOM_FONT_GLYPH_WIDTH, FATHOM_FONT_GLYPH_HEIGHT);
         glUniform1i(font_shader.loc_iTexture, 0);
         glUniform1f(font_shader.loc_iFontScale, font_scale);
-        glBindVertexArray(font_vao);
 
-        (void)GL_DYNAMIC_DRAW;
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glBindVertexArray(font_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo); 
         glBufferData(GL_ARRAY_BUFFER, (i32)(glyph_buffer_count * sizeof(glyph)), glyph_buffer, GL_STREAM_DRAW);
         glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, glyph_buffer_count);
+        glBindVertexArray(0);
 
         glDisable(GL_BLEND);
-        glBindVertexArray(0);
       }
 
       /******************************/
