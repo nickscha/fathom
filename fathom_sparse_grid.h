@@ -100,7 +100,7 @@ FATHOM_API u8 fathom_sparse_grid_initialize(fathom_sparse_grid *grid, fathom_vec
     /* Internal helpers */
     grid->center = grid_center;
     grid->cell_count = grid_cell_count;
-    grid->brick_radius = (FATHOM_PHYSICAL_BRICK_SIZE * 0.5f) * 1.7320508f * grid_cell_size;
+    grid->brick_radius = 0.5f * FATHOM_SQRT3 * (FATHOM_BRICK_SIZE * grid->cell_size);
     grid->cull_threshold = grid->brick_radius + grid->truncation_distance;
 
     return 1;
