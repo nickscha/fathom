@@ -50,11 +50,11 @@ typedef struct fathom_ui_context
 
 typedef enum fathom_ui_state
 {
-    FATHOM_UI_IDLE = 0,
-    FATHOM_UI_HOVER = (1 << 0),   /* Mouse is over the rect */
-    FATHOM_UI_PRESSED = (1 << 1), /* Mouse just went down this frame */
-    FATHOM_UI_HELD = (1 << 2),    /* Mouse is currently down */
-    FATHOM_UI_RELEASED = (1 << 3) /* Mouse was released (clicked) */
+    FATHOM_UI_STATE_IDLE = 0,
+    FATHOM_UI_STATE_HOVER = (1 << 0),   /* Mouse is over the rect */
+    FATHOM_UI_STATE_PRESSED = (1 << 1), /* Mouse just went down this frame */
+    FATHOM_UI_STATE_HELD = (1 << 2),    /* Mouse is currently down */
+    FATHOM_UI_STATE_RELEASED = (1 << 3) /* Mouse was released (clicked) */
 
 } fathom_ui_state;
 
@@ -137,18 +137,18 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
 
     if (is_over)
     {
-        res.state |= FATHOM_UI_HOVER;
+        res.state |= FATHOM_UI_STATE_HOVER;
 
         if (!active_id && ctx->mouse_pressed)
         {
             ctx->active_id = id;
-            res.state |= FATHOM_UI_PRESSED;
+            res.state |= FATHOM_UI_STATE_PRESSED;
         }
     }
 
     if (ctx->active_id == id)
     {
-        res.state |= FATHOM_UI_HELD;
+        res.state |= FATHOM_UI_STATE_HELD;
 
         if (ctx->mouse_released)
         {
@@ -156,7 +156,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_internal_process(fathom_ui_c
 
             if (is_over)
             {
-                res.state |= FATHOM_UI_RELEASED;
+                res.state |= FATHOM_UI_STATE_RELEASED;
             }
         }
     }
@@ -202,7 +202,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_panel_begin(fathom_ui_contex
         res.y = r->y;
         res.w = r->w;
         res.h = r->h;
-        res.state = FATHOM_UI_IDLE;
+        res.state = FATHOM_UI_STATE_IDLE;
     }
 
     return res;
@@ -233,7 +233,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_checkbox(fathom_ui_context *
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, x, y, w, h);
 
-    if (res.state & FATHOM_UI_RELEASED)
+    if (res.state & FATHOM_UI_STATE_RELEASED)
     {
         *is_checked = !(*is_checked);
     }
@@ -245,7 +245,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_drag_header(fathom_ui_contex
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, *win_x, *win_y, win_w, win_h);
 
-    if (res.state & FATHOM_UI_HELD)
+    if (res.state & FATHOM_UI_STATE_HELD)
     {
         f32 s = ctx->scale > 0.0f ? ctx->scale : 1.0f;
 
@@ -269,7 +269,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_radio(fathom_ui_context *ctx
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, x, y, size, size);
 
-    if (res.state & FATHOM_UI_RELEASED)
+    if (res.state & FATHOM_UI_STATE_RELEASED)
     {
         *current_val = radio_val;
     }
@@ -281,7 +281,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider_range(fathom_ui_conte
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, x, y, w, h);
 
-    if ((res.state & FATHOM_UI_PRESSED) || (res.state & FATHOM_UI_HELD))
+    if ((res.state & FATHOM_UI_STATE_PRESSED) || (res.state & FATHOM_UI_STATE_HELD))
     {
         f32 t = (f32)((i32)ctx->mouse_x - (i32)res.x) / (f32)res.w;
         t = (t < 0.0f) ? 0.0f : t;
@@ -302,7 +302,7 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_slider_int(fathom_ui_context
 {
     fathom_ui_result res = fathom_ui_internal_process(ctx, id, x, y, w, h);
 
-    if ((res.state & FATHOM_UI_PRESSED) || (res.state & FATHOM_UI_HELD))
+    if ((res.state & FATHOM_UI_STATE_PRESSED) || (res.state & FATHOM_UI_STATE_HELD))
     {
         i32 range = max - min;
         i32 value;

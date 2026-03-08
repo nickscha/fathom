@@ -1598,15 +1598,15 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
     {
       fathom_ui_result button = fathom_ui_button(&ui_context, 2, 0, 0, 0, 30);
 
-      if (button.state & FATHOM_UI_RELEASED)
+      if (button.state & FATHOM_UI_STATE_RELEASED)
       {
         fathom_ui_render_instance_push(button, 1.0f, 1.0f, 1.0f, 1.0f);
       }
-      else if (button.state & FATHOM_UI_HELD)
+      else if (button.state & FATHOM_UI_STATE_HELD)
       {
         fathom_ui_render_instance_push(button, 0.0f, 0.0f, 1.0f, 1.0f);
       }
-      else if (button.state & FATHOM_UI_HOVER)
+      else if (button.state & FATHOM_UI_STATE_HOVER)
       {
         fathom_ui_render_instance_push(button, 1.0f, 0.0f, 0.0f, 1.0f);
       }
@@ -1630,7 +1630,7 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
 
       knob_rect = fathom_ui_result_init(knob_x, slider.y, knob_width, slider.h, 0);
 
-      knob_color = (slider.state & FATHOM_UI_HELD) ? 0.8f : 0.6f;
+      knob_color = (slider.state & FATHOM_UI_STATE_HELD) ? 0.8f : 0.6f;
       fathom_ui_render_instance_push(knob_rect, knob_color, knob_color, knob_color, 1.0f);
     }
 
@@ -2414,7 +2414,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         glBindVertexArray(font_vao);
-        glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo); 
+        glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
         glBufferData(GL_ARRAY_BUFFER, (i32)(glyph_buffer_count * sizeof(glyph)), glyph_buffer, GL_STREAM_DRAW);
         glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, glyph_buffer_count);
         glBindVertexArray(0);
