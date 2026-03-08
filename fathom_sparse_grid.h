@@ -82,7 +82,6 @@ typedef struct fathom_sparse_grid
     fathom_vec3 center;
     u32 cell_count;
     f32 brick_radius;
-    f32 cull_threshold;
 
 } fathom_sparse_grid;
 
@@ -101,7 +100,6 @@ FATHOM_API u8 fathom_sparse_grid_initialize(fathom_sparse_grid *grid, fathom_vec
     grid->center = grid_center;
     grid->cell_count = grid_cell_count;
     grid->brick_radius = 0.5f * FATHOM_SQRT3 * (FATHOM_BRICK_SIZE * grid->cell_size);
-    grid->cull_threshold = grid->brick_radius + grid->truncation_distance;
 
     return 1;
 }
@@ -134,17 +132,22 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
                 fathom_vec3 center = fathom_vec3_init(px + center_off, py + center_off, pz + center_off);
                 fathom_grid_data data = distance_function(center, user_data);
 
-                if (fathom_absf(data.distance) > grid->cull_threshold)
+                f32 d = data.distance;
+                f32 R = grid->brick_radius;
+                f32 T = grid->truncation_distance;
+
+                /* Culling */
+                if ((d - R) > T)
                 {
-                    /* Culled: Either air (0) or solid (0xFFFF) */
-                    u16 state = (data.distance > 0.0f) ? FATHOM_BRICK_MAP_INDEX_AIR : FATHOM_BRICK_MAP_INDEX_SOLID;
-                    grid->brick_map_data[brick_map_index] = state;
+                    grid->brick_map_data[brick_map_index] = FATHOM_BRICK_MAP_INDEX_AIR;
+                }
+                else if ((d + R) < -T)
+                {
+                    grid->brick_map_data[brick_map_index] = FATHOM_BRICK_MAP_INDEX_SOLID;
                 }
                 else
                 {
-                    /* Active: sentinel so the next pass knows to calculate it */
-                    u16 state = FATHOM_BRICK_MAP_INDEX_USEFUL;
-                    grid->brick_map_data[brick_map_index] = state;
+                    grid->brick_map_data[brick_map_index] = FATHOM_BRICK_MAP_INDEX_USEFUL;
                     active_brick_count++;
                 }
             }
