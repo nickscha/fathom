@@ -255,11 +255,17 @@ FATHOM_API FATHOM_INLINE fathom_ui_result fathom_ui_drag_header(fathom_ui_contex
         i32 nx = (i32)(*win_x) + (i32)((f32)screen_dx / s);
         i32 ny = (i32)(*win_y) + (i32)((f32)screen_dy / s);
 
+        i32 vx;
+        i32 vy;
+
         *win_x = (u32)(nx < 0 ? 0 : nx);
         *win_y = (u32)(ny < 0 ? 0 : ny);
 
-        res.x += (u32)screen_dx;
-        res.y += (u32)screen_dy;
+        vx = (i32)res.x + screen_dx;
+        vy = (i32)res.y + screen_dy;
+
+        res.x = (u32)(vx < 0 ? 0 : vx);
+        res.y = (u32)(vy < 0 ? 0 : vy);
     }
 
     return res;
