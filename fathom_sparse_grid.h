@@ -117,6 +117,9 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
     f32 brick_step = (f32)FATHOM_BRICK_SIZE * grid->cell_size;
     f32 center_off = brick_step * 0.5f;
 
+    f32 brick_radius = grid->brick_radius;
+    f32 distance_truncation = grid->truncation_distance;
+
     pz = start.z;
 
     for (bz = 0; bz < grid->brick_map_dimensions; ++bz, pz += brick_step)
@@ -132,16 +135,14 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
                 fathom_vec3 center = fathom_vec3_init(px + center_off, py + center_off, pz + center_off);
                 fathom_grid_data data = distance_function(center, user_data);
 
-                f32 d = data.distance;
-                f32 R = grid->brick_radius;
-                f32 T = grid->truncation_distance;
+                f32 distance = data.distance;
 
                 /* Culling */
-                if ((d - R) > T)
+                if ((distance - brick_radius) > distance_truncation)
                 {
                     grid->brick_map_data[brick_map_index] = FATHOM_BRICK_MAP_INDEX_AIR;
                 }
-                else if ((d + R) < -T)
+                else if ((distance + brick_radius) < -distance_truncation)
                 {
                     grid->brick_map_data[brick_map_index] = FATHOM_BRICK_MAP_INDEX_SOLID;
                 }
