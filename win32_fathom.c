@@ -1553,6 +1553,7 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
     static u32 dhh = 20;
     static f32 slider_val = 0.5f;
     static f32 ui_scale = 0.8f;
+    static u8 collapsed = 0;
 
     ui_context.mouse_x = (u16)(state->mouse_x < 0 ? 0 : state->mouse_x);
     ui_context.mouse_y = (u16)((i32)state->window_height - (state->mouse_y < 0 ? 0 : state->mouse_y));
@@ -1586,77 +1587,86 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
     {
       fathom_ui_result header_res = fathom_ui_drag_header(&ui_context, 1, &wx, &wy, dhw, dhh);
       fathom_ui_render_instance_push(header_res, 0.2f, 0.2f, 0.2f, 1.0f);
+
+      if ((header_res.state & FATHOM_UI_STATE_HOVER) && state->mouse_right_is_down && !state->mouse_right_was_down)
+      {
+        collapsed = !(collapsed);
+      }
     }
 
-    /* Panel */
+    if (!collapsed)
     {
-      fathom_ui_result panel_res = fathom_ui_panel_begin(&ui_context, wx, wy + dhh, 200, 300);
-      fathom_ui_render_instance_push(panel_res, 0.1f, 0.1f, 0.1f, 0.6f);
+      /* Panel */
+      {
+        fathom_ui_result panel_res = fathom_ui_panel_begin(&ui_context, wx, wy + dhh, 200, 300);
+        fathom_ui_render_instance_push(panel_res, 0.1f, 0.1f, 0.1f, 0.6f);
+      }
+
+      /* Button */
+      {
+        fathom_ui_result button = fathom_ui_button(&ui_context, 2, 0, 0, 0, 30);
+
+        if (button.state & FATHOM_UI_STATE_RELEASED)
+        {
+          fathom_ui_render_instance_push(button, 1.0f, 1.0f, 1.0f, 1.0f);
+        }
+        else if (button.state & FATHOM_UI_STATE_HELD)
+        {
+          fathom_ui_render_instance_push(button, 0.0f, 0.0f, 1.0f, 1.0f);
+        }
+        else if (button.state & FATHOM_UI_STATE_HOVER)
+        {
+          fathom_ui_render_instance_push(button, 1.0f, 0.0f, 0.0f, 1.0f);
+        }
+        else
+        {
+          fathom_ui_render_instance_push(button, 0.0f, 1.0f, 0.0f, 1.0f);
+        }
+      }
+
+      /* Slider */
+      {
+        fathom_ui_result slider = fathom_ui_slider(&ui_context, 3, 0, 0, 0, 20, &slider_val);
+        fathom_ui_result knob_rect;
+        u32 knob_width;
+        u32 knob_x;
+        f32 knob_color;
+
+        fathom_ui_render_instance_push(slider, 0.2f, 0.2f, 0.2f, 1.0f);
+
+        knob_width = 10;
+        knob_x = slider.x + (u32)(slider_val * (f32)(slider.w - knob_width));
+
+        knob_rect = fathom_ui_result_init(knob_x, slider.y, knob_width, slider.h, 0);
+
+        knob_color = (slider.state & FATHOM_UI_STATE_HELD) ? 0.8f : 0.6f;
+        fathom_ui_render_instance_push(knob_rect, knob_color, knob_color, knob_color, 1.0f);
+      }
+
+      /* Checkbox */
+      {
+        static u8 checked = 0;
+        fathom_ui_result checkbox = fathom_ui_checkbox(&ui_context, 4, 0, 0, 20, 20, &checked);
+
+        if (checked)
+        {
+          fathom_ui_render_instance_push(checkbox, 0.0f, 1.0f, 0.0f, 1.0f);
+        }
+        else
+        {
+          fathom_ui_render_instance_push(checkbox, 1.0f, 0.0f, 0.0f, 1.0f);
+        }
+      }
+
+      fathom_ui_panel_end(&ui_context);
     }
 
-    /* Button */
-    {
-      fathom_ui_result button = fathom_ui_button(&ui_context, 2, 0, 0, 0, 30);
-
-      if (button.state & FATHOM_UI_STATE_RELEASED)
-      {
-        fathom_ui_render_instance_push(button, 1.0f, 1.0f, 1.0f, 1.0f);
-      }
-      else if (button.state & FATHOM_UI_STATE_HELD)
-      {
-        fathom_ui_render_instance_push(button, 0.0f, 0.0f, 1.0f, 1.0f);
-      }
-      else if (button.state & FATHOM_UI_STATE_HOVER)
-      {
-        fathom_ui_render_instance_push(button, 1.0f, 0.0f, 0.0f, 1.0f);
-      }
-      else
-      {
-        fathom_ui_render_instance_push(button, 0.0f, 1.0f, 0.0f, 1.0f);
-      }
-    }
-
-    /* Slider */
-    {
-      fathom_ui_result slider = fathom_ui_slider(&ui_context, 3, 0, 0, 0, 20, &slider_val);
-      fathom_ui_result knob_rect;
-      u32 knob_width;
-      u32 knob_x;
-      f32 knob_color;
-
-      fathom_ui_render_instance_push(slider, 0.2f, 0.2f, 0.2f, 1.0f);
-
-      knob_width = 10;
-      knob_x = slider.x + (u32)(slider_val * (f32)(slider.w - knob_width));
-
-      knob_rect = fathom_ui_result_init(knob_x, slider.y, knob_width, slider.h, 0);
-
-      knob_color = (slider.state & FATHOM_UI_STATE_HELD) ? 0.8f : 0.6f;
-      fathom_ui_render_instance_push(knob_rect, knob_color, knob_color, knob_color, 1.0f);
-    }
-
-    /* Checkbox */
-    {
-      static u8 checked = 0;
-      fathom_ui_result checkbox = fathom_ui_checkbox(&ui_context, 4, 0, 0, 20, 20, &checked);
-
-      if (checked)
-      {
-        fathom_ui_render_instance_push(checkbox, 0.0f, 1.0f, 0.0f, 1.0f);
-      }
-      else
-      {
-        fathom_ui_render_instance_push(checkbox, 1.0f, 0.0f, 0.0f, 1.0f);
-      }
-    }
-
-    fathom_ui_panel_end(&ui_context);
     fathom_ui_end(&ui_context);
   }
 
   /* Setup projection */
   orthographic = fathom_mat4x4_orthographic(0.0f, (f32)state->window_width, (f32)state->window_height, 0.0f, -1.0f, 1.0f);
-  
+
   /* OpenGL Draw */
   /* glDisable(GL_DEPTH_TEST); */
 
