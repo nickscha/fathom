@@ -73,6 +73,11 @@ FATHOM_API FATHOM_INLINE void fathom_profiler_begin(s8 *name, s8 *file, u32 line
         entry.counter += 1;
         entry.time_ms_last = fathom_profiler_time_ms();
 
+        if (fathom_profiler_entries_count >= FATHOM_PROFILER_MAX_ENTRIES)
+        {
+            return;
+        }
+
         fathom_profiler_entries[fathom_profiler_entries_count++] = entry;
     }
     else
