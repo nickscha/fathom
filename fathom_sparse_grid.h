@@ -193,6 +193,8 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
     u32 atlas_vox_stride = atlas_width;
     u32 atlas_slice_stride = atlas_width * atlas_height;
 
+    f32 brick_step = FATHOM_BRICK_SIZE * grid->cell_size;
+
     u32 bx, by, bz;
     u32 lx, ly, lz;
 
@@ -207,7 +209,6 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                 u32 atlas_bx;
                 u32 atlas_by;
 
-                fathom_vec3 brick_min;
                 fathom_vec3 physical_position;
 
                 if (grid->brick_map_data[map_idx] != FATHOM_BRICK_MAP_INDEX_USEFUL)
@@ -215,23 +216,17 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                     continue;
                 }
 
-                /* 1. Determine World Space origin for this brick (including apron) */
-                brick_min = fathom_vec3_init(
-                    grid->start.x + (f32)(bx * FATHOM_BRICK_SIZE) * grid->cell_size,
-                    grid->start.y + (f32)(by * FATHOM_BRICK_SIZE) * grid->cell_size,
-                    grid->start.z + (f32)(bz * FATHOM_BRICK_SIZE) * grid->cell_size);
-
-                /* 2. Determine Atlas Destination (Brick Coordinates) */
+                /* 1. Determine Atlas Destination (Brick Coordinates) */
                 cur_idx = atlas_used_count++;
                 atlas_bx = cur_idx % bricks_per_row;
                 atlas_by = cur_idx / bricks_per_row;
 
                 /* 3. Voxel Fill Loop */
-                physical_position.z = brick_min.z + apron_offset;
+                physical_position.z = (grid->start.z + (f32)(bz)*brick_step) + apron_offset;
 
                 for (lz = 0; lz < FATHOM_PHYSICAL_BRICK_SIZE; ++lz, physical_position.z += grid->cell_size)
                 {
-                    physical_position.y = brick_min.y + apron_offset;
+                    physical_position.y = (grid->start.y + (f32)(by)*brick_step) + apron_offset;
 
                     for (ly = 0; ly < FATHOM_PHYSICAL_BRICK_SIZE; ++ly, physical_position.y += grid->cell_size)
                     {
@@ -243,7 +238,7 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                         s8 *dst_row = &grid->atlas_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
                         u8 *dst_material_row = &grid->material_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
 
-                        physical_position.x = brick_min.x + apron_offset;
+                        physical_position.x = (grid->start.x + (f32)(bx)*brick_step) + apron_offset;
 
                         for (lx = 0; lx < FATHOM_PHYSICAL_BRICK_SIZE; ++lx, physical_position.x += grid->cell_size)
                         {
