@@ -386,6 +386,62 @@ static fathom_mat4x4 fathom_mat4x4_zero =
       0.0f, 0.0f, 0.0f, 0.0f,
       0.0f, 0.0f, 0.0f, 0.0f}};
 
+FATHOM_API FATHOM_INLINE fathom_mat4x4 fathom_mat4x4_mul(fathom_mat4x4 a, fathom_mat4x4 b)
+{
+    fathom_mat4x4 r;
+
+    i32 i;
+
+    __m128 a0, a1, a2, a3;
+    __m128 b_row_col, b0, b1, b2, b3, res;
+
+#ifdef FATHOM_MAT_ROW_MAJOR_ORDER
+    b0 = _mm_loadu_ps(&b.e[0]);
+    b1 = _mm_loadu_ps(&b.e[4]);
+    b2 = _mm_loadu_ps(&b.e[8]);
+    b3 = _mm_loadu_ps(&b.e[12]);
+
+    for (i = 0; i < 4; ++i)
+    {
+        b_row_col = _mm_loadu_ps(&a.e[i * 4]);
+
+        a0 = _mm_shuffle_ps(b_row_col, b_row_col, _MM_SHUFFLE(0, 0, 0, 0));
+        a1 = _mm_shuffle_ps(b_row_col, b_row_col, _MM_SHUFFLE(1, 1, 1, 1));
+        a2 = _mm_shuffle_ps(b_row_col, b_row_col, _MM_SHUFFLE(2, 2, 2, 2));
+        a3 = _mm_shuffle_ps(b_row_col, b_row_col, _MM_SHUFFLE(3, 3, 3, 3));
+
+        res = _mm_add_ps(_mm_mul_ps(a0, b0), _mm_mul_ps(a1, b1));
+        res = _mm_add_ps(res, _mm_mul_ps(a2, b2));
+        res = _mm_add_ps(res, _mm_mul_ps(a3, b3));
+
+        _mm_storeu_ps(&r.e[i * 4], res);
+    }
+#else
+    a0 = _mm_loadu_ps(&a.e[0]);
+    a1 = _mm_loadu_ps(&a.e[4]);
+    a2 = _mm_loadu_ps(&a.e[8]);
+    a3 = _mm_loadu_ps(&a.e[12]);
+
+    for (i = 0; i < 4; ++i)
+    {
+        b_row_col = _mm_loadu_ps(&b.e[i * 4]);
+
+        b0 = _mm_shuffle_ps(b_row_col, b_row_col, _MM_SHUFFLE(0, 0, 0, 0));
+        b1 = _mm_shuffle_ps(b_row_col, b_row_col, _MM_SHUFFLE(1, 1, 1, 1));
+        b2 = _mm_shuffle_ps(b_row_col, b_row_col, _MM_SHUFFLE(2, 2, 2, 2));
+        b3 = _mm_shuffle_ps(b_row_col, b_row_col, _MM_SHUFFLE(3, 3, 3, 3));
+
+        res = _mm_add_ps(_mm_mul_ps(a0, b0), _mm_mul_ps(a1, b1));
+        res = _mm_add_ps(res, _mm_mul_ps(a2, b2));
+        res = _mm_add_ps(res, _mm_mul_ps(a3, b3));
+
+        _mm_storeu_ps(&r.e[i * 4], res);
+    }
+#endif
+
+    return r;
+}
+
 FATHOM_API FATHOM_INLINE fathom_mat4x4 fathom_mat4x4_orthographic(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
 {
     fathom_mat4x4 result;

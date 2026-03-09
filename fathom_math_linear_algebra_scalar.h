@@ -257,6 +257,28 @@ static fathom_mat4x4 fathom_mat4x4_zero =
       0.0f, 0.0f, 0.0f, 0.0f,
       0.0f, 0.0f, 0.0f, 0.0f}};
 
+FATHOM_API FATHOM_INLINE fathom_mat4x4 fathom_mat4x4_mul(fathom_mat4x4 a, fathom_mat4x4 b)
+{
+    fathom_mat4x4 result;
+
+    i32 i;
+    i32 j;
+
+    for (i = 0; i < 4; ++i)
+    {
+        for (j = 0; j < 4; ++j)
+        {
+            result.e[FATHOM_MAT4X4_AT(i, j)] =
+                a.e[FATHOM_MAT4X4_AT(i, 0)] * b.e[FATHOM_MAT4X4_AT(0, j)] +
+                a.e[FATHOM_MAT4X4_AT(i, 1)] * b.e[FATHOM_MAT4X4_AT(1, j)] +
+                a.e[FATHOM_MAT4X4_AT(i, 2)] * b.e[FATHOM_MAT4X4_AT(2, j)] +
+                a.e[FATHOM_MAT4X4_AT(i, 3)] * b.e[FATHOM_MAT4X4_AT(3, j)];
+        }
+    }
+
+    return result;
+}
+
 FATHOM_API FATHOM_INLINE fathom_mat4x4 fathom_mat4x4_orthographic(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
 {
     f32 width = right - left;
