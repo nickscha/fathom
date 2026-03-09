@@ -1715,16 +1715,6 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
   state.target_frames_per_second = 30; /* 60 FPS, 0 = unlimited */
   state.controller.check_needed = 1;   /* By default we have to query first XInput state */
 
-  (void)GL_TEXTURE1;
-  (void)GL_RED_INTEGER;
-  (void)GL_LINEAR;
-  (void)GL_TRIANGLES;
-  (void)GL_PACK_ALIGNMENT;
-  (void)GL_RGB;
-  (void)GL_TEXTURE_3D;
-  (void)GL_TEXTURE_WRAP_R;
-  (void)GL_R16UI;
-
   /******************************/
   /* Set Process Priorities     */
   /******************************/
