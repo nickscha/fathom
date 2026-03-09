@@ -190,6 +190,9 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
     u32 atlas_width = bricks_per_row * FATHOM_PHYSICAL_BRICK_SIZE;
     u32 atlas_height = ((grid->brick_map_active_bricks_count + bricks_per_row - 1) / bricks_per_row) * FATHOM_PHYSICAL_BRICK_SIZE;
 
+    u32 atlas_vox_stride = atlas_width;
+    u32 atlas_slice_stride = atlas_width * atlas_height;
+
     u32 bx, by, bz;
     u32 lx, ly, lz;
 
@@ -200,12 +203,12 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
             for (bx = 0; bx < grid->brick_map_dimensions; ++bx)
             {
                 u32 map_idx = bx + (by * grid->brick_map_dimensions) + (bz * grid->brick_map_dimensions * grid->brick_map_dimensions);
+                u32 cur_idx;
+                u32 atlas_bx;
+                u32 atlas_by;
 
                 fathom_vec3 brick_min;
-                u32 cur_idx;
-                u32 atlas_bx, atlas_by;
-                u32 atlas_vox_stride;
-                u32 atlas_slice_stride;
+                fathom_vec3 physical_position;
 
                 if (grid->brick_map_data[map_idx] != FATHOM_BRICK_MAP_INDEX_USEFUL)
                 {
@@ -224,17 +227,14 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                 atlas_by = cur_idx / bricks_per_row;
 
                 /* 3. Voxel Fill Loop */
-                atlas_vox_stride = atlas_width;
-                atlas_slice_stride = atlas_width * atlas_height;
+                physical_position.z = brick_min.z + apron_offset;
 
-                for (lz = 0; lz < FATHOM_PHYSICAL_BRICK_SIZE; ++lz)
+                for (lz = 0; lz < FATHOM_PHYSICAL_BRICK_SIZE; ++lz, physical_position.z += grid->cell_size)
                 {
-                    f32 pz = brick_min.z + apron_offset + ((f32)lz * grid->cell_size);
+                    physical_position.y = brick_min.y + apron_offset;
 
-                    for (ly = 0; ly < FATHOM_PHYSICAL_BRICK_SIZE; ++ly)
+                    for (ly = 0; ly < FATHOM_PHYSICAL_BRICK_SIZE; ++ly, physical_position.y += grid->cell_size)
                     {
-                        f32 py = brick_min.y + apron_offset + ((f32)ly * grid->cell_size);
-
                         /* Calculate destination pointer for this row (x-line) in the atlas */
                         u32 dst_x = atlas_bx * FATHOM_PHYSICAL_BRICK_SIZE;
                         u32 dst_y = (atlas_by * FATHOM_PHYSICAL_BRICK_SIZE) + ly;
@@ -243,10 +243,11 @@ FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fa
                         s8 *dst_row = &grid->atlas_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
                         u8 *dst_material_row = &grid->material_data[dst_x + (dst_y * atlas_vox_stride) + (dst_z * atlas_slice_stride)];
 
-                        for (lx = 0; lx < FATHOM_PHYSICAL_BRICK_SIZE; ++lx)
+                        physical_position.x = brick_min.x + apron_offset;
+
+                        for (lx = 0; lx < FATHOM_PHYSICAL_BRICK_SIZE; ++lx, physical_position.x += grid->cell_size)
                         {
-                            f32 px = brick_min.x + apron_offset + ((f32)lx * grid->cell_size);
-                            fathom_grid_data data = distance_function(fathom_vec3_init(px, py, pz), user_data);
+                            fathom_grid_data data = distance_function(physical_position, user_data);
 
                             /* Quantize: map [-trunc, +trunc] to [-127, 127] */
                             f32 val = data.distance * quant_scale;
