@@ -1616,6 +1616,7 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
       }
     }
 
+    /* Slider */
     {
       fathom_ui_result slider = fathom_ui_slider(&ui_context, 3, 0, 0, 0, 20, &slider_val);
       fathom_ui_result knob_rect;
@@ -1634,12 +1635,28 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
       fathom_ui_render_instance_push(knob_rect, knob_color, knob_color, knob_color, 1.0f);
     }
 
+    /* Checkbox */
+    {
+      static u8 checked = 0;
+      fathom_ui_result checkbox = fathom_ui_checkbox(&ui_context, 4, 0, 0, 20, 20, &checked);
+
+      if (checked)
+      {
+        fathom_ui_render_instance_push(checkbox, 0.0f, 1.0f, 0.0f, 1.0f);
+      }
+      else
+      {
+        fathom_ui_render_instance_push(checkbox, 1.0f, 0.0f, 0.0f, 1.0f);
+      }
+    }
+
     fathom_ui_panel_end(&ui_context);
     fathom_ui_end(&ui_context);
   }
 
   /* Setup projection */
   orthographic = fathom_mat4x4_orthographic(0.0f, (f32)state->window_width, (f32)state->window_height, 0.0f, -1.0f, 1.0f);
+  
   /* OpenGL Draw */
   /* glDisable(GL_DEPTH_TEST); */
 
