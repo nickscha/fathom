@@ -367,4 +367,60 @@ FATHOM_API FATHOM_INLINE void fathom_vec2_mul_mat2x2(f32 *a, f32 *b, fathom_mat2
     *b = _mm_cvtss_f32(_mm_shuffle_ps(res, res, _MM_SHUFFLE(1, 1, 1, 1)));
 }
 
+#define FATHOM_MAT4X4_ELEMENT_COUNT 16
+
+#ifdef FATHOM_MAT_ROW_MAJOR_ORDER
+#define FATHOM_MAT4X4_AT(row, col) ((row) * 4 + (col)) /* Row-major order */
+#else
+#define FATHOM_MAT4X4_AT(row, col) ((col) * 4 + (row)) /* Column-major order */
+#endif
+
+typedef struct fathom_mat4x4
+{
+    f32 e[FATHOM_MAT4X4_ELEMENT_COUNT];
+} fathom_mat4x4;
+
+static fathom_mat4x4 fathom_mat4x4_zero =
+    {{0.0f, 0.0f, 0.0f, 0.0f,
+      0.0f, 0.0f, 0.0f, 0.0f,
+      0.0f, 0.0f, 0.0f, 0.0f,
+      0.0f, 0.0f, 0.0f, 0.0f}};
+
+FATHOM_API FATHOM_INLINE fathom_mat4x4 fathom_mat4x4_orthographic(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
+{
+    fathom_mat4x4 result;
+    __m128 r0, r1, r2, r3;
+    __m128 v_left_top_near, v_right_bottom_far;
+    __m128 v_diff, v_sum, v_inv_diff;
+
+    v_left_top_near = _mm_set_ps(0.0f, near, bottom, left);
+    v_right_bottom_far = _mm_set_ps(0.0f, far, top, right);
+    v_diff = _mm_sub_ps(v_right_bottom_far, v_left_top_near);
+    v_sum = _mm_add_ps(v_right_bottom_far, v_left_top_near);
+    v_inv_diff = _mm_div_ps(_mm_set1_ps(1.0f), v_diff);
+    result = fathom_mat4x4_zero;
+
+#ifdef FATHOM_MAT_ROW_MAJOR_ORDER
+    result.e[0] = 2.0f * _mm_cvtss_f32(v_inv_diff);
+    result.e[3] = -_mm_cvtss_f32(v_sum) * _mm_cvtss_f32(v_inv_diff);
+    result.e[5] = 2.0f * _mm_cvtss_f32(_mm_shuffle_ps(v_inv_diff, v_inv_diff, 1));
+    result.e[7] = -_mm_cvtss_f32(_mm_shuffle_ps(v_sum, v_sum, 1)) * _mm_cvtss_f32(_mm_shuffle_ps(v_inv_diff, v_inv_diff, 1));
+    result.e[10] = -2.0f * _mm_cvtss_f32(_mm_shuffle_ps(v_inv_diff, v_inv_diff, 2));
+    result.e[11] = -_mm_cvtss_f32(_mm_shuffle_ps(v_sum, v_sum, 2)) * _mm_cvtss_f32(_mm_shuffle_ps(v_inv_diff, v_inv_diff, 2));
+    result.e[15] = 1.0f;
+#else
+    r0 = _mm_set_ps(0.0f, 0.0f, 0.0f, 2.0f * _mm_cvtss_f32(v_inv_diff));
+    r1 = _mm_set_ps(0.0f, 0.0f, 2.0f * _mm_cvtss_f32(_mm_shuffle_ps(v_inv_diff, v_inv_diff, 1)), 0.0f);
+    r2 = _mm_set_ps(0.0f, -2.0f * _mm_cvtss_f32(_mm_shuffle_ps(v_inv_diff, v_inv_diff, 2)), 0.0f, 0.0f);
+    r3 = _mm_mul_ps(_mm_set_ps(0.0f, -1.0f, -1.0f, -1.0f), _mm_mul_ps(v_sum, v_inv_diff));
+    _mm_storeu_ps(&result.e[0], r0);
+    _mm_storeu_ps(&result.e[4], r1);
+    _mm_storeu_ps(&result.e[8], r2);
+    _mm_storeu_ps(&result.e[12], r3);
+    result.e[15] = 1.0f;
+#endif
+
+    return result;
+}
+
 #endif /* FATHOM_MATH_LINEAR_ALGEBRA_SSE2_H */

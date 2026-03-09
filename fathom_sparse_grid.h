@@ -52,6 +52,7 @@ typedef struct fathom_grid_data
 {
     f32 distance;
     u8 material;
+
 } fathom_grid_data;
 
 typedef fathom_grid_data (*fathom_grid_distance_function)(fathom_vec3 position, void *user_data);
@@ -104,7 +105,7 @@ FATHOM_API u8 fathom_sparse_grid_initialize(fathom_sparse_grid *grid, fathom_vec
     return 1;
 }
 
-FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid, fathom_grid_distance_function distance_function, void *user_data)
+FATHOM_API FATHOM_INLINE u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid, fathom_grid_distance_function distance_function, void *user_data)
 {
     u32 brick_map_index = 0;
     u32 active_brick_count = 0;
@@ -180,7 +181,7 @@ FATHOM_API u8 fathom_sparse_grid_pass_01_fill_brick_map(fathom_sparse_grid *grid
     return 1;
 }
 
-FATHOM_API u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fathom_grid_distance_function distance_function, void *user_data)
+FATHOM_API FATHOM_INLINE u8 fathom_sparse_grid_pass_02_fill_atlas(fathom_sparse_grid *grid, fathom_grid_distance_function distance_function, void *user_data)
 {
     u32 bricks_per_row = grid->atlas_bricks_per_row;
     u32 atlas_used_count = 0;
