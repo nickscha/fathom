@@ -1,4 +1,4 @@
-/* win32_fathom.c - v0.1 - public domain data structures - nickscha 2026
+/* win32_fathom.c - v0.2 - public domain data structures - nickscha 2026
 
 LICENSE
 
@@ -1708,7 +1708,7 @@ FATHOM_API i32 start(i32 argc, u8 **argv)
   u32 glyph_vbo;
 
   state.running = 1;
-  state.window_title = "fathom v0.1 (F1=Debug UI, F2=Screen Recording, R=Reset, P=Pause, F9=Borderless, F11=Fullscreen)";
+  state.window_title = "fathom v0.2 (F1=Debug UI, F2=Screen Recording, R=Reset, P=Pause, F9=Borderless, F11=Fullscreen)";
   state.window_width = 800;
   state.window_height = 600;
   state.window_clear_color_r = 0.2f;
