@@ -50,8 +50,8 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_add(fathom_vec3 a, fathom_vec3 
 
     __m128 va, vb, res;
 
-    va = _mm_load_ps((const f32 *)&a);
-    vb = _mm_load_ps((const f32 *)&b);
+    va = _mm_load_ps((f32 *)&a);
+    vb = _mm_load_ps((f32 *)&b);
     res = _mm_add_ps(va, vb);
 
     _mm_store_ps((f32 *)&result, res);
@@ -65,8 +65,8 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_sub(fathom_vec3 a, fathom_vec3 
 
     __m128 va, vb, res;
 
-    va = _mm_load_ps((const f32 *)&a);
-    vb = _mm_load_ps((const f32 *)&b);
+    va = _mm_load_ps((f32 *)&a);
+    vb = _mm_load_ps((f32 *)&b);
     res = _mm_sub_ps(va, vb);
 
     _mm_store_ps((f32 *)&result, res);
@@ -80,8 +80,8 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_mul(fathom_vec3 a, fathom_vec3 
 
     __m128 va, vb, res;
 
-    va = _mm_load_ps((const f32 *)&a);
-    vb = _mm_load_ps((const f32 *)&b);
+    va = _mm_load_ps((f32 *)&a);
+    vb = _mm_load_ps((f32 *)&b);
     res = _mm_mul_ps(va, vb);
 
     _mm_store_ps((f32 *)&result, res);
@@ -95,8 +95,8 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_div(fathom_vec3 a, fathom_vec3 
 
     __m128 va, vb, res;
 
-    va = _mm_load_ps((const f32 *)&a);
-    vb = _mm_load_ps((const f32 *)&b);
+    va = _mm_load_ps((f32 *)&a);
+    vb = _mm_load_ps((f32 *)&b);
     res = _mm_div_ps(va, vb);
 
     _mm_store_ps((f32 *)&result, res);
@@ -110,7 +110,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_addf(fathom_vec3 a, f32 value)
 
     __m128 va, vval, res;
 
-    va = _mm_load_ps((const f32 *)&a);
+    va = _mm_load_ps((f32 *)&a);
     vval = _mm_set_ps(0.0f, value, value, value);
     res = _mm_add_ps(va, vval);
 
@@ -125,7 +125,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_subf(fathom_vec3 a, f32 value)
 
     __m128 va, vval, res;
 
-    va = _mm_load_ps((const f32 *)&a);
+    va = _mm_load_ps((f32 *)&a);
     vval = _mm_set_ps(0.0f, value, value, value);
     res = _mm_sub_ps(va, vval);
 
@@ -171,7 +171,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_abs(fathom_vec3 a)
 
     __m128 va, mask, res;
 
-    va = _mm_load_ps((const f32 *)&a);
+    va = _mm_load_ps((f32 *)&a);
     mask = _mm_castsi128_ps(_mm_set1_epi32(0x7FFFFFFF)); /* Clear sign bit */
     res = _mm_and_ps(va, mask);
 
@@ -186,7 +186,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_minf(fathom_vec3 a, f32 value)
 
     __m128 va, vval, res;
 
-    va = _mm_load_ps((const f32 *)&a);
+    va = _mm_load_ps((f32 *)&a);
     vval = _mm_set_ps(0.0f, value, value, value);
     res = _mm_min_ps(va, vval);
 
@@ -201,7 +201,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_maxf(fathom_vec3 a, f32 value)
 
     __m128 va, vval, res;
 
-    va = _mm_load_ps((const f32 *)&a);
+    va = _mm_load_ps((f32 *)&a);
     vval = _mm_set_ps(0.0f, value, value, value);
     res = _mm_max_ps(va, vval);
 
@@ -214,8 +214,8 @@ FATHOM_API FATHOM_INLINE f32 fathom_vec3_dot(fathom_vec3 a, fathom_vec3 b)
 {
     __m128 va, vb, mul, mask, shuf1, sum1, shuf2, sum2;
 
-    va = _mm_load_ps((const f32 *)&a);
-    vb = _mm_load_ps((const f32 *)&b);
+    va = _mm_load_ps((f32 *)&a);
+    vb = _mm_load_ps((f32 *)&b);
     mul = _mm_mul_ps(va, vb);
 
     mask = _mm_castsi128_ps(_mm_set_epi32(0, -1, -1, -1));
@@ -233,7 +233,7 @@ FATHOM_API FATHOM_INLINE f32 fathom_vec3_length(fathom_vec3 a)
 {
     __m128 va, mul, mask, shuf1, sum1, shuf2, sum2, root;
 
-    va = _mm_load_ps((const f32 *)&a);
+    va = _mm_load_ps((f32 *)&a);
     mul = _mm_mul_ps(va, va);
 
     mask = _mm_castsi128_ps(_mm_set_epi32(0, -1, -1, -1));
@@ -255,8 +255,8 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_cross(fathom_vec3 a, fathom_vec
 
     __m128 va, vb, a_yzx, b_zxy, a_zxy, b_yzx, mul1, mul2, sub;
 
-    va = _mm_load_ps((const f32 *)&a);
-    vb = _mm_load_ps((const f32 *)&b);
+    va = _mm_load_ps((f32 *)&a);
+    vb = _mm_load_ps((f32 *)&b);
 
     a_yzx = _mm_shuffle_ps(va, va, _MM_SHUFFLE(3, 0, 2, 1));
     b_zxy = _mm_shuffle_ps(vb, vb, _MM_SHUFFLE(3, 1, 0, 2));
@@ -280,7 +280,7 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_normalize(fathom_vec3 a)
     __m128 va, mul, mask, shuf1, sum1, shuf2, length_sq;
     __m128 rsqrt, half, three_halfs, half_length_sq, rsqrt_sq, nr, zero, cmp, res;
 
-    va = _mm_load_ps((const f32 *)&a);
+    va = _mm_load_ps((f32 *)&a);
     mul = _mm_mul_ps(va, va);
 
     mask = _mm_castsi128_ps(_mm_set_epi32(0, -1, -1, -1));
