@@ -1545,6 +1545,7 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
   }
 
   /* Setup UI */
+  FATHOM_PROFILER_BEGIN(ui_process);
   {
     static fathom_ui_context ui_context = {0};
     static u32 wx = 10;
@@ -1663,6 +1664,7 @@ FATHOM_API void fathom_render_ui(win32_fathom_state *state)
 
     fathom_ui_end(&ui_context);
   }
+  FATHOM_PROFILER_END(ui_process);
 
   /* Setup projection */
   orthographic = fathom_mat4x4_orthographic(0.0f, (f32)state->window_width, (f32)state->window_height, 0.0f, -1.0f, 1.0f);
