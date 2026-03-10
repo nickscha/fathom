@@ -231,22 +231,16 @@ FATHOM_API FATHOM_INLINE f32 fathom_vec3_dot(fathom_vec3 a, fathom_vec3 b)
 
 FATHOM_API FATHOM_INLINE f32 fathom_vec3_length(fathom_vec3 a)
 {
-    __m128 va, mul, mask, shuf1, sum1, shuf2, sum2, root;
+    __m128 va, ssq, tmp;
 
     va = _mm_load_ps((f32 *)&a);
-    mul = _mm_mul_ps(va, va);
+    ssq = _mm_mul_ps(va, va);
+    tmp = _mm_shuffle_ps(ssq, ssq, _MM_SHUFFLE(1, 1, 1, 1));
+    ssq = _mm_add_ss(ssq, tmp);
+    tmp = _mm_shuffle_ps(ssq, ssq, _MM_SHUFFLE(2, 2, 2, 2));
+    ssq = _mm_add_ss(ssq, tmp);
 
-    mask = _mm_castsi128_ps(_mm_set_epi32(0, -1, -1, -1));
-    mul = _mm_and_ps(mul, mask);
-
-    shuf1 = _mm_shuffle_ps(mul, mul, _MM_SHUFFLE(2, 3, 0, 1));
-    sum1 = _mm_add_ps(mul, shuf1);
-    shuf2 = _mm_shuffle_ps(sum1, sum1, _MM_SHUFFLE(1, 0, 3, 2));
-    sum2 = _mm_add_ps(sum1, shuf2);
-
-    root = _mm_sqrt_ss(sum2);
-
-    return _mm_cvtss_f32(root);
+    return _mm_cvtss_f32(_mm_sqrt_ss(ssq));
 }
 
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_cross(fathom_vec3 a, fathom_vec3 b)
