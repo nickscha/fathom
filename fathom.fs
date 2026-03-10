@@ -159,7 +159,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             ivec3 voxelCoord = ivec3(floor((pos - uGridStart) * uInvCellSize));
             vec3 brick_color = debugColor(brickCoord);
             vec3 voxel_color = debugColor(voxelCoord);
-            col = brick_color * (0.6 + 0.3 * voxel_color);
+            col = ambient + diffuse * sun * brick_color * (0.6 + 0.3 * voxel_color);
             */
         }
     }
