@@ -186,38 +186,11 @@ typedef struct fathom_sdf_aabb
 
 FATHOM_API FATHOM_INLINE f32 fathom_sdf_aabb_distance(fathom_vec3 position, fathom_sdf_aabb *box)
 {
-    f32 dx = 0.0f;
-    f32 dy = 0.0f;
-    f32 dz = 0.0f;
+    f32 dx = fathom_maxf(0.0f, fathom_maxf(box->min.x - position.x, position.x - box->max.x));
+    f32 dy = fathom_maxf(0.0f, fathom_maxf(box->min.y - position.y, position.y - box->max.y));
+    f32 dz = fathom_maxf(0.0f, fathom_maxf(box->min.z - position.z, position.z - box->max.z));
 
-    if (position.x < box->min.x)
-    {
-        dx = box->min.x - position.x;
-    }
-    else if (position.x > box->max.x)
-    {
-        dx = position.x - box->max.x;
-    }
-
-    if (position.y < box->min.y)
-    {
-        dy = box->min.y - position.y;
-    }
-    else if (position.y > box->max.y)
-    {
-        dy = position.y - box->max.y;
-    }
-
-    if (position.z < box->min.z)
-    {
-        dz = box->min.z - position.z;
-    }
-    else if (position.z > box->max.z)
-    {
-        dz = position.z - box->max.z;
-    }
-
-    return dx * dx + dy * dy + dz * dz;
+    return (dx * dx) + (dy * dy) + (dz * dz);
 }
 
 FATHOM_API FATHOM_INLINE fathom_sdf_aabb fathom_sdf_aabb_sphere(fathom_vec3 center, f32 radius)
