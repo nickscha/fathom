@@ -178,35 +178,35 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
 
         for (i = 0; i < FATHOM_SDF_PRIMITIVE_COUNT; ++i)
         {
-            fathom_sdf_primitive primitive = primitives[i];
-            fathom_vec3 primitive_pos = fathom_vec3_sub(position, primitive.transform.position);
+            fathom_sdf_primitive *primitive = &primitives[i];
+            fathom_vec3 primitive_pos = fathom_vec3_sub(position, primitive->transform.position);
             f32 primitive_distance = ground;
 
-            switch (primitive.primitive_id)
+            switch (primitive->primitive_id)
             {
             case FATHOM_SDF_PRIMITIVE_SPHERE:
             {
-                primitive_distance = fathom_sdf_sphere(primitive_pos, primitive.attributes.sphere.radius);
+                primitive_distance = fathom_sdf_sphere(primitive_pos, primitive->attributes.sphere.radius);
             }
             break;
             case FATHOM_SDF_PRIMITIVE_BOX:
             {
-                primitive_distance = fathom_sdf_box(primitive_pos, primitive.attributes.box.base);
+                primitive_distance = fathom_sdf_box(primitive_pos, primitive->attributes.box.base);
             }
             break;
             case FATHOM_SDF_PRIMITIVE_BOX_FRAME:
             {
-                primitive_distance = fathom_sdf_box_frame(primitive_pos, primitive.attributes.box_frame.base, primitive.attributes.box_frame.edge_thickness);
+                primitive_distance = fathom_sdf_box_frame(primitive_pos, primitive->attributes.box_frame.base, primitive->attributes.box_frame.edge_thickness);
             }
             break;
             case FATHOM_SDF_PRIMITIVE_ELLIPSOID:
             {
-                primitive_distance = fathom_sdf_ellipsoid(primitive_pos, primitive.attributes.ellipsoid.radius);
+                primitive_distance = fathom_sdf_ellipsoid(primitive_pos, primitive->attributes.ellipsoid.radius);
             }
             break;
             case FATHOM_SDF_PRIMITIVE_OCTAHEDRON:
             {
-                primitive_distance = fathom_sdf_octahedron(primitive_pos, primitive.attributes.octahedron.scale);
+                primitive_distance = fathom_sdf_octahedron(primitive_pos, primitive->attributes.octahedron.scale);
             }
             break;
             default:
@@ -216,11 +216,11 @@ FATHOM_API fathom_grid_data fathom_sdf_scene(fathom_vec3 position, void *user_da
             /* material: choose the primitive that is closer (before smooth offset) */
             if (primitive_distance < primitive_distance_total)
             {
-                primitive_material_total = primitive.material_id;
+                primitive_material_total = primitive->material_id;
             }
 
             /* smooth union distance */
-            switch (primitive.operation_id)
+            switch (primitive->operation_id)
             {
             case FATHOM_SDF_OPERATION_UNION_SMOOTH:
                 primitive_distance_total = fathom_sdf_op_union_smooth(primitive_distance_total, primitive_distance, 0.4f);
