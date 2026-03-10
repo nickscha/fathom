@@ -269,37 +269,28 @@ FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_cross(fathom_vec3 a, fathom_vec
 
 FATHOM_API FATHOM_INLINE fathom_vec3 fathom_vec3_normalize(fathom_vec3 a)
 {
+    static f32 f0p5 = 0.5f;
+    static f32 f1p5 = 1.5f;
+
     fathom_vec3 result;
 
-    __m128 va, mul, mask, shuf1, sum1, shuf2, length_sq;
-    __m128 rsqrt, half, three_halfs, half_length_sq, rsqrt_sq, nr, zero, cmp, res;
+    __m128 va, ssq, tmp, lsq, rsq, mask;
 
     va = _mm_load_ps((f32 *)&a);
-    mul = _mm_mul_ps(va, va);
+    ssq = _mm_mul_ps(va, va);
 
-    mask = _mm_castsi128_ps(_mm_set_epi32(0, -1, -1, -1));
-    mul = _mm_and_ps(mul, mask);
+    tmp = _mm_shuffle_ps(ssq, ssq, _MM_SHUFFLE(1, 1, 1, 1));
+    lsq = _mm_add_ss(ssq, tmp);
+    tmp = _mm_shuffle_ps(ssq, ssq, _MM_SHUFFLE(2, 2, 2, 2));
+    lsq = _mm_add_ss(lsq, tmp);
+    lsq = _mm_shuffle_ps(lsq, lsq, _MM_SHUFFLE(0, 0, 0, 0));
+    rsq = _mm_rsqrt_ps(lsq);
+    tmp = _mm_mul_ps(_mm_mul_ps(lsq, rsq), rsq);
+    rsq = _mm_mul_ps(_mm_set1_ps(f0p5), _mm_mul_ps(rsq, _mm_sub_ps(_mm_set1_ps(f1p5), tmp)));
+    mask = _mm_cmpgt_ps(lsq, _mm_setzero_ps());
+    rsq = _mm_and_ps(rsq, mask);
 
-    shuf1 = _mm_shuffle_ps(mul, mul, _MM_SHUFFLE(2, 3, 0, 1));
-    sum1 = _mm_add_ps(mul, shuf1);
-    shuf2 = _mm_shuffle_ps(sum1, sum1, _MM_SHUFFLE(1, 0, 3, 2));
-    length_sq = _mm_add_ps(sum1, shuf2);
-
-    rsqrt = _mm_rsqrt_ps(length_sq);
-
-    half = _mm_set1_ps(0.5f);
-    three_halfs = _mm_set1_ps(1.5f);
-    half_length_sq = _mm_mul_ps(length_sq, half);
-    rsqrt_sq = _mm_mul_ps(rsqrt, rsqrt);
-    nr = _mm_sub_ps(three_halfs, _mm_mul_ps(half_length_sq, rsqrt_sq));
-    rsqrt = _mm_mul_ps(rsqrt, nr);
-
-    zero = _mm_setzero_ps();
-    cmp = _mm_cmpgt_ps(length_sq, zero);
-    rsqrt = _mm_and_ps(rsqrt, cmp);
-
-    res = _mm_mul_ps(va, rsqrt);
-    _mm_store_ps((f32 *)&result, res);
+    _mm_store_ps((f32 *)&result, _mm_mul_ps(va, rsq));
 
     return result;
 }
